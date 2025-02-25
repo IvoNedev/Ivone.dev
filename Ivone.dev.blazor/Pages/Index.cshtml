@@ -1,0 +1,13 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<script>
+    window.appData = @Html.Raw(Json.Serialize(Model.MortgageScenarios));
+</script>
+
+<div id="react-root"></div>
+<script type="module" src="/react-app/dist/index.js"></script>
+<link rel="stylesheet" href="/react-app/dist/index.css">
