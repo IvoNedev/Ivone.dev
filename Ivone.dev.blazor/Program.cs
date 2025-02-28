@@ -2,6 +2,8 @@
 
 using ivone.dev.Data.Contexts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,8 +25,6 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
-
-
 
 // In Program.cs
 builder.Services.AddScoped<IMortgageScenarioService, MortgageScenarioService>();

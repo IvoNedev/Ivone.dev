@@ -4,7 +4,6 @@ const connection = new signalR.HubConnectionBuilder()
     .withUrl("/liveupdate") // Relative path for both localhost and production
     .withAutomaticReconnect()
     .withHubProtocol(new signalR.JsonHubProtocol())
-    .configureLogging(signalR.LogLevel.Debug) // Enable Debug Logging
     .build();
 
 connection.start().catch(err => console.error("Connection Error: ", err));

@@ -10,11 +10,24 @@ const formatNumber = (value) => {
 const EUR_TO_BGN = 1.96;
 const BGN_TO_EUR = 1 / EUR_TO_BGN;
 
-const BudgetBox = () => {
-    const [isBudgetExpanded, setIsBudgetExpanded] = useState(false);
-    const [savedDeposit, setSavedDeposit] = useState('');
-    const [savedCommission, setSavedCommission] = useState('');
-    const [monthlyBudget, setMonthlyBudget] = useState('');
+const BudgetBox = ({
+    budgetDeposit,
+    setBudgetDeposit,
+    budgetCommission,
+    setBudgetCommission,
+    budgetMonthlyInstallments,
+    setBudgetMonthlyInstallments, 
+    handleMonthlyBudgetChange
+}) => {
+    const [isBudgetExpanded, setIsBudgetExpanded] = useState(true);
+
+    // The rest of your component can now use these props directly
+    const savedDeposit = budgetDeposit;
+    const setSavedDeposit = setBudgetDeposit;
+    const savedCommission = budgetCommission;
+    const setSavedCommission = setBudgetCommission;
+    const monthlyBudget = budgetMonthlyInstallments;
+    const setMonthlyBudget = setBudgetMonthlyInstallments;
     const [budgetCurrency, setBudgetCurrency] = useState('EUR'); // Default currency
 
     // Toggles currency and recalculates all amounts
@@ -33,6 +46,7 @@ const BudgetBox = () => {
             setBudgetCurrency('EUR');
         }
     };
+    
 
     return (
         <div className="mb-4 p-4 rounded border border-gray-200 shadow-sm">
@@ -43,18 +57,13 @@ const BudgetBox = () => {
                 >
                     Budget <span className="text-sm">({budgetCurrency})</span> {isBudgetExpanded ? '▲' : '▼'}
                 </h2>
-                <button
-                    onClick={switchCurrency}
-                    className="px-3 py-1 text-white bg-blue-500 hover:bg-blue-600 rounded focus:outline-none focus:ring focus:ring-blue-200"
-                >
-                    Switch to {budgetCurrency === 'EUR' ? 'BGN' : 'EUR'}
-                </button>
+              
             </div>
 
             {isBudgetExpanded ? (
                 <div className="flex flex-col gap-4">
                     <div>
-                        <label htmlFor="deposit" className="block mb-1 font-medium">Deposit</label>
+                        <label htmlFor="deposit" className="block mb-1 font-medium">Deposit  <span className="text-sm">({budgetCurrency})</span></label>
                         <input
                             id="deposit"
                             type="text"
@@ -65,7 +74,7 @@ const BudgetBox = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="commission" className="block mb-1 font-medium">Commission</label>
+                        <label htmlFor="commission" className="block mb-1 font-medium">Commission  <span className="text-sm">({budgetCurrency})</span></label>
                         <input
                             id="commission"
                             type="text"
@@ -76,12 +85,15 @@ const BudgetBox = () => {
                         />
                     </div>
                     <div>
-                        <label htmlFor="monthly" className="block mb-1 font-medium">Monthly Instalments</label>
+                        <label htmlFor="monthly" className="block mb-1 font-medium">Monthly Instalments  <span className="text-sm">({budgetCurrency})</span></label>
                         <input
                             id="monthly"
                             type="text"
                             value={formatNumber(monthlyBudget)}
-                            onChange={(e) => setMonthlyBudget(e.target.value.replace(/,/g, ''))}
+                            onChange={(e) => {
+                                setMonthlyBudget(e.target.value.replace(/,/g, ''));
+                                handleMonthlyBudgetChange(e);
+                            }}
                             placeholder="Enter what you can afford per month"
                             className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-indigo-200"
                         />
