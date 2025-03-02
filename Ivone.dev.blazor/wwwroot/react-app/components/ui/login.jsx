@@ -5,12 +5,10 @@ import { decodeJwt } from 'jose';
 
 const Login = () => {
     const handleSuccess = (response) => {
-        console.log(response);
-
-        console.log(response.credential);
+       
 
         const userObject = decodeJwt(response.credential); // Using jose's decodeJwt
-        console.log(userObject);
+        console.log(userObject.email); 
         localStorage.setItem('user', JSON.stringify(userObject));
         window.location.reload();
     };

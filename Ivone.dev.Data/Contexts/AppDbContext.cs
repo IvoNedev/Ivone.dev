@@ -9,5 +9,6 @@ namespace ivone.dev.Data.Contexts
         }
 
         public DbSet<MortgageScenario> MortgageScenarios { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }

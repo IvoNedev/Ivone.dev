@@ -1,6 +1,8 @@
 
 
 using ivone.dev.Data.Contexts;
+using ivone.dev.Services;
+using ivone.dev.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -28,6 +30,9 @@ builder.Services.AddCors(options =>
 
 // In Program.cs
 builder.Services.AddScoped<IMortgageScenarioService, MortgageScenarioService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
