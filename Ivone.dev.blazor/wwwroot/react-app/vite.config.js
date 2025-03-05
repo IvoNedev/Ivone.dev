@@ -21,10 +21,14 @@ export default defineConfig({
         outDir: './dist',
         emptyOutDir: true,
         rollupOptions: {
+            input: {
+                mortgage: path.resolve(__dirname, 'index.jsx'),  // Generates dist/mortgage.js
+                cv: path.resolve(__dirname, 'cv-index.jsx')      // Generates dist/cv.js
+            },
             output: {
-                entryFileNames: 'index.js',
-                chunkFileNames: 'index.js',
-                assetFileNames: 'index.css'
+                entryFileNames: '[name].js', 
+                chunkFileNames: '[name].js',
+                assetFileNames: '[name].[ext]'
             }
         }
     }

@@ -2,7 +2,7 @@
 import Login from '@/components/ui/Login';  // Import Login Component
 import MortgageCalculator from '@/components/ui/MortgageCalculator'; // Your main app component
 
-export default function App() {
+export default function MortgageCalculatorPortal() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     const handleLogout = () => {
