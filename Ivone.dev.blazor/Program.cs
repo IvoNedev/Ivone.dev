@@ -30,6 +30,7 @@ builder.Services.AddCors(options =>
 
 // In Program.cs
 builder.Services.AddScoped<IMortgageScenarioService, MortgageScenarioService>();
+builder.Services.AddScoped<ITimelineService, TimelineService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 

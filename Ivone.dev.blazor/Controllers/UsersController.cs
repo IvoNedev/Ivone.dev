@@ -33,6 +33,15 @@ namespace ivone.dev.Web.Controllers
             return Ok(user);
         }
 
+        // New endpoint: Get user by email
+        [HttpGet("byEmail")]
+        public async Task<IActionResult> GetByEmail([FromQuery] string email)
+        {
+            var user = await _service.GetByEmailAsync(email);
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
         // ✅ Add a new user (HasPaid defaults to false)
         [HttpPost]
         public async Task<IActionResult> Add([FromBody] User user)

@@ -1,0 +1,13 @@
+﻿@page
+@model TimelineModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<!-- Timeline.cshtml -->
+<div id="timeline-root"></div>
+<script type="module" src="/react-app/dist/timeline.js"></script>
+<link rel="stylesheet" href="/react-app/dist/timeline.css">
+<script>
+    window.appData = @Html.Raw(Json.Serialize(Model.TimelineEvents));
+</script>

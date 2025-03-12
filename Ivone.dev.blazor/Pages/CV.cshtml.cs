@@ -6,13 +6,11 @@ namespace Ivone.dev.blazor.Pages
 
     public class CVModel : PageModel
     {
-        private readonly IMortgageScenarioService _mortgageScenarioService;
         private readonly ILogger<CVModel> _logger;
 
-        public CVModel(ILogger<CVModel> logger, IMortgageScenarioService mortgageScenarioService)
+        public CVModel(ILogger<CVModel> logger)
         {
             _logger = logger;
-            _mortgageScenarioService = mortgageScenarioService;
         }
     }
 }

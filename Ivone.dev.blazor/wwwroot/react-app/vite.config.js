@@ -23,7 +23,8 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 mortgage: path.resolve(__dirname, 'index.jsx'),  // Generates dist/mortgage.js
-                cv: path.resolve(__dirname, 'cv-index.jsx')      // Generates dist/cv.js
+                cv: path.resolve(__dirname, 'cv-index.jsx'),      // Generates dist/cv.js
+                timeline: path.resolve(__dirname, 'timeline-index.jsx')  // New timeline app
             },
             output: {
                 entryFileNames: '[name].js', 

@@ -8,7 +8,7 @@ const Login = () => {
        
 
         const userObject = decodeJwt(response.credential); // Using jose's decodeJwt
-        console.log(userObject.email); 
+
         localStorage.setItem('user', JSON.stringify(userObject));
         window.location.reload();
     };

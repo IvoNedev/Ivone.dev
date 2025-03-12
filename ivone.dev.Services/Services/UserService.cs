@@ -16,7 +16,7 @@ namespace ivone.dev.Services
             _context = context;
         }
 
-        // ✅ Prevent duplicate users
+        // Prevent duplicate users
         public async Task AddAsync(User user)
         {
             var existingUser = await _context.Users
@@ -28,6 +28,12 @@ namespace ivone.dev.Services
                 user.CreatedOn = DateTime.UtcNow;
                 await base.AddAsync(user);
             }
+        }
+
+        // New method: lookup user by email
+        public async Task<User> GetByEmailAsync(string email)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         }
     }
 }
