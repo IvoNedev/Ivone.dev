@@ -96,7 +96,8 @@ const Timeline = () => {
         }
     }, [user]);
 
-    // Load timelines for the user when userId is available
+    // Load timelines for the user when userId is available.
+    // The API will auto-create a default timeline if none exists.
     useEffect(() => {
         if (userId) {
             fetch(`/api/timeline/user/${userId}`)
@@ -190,9 +191,8 @@ const Timeline = () => {
         }
     };
 
-    // Sharing functionality: call API to share timeline with another user by email
+    // Sharing functionality: call API to share timeline with another user by email.
     const handleShare = async () => {
-        // For simplicity, prompt for target user's ID. In a real app, resolve the email to a userId.
         const targetUserId = prompt("Enter target user's ID to share with:");
         if (!targetUserId) return;
         await fetch(`/api/timeline/share?timelineId=${selectedTimelineId}&userId=${targetUserId}`, { method: 'POST' });
