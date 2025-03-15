@@ -3,6 +3,8 @@
 using ivone.dev.Data.Contexts;
 using ivone.dev.Services;
 using ivone.dev.Services.Interfaces;
+using LifeInTheUK.Web.Services;
+using LifeInTheUK.Web.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -32,6 +34,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IMortgageScenarioService, MortgageScenarioService>();
 builder.Services.AddScoped<ITimelineService, TimelineService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ITestService, TestService>();
 
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

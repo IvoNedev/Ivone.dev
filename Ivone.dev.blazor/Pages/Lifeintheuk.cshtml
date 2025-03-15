@@ -1,0 +1,18 @@
+﻿@page
+@{
+    ViewData["Title"] = "Home page";
+    // Optionally, you can set Layout = "_Layout"; if not already set by convention.
+
+}
+
+
+<!-- This is where your React app will be mounted -->
+<div id="root"></div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/test-taking-client/dist/assets/index.css" />
+}
+
+@section Scripts {
+    <script type="module" src="~/test-taking-client/dist/assets/index.js"></script>
+}

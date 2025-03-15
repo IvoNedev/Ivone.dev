@@ -16,5 +16,9 @@ namespace ivone.dev.Data.Contexts
         public DbSet<TimelineEvent> TimelineEvents { get; set; }
         public DbSet<UserTimeline> UserTimelines { get; set; }
 
+        public DbSet<Test> Tests { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Answer> Answers { get; set; }
+
     }
 }
