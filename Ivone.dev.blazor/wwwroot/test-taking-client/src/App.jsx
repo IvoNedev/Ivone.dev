@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import Tests from './components/Tests';
 import TestTakingPage from './components/TestTakingPage';
 import Endless from './components/Endless';
+import RandomTest from './components/RandomTest';
 
 function App() {
     return (
@@ -12,6 +13,7 @@ function App() {
             <Route path="/tests" element={<Tests />} />
             <Route path="/tests/:id" element={<TestTakingPage />} />
             <Route path="/endless" element={<Endless />} />
+            <Route path="/random" element={<RandomTest />} />
         </Routes>
     );
 }

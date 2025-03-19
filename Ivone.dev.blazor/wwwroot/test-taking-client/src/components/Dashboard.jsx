@@ -16,6 +16,9 @@ function Dashboard() {
                 <Button variant="contained" fullWidth onClick={() => navigate('/endless')}>
                     Endless Mode
                 </Button>
+                <Button variant="contained" fullWidth onClick={() => navigate('/random')}>
+                    Random Test
+                </Button>
             </Stack>
         </Container>
     );

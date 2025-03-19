@@ -40,5 +40,14 @@ namespace LifeInTheUK.Web.Services
                 .OrderBy(q => Guid.NewGuid()) // Randomizes the order
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<Question>> GetRandomTestAsync()
+        {
+            return await _context.Questions
+                .Include(q => q.Answers)
+                .OrderBy(q => Guid.NewGuid())
+                .Take(24)
+                .ToListAsync();
+        }
     }
 }

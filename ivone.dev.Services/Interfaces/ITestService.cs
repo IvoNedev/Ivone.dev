@@ -8,5 +8,6 @@ namespace LifeInTheUK.Web.Services.Interfaces
         Task<IEnumerable<Test>> GetAllTestsAsync();
         Task<Test> GetTestByIdAsync(int id);
         Task<IEnumerable<Question>> GetEndlessTestAsync();
+        Task<IEnumerable<Question>> GetRandomTestAsync();
     }
 }

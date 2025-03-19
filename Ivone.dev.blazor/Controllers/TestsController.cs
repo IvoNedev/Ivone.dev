@@ -39,5 +39,13 @@ namespace LifeInTheUK.Web.Controllers
             IEnumerable<Question> questions = await _testService.GetEndlessTestAsync();
             return Ok(questions);
         }
+
+        [HttpGet("random")]
+        public async Task<IActionResult> GetRandomTest()
+        {
+            var questions = await _testService.GetRandomTestAsync();
+            return Ok(questions);
+        }
+
     }
 }
