@@ -7,7 +7,8 @@ import {
     Snackbar,
     Alert,
     Switch,
-    FormControlLabel
+    FormControlLabel,
+    Tooltip
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import QuestionDisplay from './QuestionDisplay';
@@ -23,13 +24,13 @@ const Endless = () => {
     const [snackbarMessage, setSnackbarMessage] = useState('');
     const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-    // New toggles for wrong-answer auto-reset
+    // Toggles for wrong-answer auto-reset modes
     const [hardcode, setHardcode] = useState(false);
     const [hardcoreRandom, setHardcoreRandom] = useState(false);
 
     const navigate = useNavigate();
 
-    // Function to load questions and reset state
+    // Load questions and reset state
     const loadQuestions = () => {
         fetch('/api/tests/endless')
             .then((res) => res.json())
@@ -61,27 +62,31 @@ const Endless = () => {
     const currentQuestion = questions[currentIndex];
     const currentAnswerRecord = answersRecord[currentIndex];
 
-    // Determine correct answers for the current question.
+    // Highlight wrong answers if answer recorded is wrong and either hardcore mode is active.
+    const highlightWrong =
+        currentAnswerRecord && !currentAnswerRecord.isCorrect && (hardcode || hardcoreRandom);
+
+    // Determine correct answer IDs for the current question.
     const correctAnswers = currentQuestion.answers
         .filter((ans) => ans.isCorrect)
         .map((ans) => ans.id);
     const requiredSelections = correctAnswers.length;
 
     const handleAnswerClick = (answer) => {
-        // Prevent any changes if already answered
+        // Prevent changes if already answered.
         if (currentAnswerRecord !== null) return;
 
         setSelectedAnswers((prevSelected) => {
             let updatedSelections;
             if (prevSelected.includes(answer.id)) {
-                // Deselect if already selected
+                // Deselect if already selected.
                 updatedSelections = prevSelected.filter((id) => id !== answer.id);
             } else {
-                // Add new selection
+                // Add new selection.
                 updatedSelections = [...prevSelected, answer.id];
             }
 
-            // Auto-submit if selections meet required count.
+            // Auto-submit if the number of selections meets the required count.
             if (updatedSelections.length === requiredSelections) {
                 handleAutoSubmit(updatedSelections);
             }
@@ -90,17 +95,17 @@ const Endless = () => {
     };
 
     const handleAutoSubmit = (selectedIds) => {
-        // Check if all selected answers match the correct answers
+        // Check if selected answers exactly match the correct answer IDs.
         const isCorrect =
             selectedIds.length === correctAnswers.length &&
             selectedIds.every((id) => correctAnswers.includes(id));
 
-        const newRecord = [...answersRecord];
-        newRecord[currentIndex] = { selectedAnswers: selectedIds, isCorrect };
-        setAnswersRecord(newRecord);
-        setTotalCount((prev) => prev + 1);
-
         if (isCorrect) {
+            // Record correct answer.
+            const newRecord = [...answersRecord];
+            newRecord[currentIndex] = { selectedAnswers: selectedIds, isCorrect };
+            setAnswersRecord(newRecord);
+            setTotalCount((prev) => prev + 1);
             setCorrectCount((prev) => prev + 1);
             setSnackbarMessage('Correct!');
             setSnackbarSeverity('success');
@@ -110,36 +115,49 @@ const Endless = () => {
                 handleNextQuestion();
             }, 300);
         } else {
-            // If answer is wrong and either toggle is on, auto-advance after 300ms.
+            // Wrong answer branch.
             if (hardcoreRandom) {
+                // In Hardcore Random, record the wrong answer, highlight it, and wait 2 seconds before refreshing questions.
+                const newRecord = [...answersRecord];
+                newRecord[currentIndex] = { selectedAnswers: selectedIds, isCorrect };
+                setAnswersRecord(newRecord);
+                setTotalCount((prev) => prev + 1);
                 setSnackbarMessage('Wrong! Refreshing questions...');
                 setSnackbarSeverity('error');
                 setSnackbarOpen(true);
                 setTimeout(() => {
                     setSnackbarOpen(false);
-                    // Refresh questions and reset the score/percentage
                     loadQuestions();
-                }, 300);
+                }, 2000);
             } else if (hardcode) {
+                // In Hardcode mode, now also record the wrong answer so highlighting works.
+                const newRecord = [...answersRecord];
+                newRecord[currentIndex] = { selectedAnswers: selectedIds, isCorrect };
+                setAnswersRecord(newRecord);
+                setTotalCount((prev) => prev + 1);
                 setSnackbarMessage('Wrong! Returning to first question...');
                 setSnackbarSeverity('error');
                 setSnackbarOpen(true);
                 setTimeout(() => {
                     setSnackbarOpen(false);
-                    setCurrentIndex(0);
-                    setSelectedAnswers([]);
-                }, 300);
+                    handleStartOver();
+                }, 2000);
+            } else {
+                // Otherwise, simply record the wrong answer (no auto-reset).
+                const newRecord = [...answersRecord];
+                newRecord[currentIndex] = { selectedAnswers: selectedIds, isCorrect };
+                setAnswersRecord(newRecord);
+                setTotalCount((prev) => prev + 1);
             }
-            // Otherwise, do nothing: user must manually proceed
         }
     };
 
     const handleNextQuestion = () => {
         if (currentIndex + 1 < questions.length) {
             setCurrentIndex(currentIndex + 1);
-            setSelectedAnswers([]); // Reset selections for the new question
+            setSelectedAnswers([]); // Reset selections for the new question.
         } else {
-            // Loop back to the first question if needed
+            // Loop back to the first question if needed.
             setCurrentIndex(0);
             setSelectedAnswers([]);
         }
@@ -148,7 +166,7 @@ const Endless = () => {
     const handlePreviousQuestion = () => {
         if (currentIndex > 0) {
             setCurrentIndex(currentIndex - 1);
-            setSelectedAnswers([]); // Reset selections when going back
+            setSelectedAnswers([]); // Reset selections when going back.
         }
     };
 
@@ -164,17 +182,13 @@ const Endless = () => {
         totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
     const percentageColor = rollingPercentage >= 75 ? 'green' : 'red';
 
-    // Style "Previous Question" button based on previous answer
+    // Style "Previous Question" button based on the previous answer.
     let prevButtonStyles = {};
     if (currentIndex > 0 && answersRecord[currentIndex - 1]) {
         prevButtonStyles = {
-            backgroundColor: answersRecord[currentIndex - 1].isCorrect
-                ? 'green'
-                : 'red',
+            backgroundColor: answersRecord[currentIndex - 1].isCorrect ? 'green' : 'red',
             '&:hover': {
-                backgroundColor: answersRecord[currentIndex - 1].isCorrect
-                    ? 'darkgreen'
-                    : 'darkred'
+                backgroundColor: answersRecord[currentIndex - 1].isCorrect ? 'darkgreen' : 'darkred'
             }
         };
     }
@@ -190,6 +204,9 @@ const Endless = () => {
             <Typography variant="h4" gutterBottom>
                 Endless Mode
             </Typography>
+            <Typography variant="subtitle2" gutterBottom>
+                All questions one after the other
+            </Typography>
             <QuestionDisplay
                 question={currentQuestion}
                 answered={currentAnswerRecord !== null}
@@ -201,6 +218,7 @@ const Endless = () => {
                             : 'wrong'
                         : null
                 }
+                highlightWrong={highlightWrong} // Pass true for hardcore/hardcode modes
                 onAnswerClick={handleAnswerClick}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
@@ -231,28 +249,32 @@ const Endless = () => {
                     Questions Answered: {totalCount} | Correct: {correctCount} | Rolling %:{' '}
                     <span style={{ color: percentageColor }}>{rollingPercentage}%</span>
                 </Typography>
-                {/* New toggles */}
+                {/* Mode toggles with tooltips */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={hardcode}
-                                onChange={(e) => setHardcode(e.target.checked)}
-                                color="primary"
-                            />
-                        }
-                        label="Hardcode"
-                    />
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={hardcoreRandom}
-                                onChange={(e) => setHardcoreRandom(e.target.checked)}
-                                color="primary"
-                            />
-                        }
-                        label="Hardcore Random"
-                    />
+                    <Tooltip title="Hardcode: Resets the entire test state on a wrong answer, clearing all previous responses.">
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={hardcode}
+                                    onChange={(e) => setHardcode(e.target.checked)}
+                                    color="primary"
+                                />
+                            }
+                            label="Hardcode"
+                        />
+                    </Tooltip>
+                    <Tooltip title="Hardcore Random: Records the wrong answer and refreshes questions on a wrong answer, waiting 2 seconds for feedback with the wrong answer highlighted.">
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={hardcoreRandom}
+                                    onChange={(e) => setHardcoreRandom(e.target.checked)}
+                                    color="primary"
+                                />
+                            }
+                            label="Hardcore Random"
+                        />
+                    </Tooltip>
                 </Box>
             </Box>
 

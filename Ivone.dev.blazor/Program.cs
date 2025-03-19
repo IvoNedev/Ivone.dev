@@ -58,7 +58,7 @@ app.UseCors(); // Enable CORS
 app.UseRouting();
 app.MapControllers();
 app.UseAuthorization();
-
+app.MapFallbackToFile("test-taking-client/dist/index.html");
 // Map SignalR Hub
 app.MapHub<LiveUpdateHub>("/liveupdate");
 app.MapRazorPages();

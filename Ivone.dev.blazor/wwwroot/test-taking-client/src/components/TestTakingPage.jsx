@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Typography, Box, Button } from '@mui/material';
+import {
+    Container,
+    Typography,
+    Box,
+    Button,
+    Checkbox,
+    FormControlLabel,
+    Tooltip
+} from '@mui/material';
 import QuestionDisplay from './QuestionDisplay';
 
 const TestTakingPage = () => {
@@ -11,6 +19,15 @@ const TestTakingPage = () => {
     const [answersRecord, setAnswersRecord] = useState([]);
     const [selectedAnswers, setSelectedAnswers] = useState([]); // Store selected answers
     const [score, setScore] = useState(0);
+    const [quickMode, setQuickMode] = useState(false);
+
+    // Load the quick mode setting for this test from localStorage
+    useEffect(() => {
+        const storedQuickMode = localStorage.getItem(`quickMode_${id}`);
+        if (storedQuickMode) {
+            setQuickMode(storedQuickMode === 'true');
+        }
+    }, [id]);
 
     useEffect(() => {
         fetch(`/api/tests/${id}`)
@@ -79,6 +96,15 @@ const TestTakingPage = () => {
 
         if (isCorrect) {
             setScore((prev) => prev + 1);
+            // If Quick Mode is enabled, automatically proceed to the next question after a short delay.
+            if (quickMode) {
+                setTimeout(() => {
+                    // If not the last question, go to the next one.
+                    if (currentIndex + 1 < test.questions.length) {
+                        handleNextQuestion();
+                    }
+                }, 300);
+            }
         }
     };
 
@@ -127,6 +153,13 @@ const TestTakingPage = () => {
         navigate('/tests');
     };
 
+    // Handler for Quick Mode checkbox change
+    const handleQuickModeChange = (event) => {
+        const newValue = event.target.checked;
+        setQuickMode(newValue);
+        localStorage.setItem(`quickMode_${id}`, newValue);
+    };
+
     return (
         <Container maxWidth="md" sx={{ mt: 4 }}>
             {/* Navigation Buttons */}
@@ -144,6 +177,20 @@ const TestTakingPage = () => {
             <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 Question {currentIndex + 1} of {test.questions.length}
             </Typography>
+            {/* Quick Mode toggle with Tooltip */}
+            <Box sx={{ mb: 2 }}>
+                <Tooltip title="Correct answer automatically goes to next question">
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={quickMode}
+                                onChange={handleQuickModeChange}
+                            />
+                        }
+                        label="Quick Mode"
+                    />
+                </Tooltip>
+            </Box>
             <QuestionDisplay
                 question={currentQuestion}
                 answered={currentAnswerRecord !== null}

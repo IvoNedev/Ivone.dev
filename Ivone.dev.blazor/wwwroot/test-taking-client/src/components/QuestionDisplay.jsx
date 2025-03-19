@@ -1,4 +1,3 @@
-// src/components/QuestionDisplay.jsx
 import React from 'react';
 import { Card, CardContent, Typography, Grid, Paper, Box } from '@mui/material';
 
@@ -9,6 +8,7 @@ const QuestionDisplay = ({
     feedback,
     onAnswerClick,
     reservedHeight = 100, // Fixed space reserved for feedback/explanation
+    highlightWrong = false, // New prop to trigger hardcore/hardcode highlighting mode
 }) => {
     return (
         <Card variant="outlined" sx={{ mb: 3 }}>
@@ -22,15 +22,25 @@ const QuestionDisplay = ({
                         let bgColor = 'inherit';
 
                         if (answered) {
-                            // After submission: Always highlight correct answers.
-                            if (answer.isCorrect) {
-                                borderStyle = '2px solid green';
-                                bgColor = 'lightgreen';
-                            }
-                            // After submission: Highlight a wrong answer selected by the user in red.
-                            if (selectedAnswerIds.includes(answer.id) && !answer.isCorrect) {
-                                borderStyle = '2px solid red';
-                                bgColor = 'lightcoral';
+                            if (highlightWrong) {
+                                // In hardcore mode (either type), force highlighting based on answer correctness.
+                                if (answer.isCorrect) {
+                                    borderStyle = '2px solid green';
+                                    bgColor = 'lightgreen';
+                                } else if (selectedAnswerIds.includes(answer.id)) {
+                                    borderStyle = '2px solid red';
+                                    bgColor = 'lightcoral';
+                                }
+                            } else {
+                                // Default post-submission styling.
+                                if (answer.isCorrect) {
+                                    borderStyle = '2px solid green';
+                                    bgColor = 'lightgreen';
+                                }
+                                if (selectedAnswerIds.includes(answer.id) && !answer.isCorrect) {
+                                    borderStyle = '2px solid red';
+                                    bgColor = 'lightcoral';
+                                }
                             }
                         } else {
                             // Before submission: if the answer is selected, highlight it in dark gray.
@@ -65,7 +75,9 @@ const QuestionDisplay = ({
                             <Typography variant="h6" color={feedback === 'correct' ? 'green' : 'red'}>
                                 {feedback === 'correct' ? 'Correct!' : 'Wrong!'}
                             </Typography>
-                            <Typography variant="body1">{question.explanation}</Typography>
+                            {question.explanation && (
+                                <Typography variant="body1">{question.explanation}</Typography>
+                            )}
                         </>
                     )}
                 </Box>
