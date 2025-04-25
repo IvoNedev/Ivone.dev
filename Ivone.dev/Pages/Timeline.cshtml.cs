@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Ivone.dev.blazor.Pages
+namespace Ivone.dev.Pages
 {
     public class TimelineModel : PageModel
     {

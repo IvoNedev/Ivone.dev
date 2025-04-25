@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace Ivone.dev.blazor.Pages
+namespace Ivone.dev.Pages
 {
     public class PrivacyModel : PageModel
     {

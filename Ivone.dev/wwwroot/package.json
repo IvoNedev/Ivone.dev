@@ -7,7 +7,7 @@
     "lib": "lib"
   },
   "scripts": {
-    "dev": "concurrently \"vite\" \"dotnet watch run --project ../Ivone.dev.blazor.csproj\"",
+    "dev": "concurrently \"vite\" \"dotnet watch run --project ../Ivone.dev.csproj\"",
     "build": "vite build",
     "preview": "vite preview"
   },

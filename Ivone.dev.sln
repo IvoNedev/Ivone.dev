@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ivone.dev.blazor", "Ivone.dev.blazor\Ivone.dev.blazor.csproj", "{681DF965-BED9-412A-9C99-77DD88E94C9E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ivone.dev", "Ivone.dev\Ivone.dev.csproj", "{681DF965-BED9-412A-9C99-77DD88E94C9E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ivone.dev.Data", "Ivone.dev.Data\Ivone.dev.Data.csproj", "{2EDE8ACB-6CE7-454F-B2F4-91B343BE6B0C}"
 EndProject

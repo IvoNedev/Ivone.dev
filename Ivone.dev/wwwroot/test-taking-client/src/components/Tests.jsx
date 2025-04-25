@@ -11,13 +11,20 @@ import {
     Checkbox,
     FormControlLabel,
     Tooltip,
+    AppBar,
+    Toolbar,
+    IconButton,
+    Drawer,
+    Divider,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import MenuIcon from '@mui/icons-material/Menu';
 
 function Tests() {
     const [tests, setTests] = useState([]);
     const [testResults, setTestResults] = useState([]);
     const [quickModes, setQuickModes] = useState({});
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -46,40 +53,71 @@ function Tests() {
 
     // Handler for toggling Quick Mode for a specific test.
     const handleQuickModeChange = (testId, event) => {
-        // Stop propagation so that clicking the checkbox doesn't trigger the ListItemButton onClick.
+        // Stop propagation so that clicking the checkbox doesn't trigger navigation.
         event.stopPropagation();
         const newValue = event.target.checked;
         setQuickModes((prev) => ({
             ...prev,
             [testId]: newValue,
         }));
-        localStorage.setItem(`quickMode_${testId}`, newValue);
+        localStorage.setItem(`quickMode_${test.id}`, newValue); // Or use testId here.
     };
 
     // Helper function to get the best result from an array of results.
     const getBestResult = (results) => {
         if (!results || results.length === 0) return null;
-        return results.reduce((best, current) => (!best || current.percentage > best.percentage ? current : best), null);
+        return results.reduce(
+            (best, current) => (!best || current.percentage > best.percentage ? current : best),
+            null
+        );
     };
 
     // Today's midnight (local time)
     const todayMidnight = new Date();
     todayMidnight.setHours(0, 0, 0, 0);
 
+    // Drawer handlers
+    const toggleDrawer = (open) => (event) => {
+        if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) return;
+        setDrawerOpen(open);
+    };
+
+    const drawerContent = (
+        <Box
+            sx={{ width: 250 }}
+            role="presentation"
+            onClick={toggleDrawer(false)}
+            onKeyDown={toggleDrawer(false)}
+        >
+            <List>
+                <ListItem disablePadding>
+                    <ListItemButton onClick={() => navigate('/')}>
+                        <ListItemText primary="Dashboard" />
+                    </ListItemButton>
+                </ListItem>
+            </List>
+            <Divider />
+        </Box>
+    );
+
     return (
         <Container>
-            {/* Dashboard Button */}
-            <Button
-                variant="contained"
-                color="primary"
-                sx={{ mt: 2 }}
-                onClick={() => navigate('/')}
-            >
-                Dashboard
-            </Button>
-            <Typography variant="h4" gutterBottom sx={{ mt: 2 }}>
-                Available Tests
-            </Typography>
+            {/* AppBar Header */}
+            <AppBar position="static" color="default" sx={{ mb: 2 }}>
+                <Toolbar>
+                    <IconButton edge="start" color="inherit" onClick={toggleDrawer(true)} aria-label="menu">
+                        <MenuIcon />
+                    </IconButton>
+                    <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
+                        {drawerContent}
+                    </Drawer>
+                    <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center' }}>
+                        All Tests
+                    </Typography>
+                </Toolbar>
+            </AppBar>
+
+            {/* List of Tests */}
             <List>
                 {tests.map((test) => {
                     // Filter test results for this test based on matching testId.
@@ -104,29 +142,12 @@ function Tests() {
                                 <Box sx={{ ml: 2, textAlign: 'right' }}>
                                     <Typography
                                         variant="body2"
-                                        color={
-                                            overallTopResult && overallTopResult.percentage < 75
-                                                ? 'red'
-                                                : 'green'
-                                        }
+                                        color={overallTopResult && overallTopResult.percentage < 75 ? 'red' : 'green'}
                                     >
-                                        All Time:{" "}
+                                        Score:{" "}
                                         {overallTopResult
                                             ? `${overallTopResult.score}/${overallTopResult.total} (${overallTopResult.percentage}%)`
                                             : "No score yet"}
-                                    </Typography>
-                                    <Typography
-                                        variant="body2"
-                                        color={
-                                            todaysTopResult && todaysTopResult.percentage < 75
-                                                ? 'red'
-                                                : 'green'
-                                        }
-                                    >
-                                        Today:{" "}
-                                        {todaysTopResult
-                                            ? `${todaysTopResult.score}/${todaysTopResult.total} (${todaysTopResult.percentage}%)`
-                                            : "No score today"}
                                     </Typography>
                                     <Tooltip title="Correct answer automatically goes to next question">
                                         <FormControlLabel

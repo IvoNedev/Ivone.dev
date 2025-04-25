@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import AdBanner from './AdBanner';
 import {
     Container,
     Typography,
@@ -8,9 +9,19 @@ import {
     Alert,
     Switch,
     FormControlLabel,
-    Tooltip
+    Tooltip,
+    AppBar,
+    Toolbar,
+    IconButton,
+    Drawer,
+    Divider,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemText
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import MenuIcon from '@mui/icons-material/Menu';
 import QuestionDisplay from './QuestionDisplay';
 
 const Endless = () => {
@@ -28,7 +39,32 @@ const Endless = () => {
     const [hardcode, setHardcode] = useState(false);
     const [hardcoreRandom, setHardcoreRandom] = useState(false);
 
+    // State for Drawer
+    const [drawerOpen, setDrawerOpen] = useState(false);
     const navigate = useNavigate();
+
+    const toggleDrawer = (open) => (event) => {
+        if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) return;
+        setDrawerOpen(open);
+    };
+
+    const drawerContent = (
+        <Box
+            sx={{ width: 250 }}
+            role="presentation"
+            onClick={toggleDrawer(false)}
+            onKeyDown={toggleDrawer(false)}
+        >
+            <List>
+                <ListItem disablePadding>
+                    <ListItemButton onClick={() => navigate('/')}>
+                        <ListItemText primary="Dashboard" />
+                    </ListItemButton>
+                </ListItem>
+            </List>
+            <Divider />
+        </Box>
+    );
 
     // Load questions and reset state
     const loadQuestions = () => {
@@ -117,7 +153,6 @@ const Endless = () => {
         } else {
             // Wrong answer branch.
             if (hardcoreRandom) {
-                // In Hardcore Random, record the wrong answer, highlight it, and wait 2 seconds before refreshing questions.
                 const newRecord = [...answersRecord];
                 newRecord[currentIndex] = { selectedAnswers: selectedIds, isCorrect };
                 setAnswersRecord(newRecord);
@@ -130,7 +165,6 @@ const Endless = () => {
                     loadQuestions();
                 }, 2000);
             } else if (hardcode) {
-                // In Hardcode mode, now also record the wrong answer so highlighting works.
                 const newRecord = [...answersRecord];
                 newRecord[currentIndex] = { selectedAnswers: selectedIds, isCorrect };
                 setAnswersRecord(newRecord);
@@ -143,7 +177,6 @@ const Endless = () => {
                     handleStartOver();
                 }, 2000);
             } else {
-                // Otherwise, simply record the wrong answer (no auto-reset).
                 const newRecord = [...answersRecord];
                 newRecord[currentIndex] = { selectedAnswers: selectedIds, isCorrect };
                 setAnswersRecord(newRecord);
@@ -195,18 +228,24 @@ const Endless = () => {
 
     return (
         <Container maxWidth="md" sx={{ mt: 4 }}>
-            {/* Navigation Button */}
-            <Box sx={{ mb: 2 }}>
-                <Button variant="contained" color="primary" onClick={() => navigate('/')}>
-                    Dashboard
-                </Button>
-            </Box>
-            <Typography variant="h4" gutterBottom>
-                Endless Mode
-            </Typography>
-            <Typography variant="subtitle2" gutterBottom>
-                All questions one after the other
-            </Typography>
+            {/* AppBar Header with Burger Menu */}
+            <AppBar position="static" color="default" sx={{ mb: 2 }}>
+                <Toolbar>
+                    <IconButton edge="start" color="inherit" onClick={toggleDrawer(true)} aria-label="menu">
+                        <MenuIcon />
+                    </IconButton>
+                    <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
+                        {drawerContent}
+                    </Drawer>
+                    <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center' }}>
+                        Endless Mode
+                        <br />
+                        <span style={{ fontSize: "small" }}>(All questions one after the other)</span>
+
+                    </Typography>
+                </Toolbar>
+            </AppBar>
+
             <QuestionDisplay
                 question={currentQuestion}
                 answered={currentAnswerRecord !== null}
@@ -221,6 +260,9 @@ const Endless = () => {
                 highlightWrong={highlightWrong} // Pass true for hardcore/hardcode modes
                 onAnswerClick={handleAnswerClick}
             />
+            {/*<Box sx={{ width: '320px', height: '100px', mx: 'auto', my: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>*/}
+            {/*    <AdBanner />*/}
+            {/*</Box>*/}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
                 <Button
                     variant="contained"
@@ -249,9 +291,8 @@ const Endless = () => {
                     Questions Answered: {totalCount} | Correct: {correctCount} | Rolling %:{' '}
                     <span style={{ color: percentageColor }}>{rollingPercentage}%</span>
                 </Typography>
-                {/* Mode toggles with tooltips */}
                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                    <Tooltip title="Hardcode: Resets the entire test state on a wrong answer, clearing all previous responses.">
+                    <Tooltip title="Goes back to Question 1 if a wrong answer is given">
                         <FormControlLabel
                             control={
                                 <Switch
@@ -260,10 +301,10 @@ const Endless = () => {
                                     color="primary"
                                 />
                             }
-                            label="Hardcode"
+                            label="Hardcore"
                         />
                     </Tooltip>
-                    <Tooltip title="Hardcore Random: Records the wrong answer and refreshes questions on a wrong answer, waiting 2 seconds for feedback with the wrong answer highlighted.">
+                    <Tooltip title="Starts over from a random Question 1">
                         <FormControlLabel
                             control={
                                 <Switch
@@ -272,12 +313,11 @@ const Endless = () => {
                                     color="primary"
                                 />
                             }
-                            label="Hardcore Random"
+                            label="Random Hardcore"
                         />
                     </Tooltip>
                 </Box>
             </Box>
-
             <Snackbar
                 open={snackbarOpen}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
