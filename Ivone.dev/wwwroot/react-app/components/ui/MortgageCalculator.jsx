@@ -21,21 +21,47 @@ export default function MortgageCalculator() {
 
     const EUR_TO_BGN = 1.96;
     const BGN_TO_EUR = 1 / EUR_TO_BGN;
-    const [loanTerm, setLoanTerm] = useState(30); // Default to 30 Years
-    const [deposit, setDeposit] = useState(0.20); // Pre-select 20%
-    const [totalCost, setTotalCost] = useState('251000');
-    const [currency, setCurrency] = useState('EUR');
+
+    // Persisted state hooks:
+    const [loanTerm, setLoanTerm] = useState(() => {
+        const v = localStorage.getItem('mortgage_loanTerm');
+        return v !== null ? parseInt(v, 10) : 30;
+    });
+    const [deposit, setDeposit] = useState(() => {
+        const v = localStorage.getItem('mortgage_deposit');
+        return v !== null ? parseFloat(v) : 0.20;
+    });
+    const [totalCost, setTotalCost] = useState(() => {
+        return localStorage.getItem('mortgage_totalCost') || '251000';
+    });
+    const [parkSpot, setParkSpot] = useState(() => {
+        const v = localStorage.getItem('mortgage_parkSpot');
+        return v !== null ? parseFloat(v) : 27000;
+    });
+    const [commissionRate, setCommissionRate] = useState(() => {
+        const v = localStorage.getItem('mortgage_commissionRate');
+        return v !== null ? parseFloat(v) : 0.036;
+    });
+    const [lawyerFeeRate, setLawyerFeeRate] = useState(() => {
+        const v = localStorage.getItem('mortgage_lawyerFeeRate');
+        return v !== null ? parseFloat(v) : 0.04;
+    });
+    const [vatEnabled, setVatEnabled] = useState(() => {
+        return localStorage.getItem('mortgage_vatEnabled') === 'true';
+    });
+
+    // Static or computed-only hooks:
+    const [currency, setCurrency] = useState(() => {
+        return localStorage.getItem('mortgage_currency') || 'EUR';
+    });
     const [monthlyPayments, setMonthlyPayments] = useState({});
     const [depositAmount, setDepositAmount] = useState(0);
     const [mortgageAmount, setMortgageAmount] = useState(0);
-    const [parkSpot, setParkSpot] = useState(27000); // Pre-set to 27000
-    const [commissionRate, setCommissionRate] = useState(0.036); // Pre-set to 3.6%
-    const [lawyerFeeRate, setLawyerFeeRate] = useState(0.04); // Pre-set to 4%
-    const [vatEnabled, setVatEnabled] = useState(false);
     const [vatAmount, setVatAmount] = useState(0);
     const [grandTotal, setGrandTotal] = useState(0);
-    
+
     const exchangeRate = 1.96; // 1 EUR = 1.96 BGN
+
 
 
     //API
@@ -67,9 +93,15 @@ export default function MortgageCalculator() {
 
     //RAG
     // State for the budget inputs
-    const [budgetDeposit, setBudgetDeposit] = useState('60000');
-    const [budgetCommission, setBudgetCommission] = useState('10500');
-    const [budgetMonthlyInstallments, setBudgetMonthlyInstallments] = useState('1000');
+    const [budgetDeposit, setBudgetDeposit] = useState(() => {
+         return localStorage.getItem('mortgage_budgetDeposit') || '60000';
+        });
+     const [budgetCommission, setBudgetCommission] = useState(() => {
+          return localStorage.getItem('mortgage_budgetCommission') || '10500';
+        });
+    const [budgetMonthlyInstallments, setBudgetMonthlyInstallments] = useState(() => {
+           return localStorage.getItem('mortgage_budgetMonthlyInstallments') || '1000';
+          });
 
 
     const getRowStyle = (inputValue, cellValue) => {
@@ -350,6 +382,12 @@ export default function MortgageCalculator() {
         ["BGN 🇧🇬", ...Object.values(monthlyPayments).map(convertCurrency).map(formatNumber)],
     ];
 
+    // — Add this right after your existing state declarations —
+    // m² sizes for the table
+    const sqmSizes = [60, 70, 80, 90, 100, 110, 120];
+
+
+
 
     useEffect(() => {
         const asyncRecalculate = async () => {
@@ -396,6 +434,33 @@ export default function MortgageCalculator() {
             }
         });
     }, []);
+
+    // Persist inputs to localStorage anytime they change:
+    useEffect(() => {
+        localStorage.setItem('mortgage_loanTerm', loanTerm);
+        localStorage.setItem('mortgage_deposit', deposit);
+        localStorage.setItem('mortgage_totalCost', totalCost);
+        localStorage.setItem('mortgage_parkSpot', parkSpot);
+        localStorage.setItem('mortgage_commissionRate', commissionRate);
+        localStorage.setItem('mortgage_lawyerFeeRate', lawyerFeeRate);
+        localStorage.setItem('mortgage_vatEnabled', vatEnabled);
+        localStorage.setItem('mortgage_budgetDeposit', budgetDeposit);
+        localStorage.setItem('mortgage_budgetCommission', budgetCommission);
+        localStorage.setItem('mortgage_budgetMonthlyInstallments', budgetMonthlyInstallments);
+        localStorage.setItem('mortgage_currency', currency);
+    }, [
+        loanTerm,
+        deposit,
+        totalCost,
+        parkSpot,
+        commissionRate,
+        lawyerFeeRate,
+        vatEnabled,
+        budgetDeposit,
+        budgetCommission,
+        budgetMonthlyInstallments
+    ]);
+
     return (
         <Card className="p-6 max-w-4xl mx-auto">
             <CardContent>
@@ -612,6 +677,27 @@ export default function MortgageCalculator() {
                     columns={paymentColumns}
                     data={paymentData}
                 />
+
+                <br/>
+                {/* Cost-per-m² table (updates with totalCost) */}
+                {/* Cost per m² table */}
+                {/* Cost-per-m² table */}
+                <Table
+                    columns={["Area", ...sqmSizes.map(s => `${s}m²`)]}
+                    data={[
+                        [
+                            "EUR/m²",
+                            ...sqmSizes.map(size => {
+                                // Use totalCost + 20% if vatEnabled, else just totalCost
+                                const base = parseFloat(totalCost) * (vatEnabled ? 1.2 : 1);
+                                return formatNumber(base / size);
+                            })
+                        ]
+                    ]}
+                />
+
+
+
 
 
 
