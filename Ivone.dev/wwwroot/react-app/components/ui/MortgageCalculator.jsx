@@ -3,6 +3,7 @@ import BudgetBox from '@/components/ui/budget-box';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectContent, SelectItem } from '@/components/ui/select';
+
 import { sendUpdate, onReceiveUpdate } from '@/components/ui/signalr';
 import Table from '@/components/ui/table';
 import * as Slider from '@radix-ui/react-slider';
@@ -30,6 +31,10 @@ export default function MortgageCalculator() {
     const [parkSpot, setParkSpot] = useState(27000); // Pre-set to 27000
     const [commissionRate, setCommissionRate] = useState(0.036); // Pre-set to 3.6%
     const [lawyerFeeRate, setLawyerFeeRate] = useState(0.04); // Pre-set to 4%
+    const [vatEnabled, setVatEnabled] = useState(false);
+    const [vatAmount, setVatAmount] = useState(0);
+    const [grandTotal, setGrandTotal] = useState(0);
+    
     const exchangeRate = 1.96; // 1 EUR = 1.96 BGN
 
 
@@ -220,10 +225,28 @@ export default function MortgageCalculator() {
 
     const calculateMortgage = (cost, deposit) => {
         const totalWithParking = parseFloat(cost) + parseFloat(parkSpot);
-        const depositAmount = totalWithParking * deposit;
-        const mortgageAmount = totalWithParking - depositAmount;
+
+        // 20% VAT calculation
+        const vatAmt = vatEnabled ? totalWithParking * 0.20 : 0;
+        setVatAmount(vatAmt);
+
+        // apply VAT before splitting
+        const totalWithVat = totalWithParking + vatAmt;
+        const depositAmount = totalWithVat * deposit;
+        const mortgageAmount = totalWithVat - depositAmount;
+
+        // commission & lawyer fees on post-VAT amount
+        const commissionAmount = totalWithVat * commissionRate;
+        const lawyerFeeAmount = totalWithVat * lawyerFeeRate;
+
+        // grand total
+        const grandTotalCalc = totalWithVat + commissionAmount + lawyerFeeAmount;
+        setGrandTotal(grandTotalCalc);
+
+        // push updated values to state
         setDepositAmount(depositAmount);
         setMortgageAmount(mortgageAmount);
+
 
         const payments = loanTerm * 12;  // Dynamically use the selected loan term
         const interestRates = [0.022, 0.03, 0.035, 0.04, 0.045, 0.05];
@@ -287,6 +310,7 @@ export default function MortgageCalculator() {
     const breakdownColumns = ["Description", "EUR 🇪🇺", "BGN 🇧🇬"];
     const breakdownData = [
         ["Total Cost", formatNumber(parseFloat(totalCost) + parseFloat(parkSpot)), formatNumber(convertCurrency(parseFloat(totalCost) + parseFloat(parkSpot)))],
+        ["VAT (20%)", formatNumber(vatAmount), formatNumber(vatAmount * exchangeRate)],
         [
             "Pay Now (total)",
             `(${formatNumber(depositAmount + commissionAmount)})`,
@@ -301,6 +325,8 @@ export default function MortgageCalculator() {
         ],
         ["Mortgage Amount", formatNumber(mortgageAmount), formatNumber(convertCurrency(mortgageAmount))],
         ["Lawyer Fee", formatNumber(lawyerFeeAmount), formatNumber(convertCurrency(lawyerFeeAmount))],
+        ["Grand Total", formatNumber(grandTotal), formatNumber(grandTotal * exchangeRate)],
+
     ];
 
 
@@ -331,7 +357,7 @@ export default function MortgageCalculator() {
             handleMonthlyBudgetChange();
         };
         asyncRecalculate();
-    }, [totalCost, deposit, parkSpot, commissionRate, lawyerFeeRate, loanTerm]);
+    }, [totalCost, deposit, parkSpot, commissionRate, lawyerFeeRate, loanTerm, vatEnabled]);
 
     // SignalR Listener for Real-Time Updates
     useEffect(() => {
@@ -531,6 +557,14 @@ export default function MortgageCalculator() {
                                 <SelectItem value="0.40">40%</SelectItem>
                             </SelectContent>
                         </Select>
+                        <input
+                            type="checkbox"
+                            checked={vatEnabled}
+                            onChange={e => setVatEnabled(e.target.checked)}
+                            id="vatToggle"
+                        />
+                        <label htmlFor="vatToggle" className="ml-2">Add 20% VAT</label>
+
                     </div>
 
                     <div className="w-1/4">
