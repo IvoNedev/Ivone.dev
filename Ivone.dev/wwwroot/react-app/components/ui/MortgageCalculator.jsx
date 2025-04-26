@@ -32,11 +32,11 @@ export default function MortgageCalculator() {
         return v !== null ? parseFloat(v) : 0.20;
     });
     const [totalCost, setTotalCost] = useState(() => {
-        return localStorage.getItem('mortgage_totalCost') || '251000';
+        return localStorage.getItem('mortgage_totalCost') || '160000';
     });
     const [parkSpot, setParkSpot] = useState(() => {
         const v = localStorage.getItem('mortgage_parkSpot');
-        return v !== null ? parseFloat(v) : 27000;
+        return v !== null ? parseFloat(v) : 30000;
     });
     const [commissionRate, setCommissionRate] = useState(() => {
         const v = localStorage.getItem('mortgage_commissionRate');
@@ -47,8 +47,10 @@ export default function MortgageCalculator() {
         return v !== null ? parseFloat(v) : 0.04;
     });
     const [vatEnabled, setVatEnabled] = useState(() => {
-        return localStorage.getItem('mortgage_vatEnabled') === 'true';
+        const v = localStorage.getItem('mortgage_vatEnabled');
+        return v !== null ? (v === 'true') : true;  // default to true when no value stored
     });
+
 
     // Static or computed-only hooks:
     const [currency, setCurrency] = useState(() => {
@@ -236,11 +238,11 @@ export default function MortgageCalculator() {
                 // Reset the form state to "New..."
                 setSelectedId(null);
                 setCurrentName("Mortgage Calculator");
-                setTotalCost('251000');
+                setTotalCost('200000');
                 setDeposit(0.20);
                 setDepositAmount(0);
                 setMortgageAmount(0);
-                setParkSpot(27000);
+                setParkSpot(30000);
                 setCommissionRate(0.036);
                 setLawyerFeeRate(0.04);
                 setLoanTerm(30);
@@ -268,8 +270,8 @@ export default function MortgageCalculator() {
         const mortgageAmount = totalWithVat - depositAmount;
 
         // commission & lawyer fees on post-VAT amount
-        const commissionAmount = totalWithVat * commissionRate;
-        const lawyerFeeAmount = totalWithVat * lawyerFeeRate;
+        const commissionAmount = commissionRate;
+        const lawyerFeeAmount = lawyerFeeRate;
 
         // grand total
         const grandTotalCalc = totalWithVat + commissionAmount + lawyerFeeAmount;
@@ -341,23 +343,38 @@ export default function MortgageCalculator() {
 
     const breakdownColumns = ["Description", "EUR 🇪🇺", "BGN 🇧🇬"];
     const breakdownData = [
-        ["Total Cost", formatNumber(parseFloat(totalCost) + parseFloat(parkSpot)), formatNumber(convertCurrency(parseFloat(totalCost) + parseFloat(parkSpot)))],
+        ["Base Cost + parking spot", formatNumber(parseFloat(totalCost) + parseFloat(parkSpot)), formatNumber(convertCurrency(parseFloat(totalCost) + parseFloat(parkSpot)))],
         ["VAT (20%)", formatNumber(vatAmount), formatNumber(vatAmount * exchangeRate)],
+        ["Base Cost + parking spot + VAT",
+            formatNumber(
+                parseFloat(totalCost) +
+                parseFloat(parkSpot) +
+                vatAmount
+            ),
+            formatNumber(
+                convertCurrency(
+                    parseFloat(totalCost) +
+                    parseFloat(parkSpot) +
+                    vatAmount
+                )
+            )
+        ],
+
+        ["Deposit Amount (% entered above)", formatNumber(depositAmount), formatNumber(convertCurrency(depositAmount))],
+        ["Commission (% entered above)", formatNumber(commissionAmount), formatNumber(convertCurrency(commissionAmount))],
         [
-            "Pay Now (total)",
+            "Pay Now (" + (deposit * 100) +"% deposit + Commission)",
             `(${formatNumber(depositAmount + commissionAmount)})`,
             `(${formatNumber(convertCurrency(depositAmount + commissionAmount))})`,
         ],
-        ["Deposit Amount", formatNumber(depositAmount), formatNumber(convertCurrency(depositAmount))],
-        ["Commission", formatNumber(commissionAmount), formatNumber(convertCurrency(commissionAmount))],
         [
-            "Pay Later (total)",
+            "Pay Later (Remaining " + (100 - (deposit * 100)) + "% + Lawyer Fee)",
             `(${formatNumber(mortgageAmount + lawyerFeeAmount)})`,
             `(${formatNumber(convertCurrency(mortgageAmount + lawyerFeeAmount))})`,
         ],
-        ["Mortgage Amount", formatNumber(mortgageAmount), formatNumber(convertCurrency(mortgageAmount))],
-        ["Lawyer Fee", formatNumber(lawyerFeeAmount), formatNumber(convertCurrency(lawyerFeeAmount))],
-        ["Grand Total", formatNumber(grandTotal), formatNumber(grandTotal * exchangeRate)],
+        ["Mortgage Amount ("+(100- formatNumber(depositAmount))+"%)", formatNumber(mortgageAmount), formatNumber(convertCurrency(mortgageAmount))],
+        ["Lawyer Fee (% entered above)", formatNumber(lawyerFeeAmount), formatNumber(convertCurrency(lawyerFeeAmount))],
+        ["Grand Total (Total Cost + VAT + Parking Spot + Commission + Lawyer Fee)", formatNumber(grandTotal), formatNumber(grandTotal * exchangeRate)],
 
     ];
 
@@ -464,7 +481,7 @@ export default function MortgageCalculator() {
     return (
         <Card className="p-6 max-w-4xl mx-auto">
             <CardContent>
-                <div className="mb-4 p-4 rounded border border-gray-200 shadow-sm">
+                <div id="unique" className="mb-4 p-4 rounded border border-gray-200 shadow-sm">
                     <div className="flex items-center gap-4 mb-4">
                         {editMode ? (
                             <input
@@ -594,7 +611,7 @@ export default function MortgageCalculator() {
                 </div>
 
                 <div className="flex gap-4 items-end">
-                    <div className="w-3/4">
+                    <div className="w-2/4">
                         <label>Deposit Percentage</label>
                         <Select
                             value={deposit.toFixed(2)}
@@ -622,6 +639,10 @@ export default function MortgageCalculator() {
                                 <SelectItem value="0.40">40%</SelectItem>
                             </SelectContent>
                         </Select>
+                       
+
+                    </div>
+                    <div class="w-1/4">
                         <input
                             type="checkbox"
                             checked={vatEnabled}
@@ -629,9 +650,7 @@ export default function MortgageCalculator() {
                             id="vatToggle"
                         />
                         <label htmlFor="vatToggle" className="ml-2">Add 20% VAT</label>
-
                     </div>
-
                     <div className="w-1/4">
                         <label className="block mb-1">Loan Term: {loanTerm} Years</label>
                         <Slider.Root

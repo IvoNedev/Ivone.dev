@@ -47,9 +47,9 @@ export default function MortgageCalculatorPortal() {
     }, []);
 
     // Conditional Rendering
-    if (!isAuthenticated) {
-        return <Login />;
-    } else {
+    //if (!isAuthenticated) {
+    //    return <Login />;
+    //} else {
         return <MortgageCalculator />;
-    }
+    //}
 }
