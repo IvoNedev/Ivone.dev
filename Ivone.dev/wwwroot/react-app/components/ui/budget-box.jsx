@@ -19,7 +19,7 @@ const BudgetBox = ({
     setBudgetMonthlyInstallments, 
     handleMonthlyBudgetChange
 }) => {
-    const [isBudgetExpanded, setIsBudgetExpanded] = useState(true);
+    const [isBudgetExpanded, setIsBudgetExpanded] = useState(false);
 
     // The rest of your component can now use these props directly
     const savedDeposit = budgetDeposit;
