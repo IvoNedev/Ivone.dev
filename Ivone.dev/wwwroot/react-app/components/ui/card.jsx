@@ -2,7 +2,7 @@
 
 export function Card({ children }) {
     return (
-        <div className="border rounded-lg shadow p-4 mb-4">
+        <div className="border rounded-lg shadow p-2 mb-2">
             {children}
         </div>
     );

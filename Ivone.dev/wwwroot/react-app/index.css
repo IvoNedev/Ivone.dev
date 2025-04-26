@@ -4,9 +4,14 @@
 
 @media print {
     /* 1. Hide your “unique” element entirely */
-    #unique {
+    #unique,
+    #budgetToggleArrow,
+    #mortgageSlider,
+    #vatToggle,
+    #languageToggle {
         display: none !important;
     }
+
 
     /* 2. Hide everything by default */
     body * {
@@ -26,4 +31,6 @@
         left: 0;
         width: 100%;
     }
+
+
 }
