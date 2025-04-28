@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 @media print {
     /* 1. Hide your “unique” element entirely */
     #unique,
@@ -32,5 +33,8 @@
         width: 100%;
     }
 
-
+    html, body, table, th, td {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 }

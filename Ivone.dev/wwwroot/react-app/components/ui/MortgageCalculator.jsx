@@ -153,16 +153,16 @@ export default function MortgageCalculator() {
             costPerSqm: 'EUR/m²',
             areaHeader: 'Площ',
             sqmSizes: [60, 70, 80, 90, 100, 110, 120],
-            descBase: 'Базова цена на имота + парко мястото',
+            descBase: 'Базова цена на имота + парко място',
             descVat: 'ДДС (20%)',
-            descTotalVat: 'Базова цена на имота + парко мястото + ДДС',
+            descTotalVat: 'Базова цена на имота + парко място + ДДС',
             descDeposit: 'Депозит (% вписан по-горе)',
             descCommission: 'Комисионна (% вписан по-горе)',
             descPayNow: budget => `Дължими сега (${budget * 100}% депозит + комисионна)`,
             descPayLater: deposit => `Остатачна дължимост (${100 - deposit * 100}% + адвокатска комисионна)`,
             descMortgage: deposit => `Стойност на ипотеката (${100 - Math.round(deposit * 100)}%)`,
             descLawyer: 'Адвокатска комисионна (% вписан по-горе)',
-            descGrandTotal: 'Общо всичко (Базова цена на имота + парко мястото + ДДС + Брокерска Комисионна + Адвокатска Комисионна)',
+            descGrandTotal: 'Общо всичко (Базова цена на имота + парко място + ДДС + Брокерска Комисионна + Адвокатска Комисионна)',
             budgetHeader: 'Наличен бюджет (EUR) ▼',
             budgetText: ({ deposit, commission, monthly }) =>
                 `Депозит: ${deposit} | Комисионна: ${commission} | Примерна месечна вноска: ${monthly}`,
@@ -181,7 +181,7 @@ export default function MortgageCalculator() {
         const cell = parseFloat(cellValue.replace(/,/g, '')); // Remove commas
 
         if (input > cell) {
-            return 'bg-green-100';
+            return 'bg-yellow-100';
         }
         else return 'bg-red-100';
 
@@ -234,20 +234,20 @@ export default function MortgageCalculator() {
                     const adjustedBudget = isBGN ? budget * EUR_TO_BGN : budget;
 
                     if (cellValue <= adjustedBudget) {
-                        cell.classList.add('bg-green-100');
+                        cell.classList.add('bg-yellow-100');
                         cell.classList.remove('bg-red-100');
 
                         // If this is an EUR cell, look for a sibling BGN cell
                         if (isEUR) {
                             const siblingBGN = Array.from(cells).find(c => c.classList.contains("bgn"));
                             if (siblingBGN) {
-                                siblingBGN.classList.add('bg-green-100');
+                                siblingBGN.classList.add('bg-yellow-100');
                                 siblingBGN.classList.remove('bg-red-100');
                             }
                         }
                     } else {
                         cell.classList.add('bg-red-100');
-                        cell.classList.remove('bg-green-100');
+                        cell.classList.remove('bg-yellow-100');
                     }
                 });
             }
@@ -339,8 +339,8 @@ export default function MortgageCalculator() {
         const mortgageAmount = totalWithVat - depositAmount;
 
         // commission & lawyer fees on post-VAT amount
-        const commissionAmount = commissionRate;
-        const lawyerFeeAmount = lawyerFeeRate;
+        const commissionAmount = totalWithVat * commissionRate;
+        const lawyerFeeAmount = totalWithVat * lawyerFeeRate;
 
         // grand total
         const grandTotalCalc = totalWithVat + commissionAmount + lawyerFeeAmount;
@@ -412,41 +412,68 @@ export default function MortgageCalculator() {
 
     const breakdownColumns = t('breakdownColumns');
     const breakdownData = [
-        [t('descBase'), formatNumber(parseFloat(totalCost) + parseFloat(parkSpot)), formatNumber(convertCurrency(parseFloat(totalCost) + parseFloat(parkSpot)))],
-        [t('descVat'), formatNumber(vatAmount), formatNumber(vatAmount * exchangeRate)],
-        [t('descTotalVat'),
-            formatNumber(
+        [
+            t('descBase'),
+            formatNumber(Math.round(parseFloat(totalCost) + parseFloat(parkSpot))),
+            formatNumber(Math.round(convertCurrency(parseFloat(totalCost) + parseFloat(parkSpot))))
+        ],
+        [
+            t('descVat'),
+            formatNumber(Math.round(vatAmount)),
+            formatNumber(Math.round(vatAmount * exchangeRate))
+        ],
+        [
+            t('descTotalVat'),
+            formatNumber(Math.round(
                 parseFloat(totalCost) +
                 parseFloat(parkSpot) +
                 vatAmount
-            ),
-            formatNumber(
+            )),
+            formatNumber(Math.round(
                 convertCurrency(
                     parseFloat(totalCost) +
                     parseFloat(parkSpot) +
                     vatAmount
                 )
-            )
+            ))
         ],
-
-        [t('descDeposit'), formatNumber(depositAmount), formatNumber(convertCurrency(depositAmount))],
-        [t('descCommission'), formatNumber(commissionAmount), formatNumber(convertCurrency(commissionAmount))],
         [
-
+            t('descDeposit'),
+            formatNumber(Math.round(depositAmount)),
+            formatNumber(Math.round(convertCurrency(depositAmount)))
+        ],
+        [
+            t('descCommission'),
+            formatNumber(Math.round(commissionAmount)),
+            formatNumber(Math.round(convertCurrency(commissionAmount)))
+        ],
+        [
             t('descPayNow')(deposit),
-            `${formatNumber(depositAmount + commissionAmount)}`,
-            `${formatNumber(convertCurrency(depositAmount + commissionAmount))}`,
+            formatNumber(Math.round(depositAmount + commissionAmount)),
+            formatNumber(Math.round(convertCurrency(depositAmount + commissionAmount)))
         ],
         [
-            t('descPayLater')(deposit), 
-            `${formatNumber(mortgageAmount + lawyerFeeAmount)}`,
-            `${formatNumber(convertCurrency(mortgageAmount + lawyerFeeAmount))}`,
+            t('descPayLater')(deposit),
+            formatNumber(Math.round(mortgageAmount + lawyerFeeAmount)),
+            formatNumber(Math.round(convertCurrency(mortgageAmount + lawyerFeeAmount)))
         ],
-        [t('descMortgage')(deposit), formatNumber(mortgageAmount), formatNumber(convertCurrency(mortgageAmount))],
-        [t('descLawyer'), formatNumber(lawyerFeeAmount), formatNumber(convertCurrency(lawyerFeeAmount))],
-        [t('descGrandTotal'), formatNumber(Math.round(grandTotal)), formatNumber(Math.round(grandTotal * exchangeRate))],
-
+        [
+            t('descMortgage')(deposit),
+            formatNumber(Math.round(mortgageAmount)),
+            formatNumber(Math.round(convertCurrency(mortgageAmount)))
+        ],
+        [
+            t('descLawyer'),
+            formatNumber(Math.round(lawyerFeeAmount)),
+            formatNumber(Math.round(convertCurrency(lawyerFeeAmount)))
+        ],
+        [
+            t('descGrandTotal'),
+            formatNumber(Math.round(grandTotal)),
+            formatNumber(Math.round(grandTotal * exchangeRate))
+        ],
     ];
+
 
 
 
@@ -465,9 +492,20 @@ export default function MortgageCalculator() {
 
     const paymentColumns = t('paymentColumns');
     const paymentData = [
-        ["EUR 🇪🇺", ...Object.values(monthlyPayments).map(formatNumber)],
-        ["BGN 🇧🇬", ...Object.values(monthlyPayments).map(convertCurrency).map(formatNumber)],
+        [
+            "EUR 🇪🇺",
+            ...Object.values(monthlyPayments).map(v =>
+                formatNumber(Math.round(v))
+            )
+        ],
+        [
+            "BGN 🇧🇬",
+            ...Object.values(monthlyPayments).map(v =>
+                formatNumber(Math.round(convertCurrency(v)))
+            )
+        ]
     ];
+
 
     // — Add this right after your existing state declarations —
     // m² sizes for the table
@@ -553,7 +591,9 @@ export default function MortgageCalculator() {
         [
             'EUR/m²',
             ...sqmSizes.map(size =>
-                formatNumber((parseFloat(totalCost) * (vatEnabled ? 1.2 : 1)) / size)
+                formatNumber(
+                    Math.round((parseFloat(totalCost) * (vatEnabled ? 1.2 : 1)) / size)
+                )
             )
         ],
         // add this extra row only when VAT is turned off
@@ -562,12 +602,15 @@ export default function MortgageCalculator() {
                 [
                     'EUR/m² + ' + t('vatLabelSimple'),
                     ...sqmSizes.map(size =>
-                        formatNumber((parseFloat(totalCost) * 1.2) / size)
+                        formatNumber(
+                            Math.round((parseFloat(totalCost) * 1.2) / size)
+                        )
                     )
                 ]
             ]
             : [])
     ];
+
 
     return (
         <Card className="p-6 max-w-4xl mx-auto">
@@ -771,16 +814,30 @@ export default function MortgageCalculator() {
                     columns={breakdownColumns}
                     data={breakdownData}
                     renderCell={renderCell}
-                    getRowStyle={(row, rowIndex) => {
-                        if (row[0] === 'Deposit Amount') {
+                    getRowStyle={(row) => {
+                        const desc = row[0];
 
+                        // keep your existing dynamic checks
+                        if (desc === t('descDeposit')) {
                             return getRowStyle(budgetDeposit, row[1]);
-                        } else if (row[0] === 'Commission') {
+                        }
+                        if (desc === t('descCommission')) {
                             return getRowStyle(budgetCommission, row[1]);
                         }
+
+                        // static gray rows for the three keys
+                        if (
+                            desc === t('descBase') ||
+                            desc === t('descTotalVat') ||
+                            desc === t('descGrandTotal')
+                        ) {
+                            return 'bg-green-100';   // or 'bg-gray-200' for darker
+                        }
+
                         return '';
                     }}
                 />
+
 
                 <br />
 

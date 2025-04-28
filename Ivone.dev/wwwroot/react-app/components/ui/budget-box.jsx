@@ -17,11 +17,13 @@ export default function BudgetBox({
     setBudgetCommission,
     budgetMonthlyInstallments,
     setBudgetMonthlyInstallments,
-    handleMonthlyBudgetChange
+    handleMonthlyBudgetChange,
+    lang,
+    setLang
 }) {
     const [isBudgetExpanded, setIsBudgetExpanded] = useState(false);
     const [budgetCurrency, setBudgetCurrency] = useState('EUR'); // 'EUR' or 'BGN'
-    const [lang, setLang] = useState('bg');                     // 'en' or 'bg'
+                     // 'en' or 'bg'
 
     // -- translations map --
     const translations = {
@@ -112,7 +114,7 @@ export default function BudgetBox({
                             <path fill="#C8102E" d="M0 193v96h640v-96zM273 0v480h96V0z" />
                         </svg>
                 </button>
-                <button onClick={() => setLang('bg')} className="cursor-pointer hover:opacity-80" aria-label="BG">
+                    <button onClick={() => setLang('bg')} className="cursor-pointer hover:opacity-80" aria-label="BG">
                     {/* BGN SVG */}
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" className="w-6 h-6">
                             <path fill="#fff" d="M0 0h640v160H0z" />
