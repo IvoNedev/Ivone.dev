@@ -1,0 +1,287 @@
+﻿@page
+@model SofiaPropsModel
+@{
+    Layout = "_Layout";
+}
+
+<h2>Sofia Property Prices Over Time</h2>
+
+<style>
+    .dual-list-container {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .list-box {
+        border: 1px solid #ccc;
+        width: 250px;
+        height: 200px;
+        overflow-y: auto;
+        padding: 0.25rem;
+        list-style: none;
+    }
+
+        .list-box li {
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+        }
+
+            .list-box li:hover {
+                background-color: #eef;
+            }
+
+    .list-label {
+        font-weight: bold;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+</style>
+
+<div class="dual-list-container">
+    <!-- === Areas dual-list === -->
+    <div>
+        <span class="list-label">Available Areas (click to select):</span>
+        <ul id="availableAreas" class="list-box">
+            @foreach (var area in Model.AllAreas)
+            {
+                <li data-value="@area">@area</li>
+            }
+        </ul>
+    </div>
+    <div>
+        <span class="list-label">Selected Areas (click to remove):</span>
+        <ul id="selectedAreas" class="list-box"></ul>
+    </div>
+
+    <!-- === Dates dual-list === -->
+    <div>
+        <span class="list-label">Available Dates (newest first):</span>
+        <ul id="availableDates" class="list-box">
+            @foreach (var date in Model.AllDates)
+            {
+                <li data-value="@date">@date</li>
+            }
+        </ul>
+    </div>
+    <div>
+        <span class="list-label">Selected Dates (click to remove):</span>
+        <ul id="selectedDates" class="list-box"></ul>
+    </div>
+
+    <!-- === Bed type radio buttons === -->
+    <div style="min-width: 120px;">
+        <span class="list-label">Bed Type:</span>
+        <input type="radio" name="bedType" id="bed1" value="1" checked />
+        <label for="bed1">1-bed</label><br />
+        <input type="radio" name="bedType" id="bed2" value="2" />
+        <label for="bed2">2-bed</label><br />
+        <input type="radio" name="bedType" id="bed3" value="3" />
+        <label for="bed3">3-bed</label>
+    </div>
+
+    <!-- === Metric type toggle === -->
+    <div style="min-width: 120px;">
+        <span class="list-label">Metric:</span>
+        <input type="radio" name="priceMetric" id="metricPrice" value="Price" checked />
+        <label for="metricPrice">Price</label><br />
+        <input type="radio" name="priceMetric" id="metricPerSqm" value="PerSqm" />
+        <label for="metricPerSqm">Price / кв.м</label>
+    </div>
+</div>
+
+<hr />
+
+<!-- === The Chart.js canvas === -->
+<canvas id="lineChart" width="900" height="500"></canvas>
+
+@section Scripts {
+    <!-- 1) Load Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // 2) Parse JSON data from PageModel:
+        const allStats = @Html.Raw(Model.StatsJson);
+        // Format: [
+        //   { Area:"Банишора", Date:"26.12.2019", Price1:55107, Price1PerSqm:1227, Price2:70149, Price2PerSqm:1128, Price3:98208, Price3PerSqm:1002 },
+        //   …
+        // ];
+
+        // 3) Utility: get numeric value given (area, date, bedType, priceMetric)
+        function getValue(area, date, bedType, priceMetric) {
+            const rec = allStats.find(r => r.Area === area && r.Date === date);
+            if (!rec) return null;
+            if (bedType === "1") {
+                return priceMetric === "Price" ? rec.Price1 : rec.Price1PerSqm;
+            }
+            if (bedType === "2") {
+                return priceMetric === "Price" ? rec.Price2 : rec.Price2PerSqm;
+            }
+            // bedType === "3"
+            return priceMetric === "Price" ? rec.Price3 : rec.Price3PerSqm;
+        }
+
+        // 4) Initialize empty Chart.js line chart
+        const ctx = document.getElementById('lineChart').getContext('2d');
+        const config = {
+            type: 'line',
+            data: {
+                labels: [],    // will become selectedDates (X-axis)
+                datasets: []   // one dataset per selectedArea (each line)
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                stacked: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const val = context.parsed.y;
+                                return context.dataset.label + ': ' + (val === null ? '—' : val);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Value'
+                        }
+                    }
+                }
+            }
+        };
+        const lineChart = new Chart(ctx, config);
+
+        // 5) Rebuild chart whenever selections change
+        function updateChart() {
+            // 5a) Read selected Areas from the "Selected Areas" list
+            const selectedAreas = Array.from(
+                document.querySelectorAll('#selectedAreas li')
+            ).map(li => li.getAttribute('data-value'));
+
+            // 5b) Read selected Dates from the "Selected Dates" list, then sort ascending
+            const selectedDates = Array.from(
+                document.querySelectorAll('#selectedDates li')
+            ).map(li => li.getAttribute('data-value'))
+                .sort((a, b) => {
+                    // parse "d.M.yyyy" to Date for proper ascending sort
+                    const da = Date.parse(a.split('.').reverse().join('-'));
+                    const db = Date.parse(b.split('.').reverse().join('-'));
+                    return da - db;
+                });
+
+            // 5c) Read bedType & metric
+            const bedType = document.querySelector('input[name="bedType"]:checked').value;       // "1","2","3"
+            const priceMetric = document.querySelector('input[name="priceMetric"]:checked').value; // "Price" or "PerSqm"
+
+            // 5d) Set X-axis labels
+            config.data.labels = selectedDates;
+
+            // 5e) Build one dataset per Area
+            config.data.datasets = selectedAreas.map((area, idx) => {
+                // assign distinct HSL color per area
+                const hue = (idx * 60) % 360;
+                const borderColor = `hsl(${hue}, 65%, 40%)`;
+                const backgroundColor = `hsl(${hue}, 65%, 70%)`;
+
+                // Collect a data point for each selected date
+                const dataArr = selectedDates.map(date => {
+                    const val = getValue(area, date, bedType, priceMetric);
+                    return val === null ? null : val;
+                });
+
+                return {
+                    label: area,
+                    data: dataArr,
+                    borderColor: borderColor,
+                    backgroundColor: backgroundColor,
+                    fill: false,
+                    tension: 0.3,
+                    spanGaps: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                };
+            });
+
+            lineChart.update();
+        }
+
+        // 6) Move item from available → selected (for either Areas or Dates)
+        function moveItem(liElement, fromListId, toListId) {
+            const container = document.getElementById(toListId);
+            // Clone the <li> node so we detach it from its old parent
+            const newLi = liElement.cloneNode(true);
+            container.appendChild(newLi);
+            liElement.remove();
+
+            // Attach click‐to‐remove on the newly‐added item:
+            newLi.addEventListener('click', () => {
+                moveItem(newLi, toListId, fromListId);
+                updateChart();
+            });
+        }
+
+        // 7) Wire up initial click‐handlers on every <li> in Available lists
+        function setupDualList(sourceListId, targetListId) {
+            document.querySelectorAll(`#${sourceListId} li`).forEach(li => {
+                li.addEventListener('click', () => {
+                    moveItem(li, sourceListId, targetListId);
+                    updateChart();
+                });
+            });
+        }
+
+        // 8) Wire up radio buttons to update chart
+        function setupRadios() {
+            document.querySelectorAll('input[name="bedType"]').forEach(r =>
+                r.addEventListener('change', updateChart)
+            );
+            document.querySelectorAll('input[name="priceMetric"]').forEach(r =>
+                r.addEventListener('change', updateChart)
+            );
+        }
+
+        // 9) On DOMContentLoaded: initialize dual‐lists and optionally pre‐select defaults
+        window.addEventListener('DOMContentLoaded', () => {
+            // 9a) Attach click handlers for moving Areas
+            setupDualList('availableAreas', 'selectedAreas');
+            setupDualList('selectedAreas', 'availableAreas');
+
+            // 9b) Attach click handlers for moving Dates
+            setupDualList('availableDates', 'selectedDates');
+            setupDualList('selectedDates', 'availableDates');
+
+            // 9c) Attach radio button listeners
+            setupRadios();
+
+            // 9d) (Optional) Pre‐select the first two Areas and first three Dates:
+            const availAreas = document.querySelectorAll('#availableAreas li');
+            for (let i = 0; i < availAreas.length && i < 2; i++) {
+                moveItem(availAreas[i], 'availableAreas', 'selectedAreas');
+            }
+            const availDates = document.querySelectorAll('#availableDates li');
+            for (let i = 0; i < availDates.length && i < 3; i++) {
+                moveItem(availDates[i], 'availableDates', 'selectedDates');
+            }
+
+            // Finally, draw the chart once
+            updateChart();
+        });
+    </script>
+}

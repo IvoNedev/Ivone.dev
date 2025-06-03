@@ -1,0 +1,627 @@
+﻿@page
+@model MealPrepModel
+@{
+    ViewData["Title"] = "Aconto";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>window.FontAwesomeConfig = { autoReplaceSvg: 'nest' };</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }</style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#6B7280',
+                        accent: '#10B981',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="font-sans bg-gray-50 text-gray-800">
+    <div id="app" class="relative h-full min-h-screen">
+        <!-- Mobile Header -->
+        <header id="header" class="fixed top-0 left-0 right-0 z-30 bg-white shadow-sm h-14 flex items-center px-4">
+            <div class="flex justify-between items-center w-full">
+                <h1 class="text-lg font-semibold text-primary">MealPlanner</h1>
+                <button id="mobile-menu-toggle" class="md:hidden text-gray-600">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="pt-14 pb-16 md:pb-0 md:pt-14 md:pl-0 h-full">
+            <!-- Main Content Area -->
+            <div class="md:flex md:h-[calc(100vh-56px)]">
+                <!-- Sidebar (hidden on mobile, shown on desktop) -->
+                <aside id="sidebar" class="fixed inset-0 z-20 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out bg-white md:w-80 md:min-w-80 md:border-r border-gray-200 md:h-full overflow-hidden">
+                    <div class="h-14 border-b border-gray-200 flex items-center justify-between px-4">
+                        <h2 class="font-medium">Meal Categories</h2>
+                        <button id="close-sidebar" class="md:hidden text-gray-500">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="overflow-y-auto h-[calc(100%-56px)]">
+                        <div id="accordion" class="divide-y divide-gray-200">
+                            <!-- Chicken Category -->
+                            <div id="category-chicken" class="category-section">
+                                <div class="category-header flex items-center justify-between p-4 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-drumstick-bite text-amber-600 mr-3"></i>
+                                        <h3 class="font-medium">Chicken</h3>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-down text-gray-400 transform transition-transform"></i>
+                                </div>
+                                <div class="category-content px-4 pb-4 hidden">
+                                    <div class="meal-list space-y-2 mb-3">
+                                        <!-- Meals will be added here dynamically -->
+                                    </div>
+                                    <div class="add-meal-form bg-gray-50 p-3 rounded-lg">
+                                        <h4 class="text-sm font-medium mb-2">Add New Meal</h4>
+                                        <input type="text" placeholder="Meal Name" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <input type="url" placeholder="Recipe URL" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex space-x-2">
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-chicken" value="1" checked class="mr-1">
+                                                    1-day
+                                                </label>
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-chicken" value="2" class="mr-1">
+                                                    2-day
+                                                </label>
+                                            </div>
+                                            <button class="add-meal-btn bg-primary text-white px-3 py-1 rounded text-sm">Add</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fish Category -->
+                            <div id="category-fish" class="category-section">
+                                <div class="category-header flex items-center justify-between p-4 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-fish text-blue-500 mr-3"></i>
+                                        <h3 class="font-medium">Fish</h3>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-down text-gray-400 transform transition-transform"></i>
+                                </div>
+                                <div class="category-content px-4 pb-4 hidden">
+                                    <div class="meal-list space-y-2 mb-3">
+                                        <!-- Meals will be added here dynamically -->
+                                    </div>
+                                    <div class="add-meal-form bg-gray-50 p-3 rounded-lg">
+                                        <h4 class="text-sm font-medium mb-2">Add New Meal</h4>
+                                        <input type="text" placeholder="Meal Name" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <input type="url" placeholder="Recipe URL" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex space-x-2">
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-fish" value="1" checked class="mr-1">
+                                                    1-day
+                                                </label>
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-fish" value="2" class="mr-1">
+                                                    2-day
+                                                </label>
+                                            </div>
+                                            <button class="add-meal-btn bg-primary text-white px-3 py-1 rounded text-sm">Add</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Beef Category -->
+                            <div id="category-beef" class="category-section">
+                                <div class="category-header flex items-center justify-between p-4 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-burger text-red-600 mr-3"></i>
+                                        <h3 class="font-medium">Beef</h3>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-down text-gray-400 transform transition-transform"></i>
+                                </div>
+                                <div class="category-content px-4 pb-4 hidden">
+                                    <div class="meal-list space-y-2 mb-3">
+                                        <!-- Meals will be added here dynamically -->
+                                    </div>
+                                    <div class="add-meal-form bg-gray-50 p-3 rounded-lg">
+                                        <h4 class="text-sm font-medium mb-2">Add New Meal</h4>
+                                        <input type="text" placeholder="Meal Name" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <input type="url" placeholder="Recipe URL" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex space-x-2">
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-beef" value="1" checked class="mr-1">
+                                                    1-day
+                                                </label>
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-beef" value="2" class="mr-1">
+                                                    2-day
+                                                </label>
+                                            </div>
+                                            <button class="add-meal-btn bg-primary text-white px-3 py-1 rounded text-sm">Add</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pork Category -->
+                            <div id="category-pork" class="category-section">
+                                <div class="category-header flex items-center justify-between p-4 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-bacon text-pink-600 mr-3"></i>
+                                        <h3 class="font-medium">Pork</h3>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-down text-gray-400 transform transition-transform"></i>
+                                </div>
+                                <div class="category-content px-4 pb-4 hidden">
+                                    <div class="meal-list space-y-2 mb-3">
+                                        <!-- Meals will be added here dynamically -->
+                                    </div>
+                                    <div class="add-meal-form bg-gray-50 p-3 rounded-lg">
+                                        <h4 class="text-sm font-medium mb-2">Add New Meal</h4>
+                                        <input type="text" placeholder="Meal Name" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <input type="url" placeholder="Recipe URL" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex space-x-2">
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-pork" value="1" checked class="mr-1">
+                                                    1-day
+                                                </label>
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-pork" value="2" class="mr-1">
+                                                    2-day
+                                                </label>
+                                            </div>
+                                            <button class="add-meal-btn bg-primary text-white px-3 py-1 rounded text-sm">Add</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Vegetarian Category -->
+                            <div id="category-vegetarian" class="category-section">
+                                <div class="category-header flex items-center justify-between p-4 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <i class="fa-solid fa-leaf text-green-600 mr-3"></i>
+                                        <h3 class="font-medium">Vegetarian</h3>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-down text-gray-400 transform transition-transform"></i>
+                                </div>
+                                <div class="category-content px-4 pb-4 hidden">
+                                    <div class="meal-list space-y-2 mb-3">
+                                        <!-- Meals will be added here dynamically -->
+                                    </div>
+                                    <div class="add-meal-form bg-gray-50 p-3 rounded-lg">
+                                        <h4 class="text-sm font-medium mb-2">Add New Meal</h4>
+                                        <input type="text" placeholder="Meal Name" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <input type="url" placeholder="Recipe URL" class="w-full p-2 mb-2 border border-gray-300 rounded text-sm">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex space-x-2">
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-vegetarian" value="1" checked class="mr-1">
+                                                    1-day
+                                                </label>
+                                                <label class="inline-flex items-center text-sm">
+                                                    <input type="radio" name="meal-duration-vegetarian" value="2" class="mr-1">
+                                                    2-day
+                                                </label>
+                                            </div>
+                                            <button class="add-meal-btn bg-primary text-white px-3 py-1 rounded text-sm">Add</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Weekly Meal Plan Grid -->
+                <div id="meal-plan-container" class="px-4 py-4 md:flex-1 md:overflow-y-auto">
+                    <h2 class="text-lg font-semibold mb-4">Weekly Meal Plan</h2>
+
+                    <div class="overflow-x-auto">
+                        <div id="meal-plan-grid" class="grid grid-cols-7 gap-2 min-w-[700px]">
+                            <!-- Day Headers -->
+                            <div class="day-header p-2 text-center font-medium bg-gray-100 rounded-t">Mon</div>
+                            <div class="day-header p-2 text-center font-medium bg-gray-100 rounded-t">Tue</div>
+                            <div class="day-header p-2 text-center font-medium bg-gray-100 rounded-t">Wed</div>
+                            <div class="day-header p-2 text-center font-medium bg-gray-100 rounded-t">Thu</div>
+                            <div class="day-header p-2 text-center font-medium bg-gray-100 rounded-t">Fri</div>
+                            <div class="day-header p-2 text-center font-medium bg-gray-100 rounded-t">Sat</div>
+                            <div class="day-header p-2 text-center font-medium bg-gray-100 rounded-t">Sun</div>
+
+                            <!-- Day Cells -->
+                            <div id="day-1" class="day-cell h-40 bg-white border border-gray-200 rounded shadow-sm p-2 meal-dropzone"></div>
+                            <div id="day-2" class="day-cell h-40 bg-white border border-gray-200 rounded shadow-sm p-2 meal-dropzone"></div>
+                            <div id="day-3" class="day-cell h-40 bg-white border border-gray-200 rounded shadow-sm p-2 meal-dropzone"></div>
+                            <div id="day-4" class="day-cell h-40 bg-white border border-gray-200 rounded shadow-sm p-2 meal-dropzone"></div>
+                            <div id="day-5" class="day-cell h-40 bg-white border border-gray-200 rounded shadow-sm p-2 meal-dropzone"></div>
+                            <div id="day-6" class="day-cell h-40 bg-white border border-gray-200 rounded shadow-sm p-2 meal-dropzone"></div>
+                            <div id="day-7" class="day-cell h-40 bg-white border border-gray-200 rounded shadow-sm p-2 meal-dropzone"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Mobile Bottom Navigation -->
+        <nav id="mobile-nav" class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30">
+            <div class="flex justify-around h-16">
+                <button id="show-sidebar-btn" class="flex flex-col items-center justify-center flex-1">
+                    <i class="fa-solid fa-utensils text-primary"></i>
+                    <span class="text-xs mt-1">Meals</span>
+                </button>
+                <button id="show-planner-btn" class="flex flex-col items-center justify-center flex-1">
+                    <i class="fa-solid fa-calendar-days text-gray-500"></i>
+                    <span class="text-xs mt-1">Planner</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize state from local storage or set defaults
+            let meals = JSON.parse(localStorage.getItem('meals')) || {
+                chicken: [],
+                fish: [],
+                beef: [],
+                pork: [],
+                vegetarian: []
+            };
+
+            let weeklyPlan = JSON.parse(localStorage.getItem('weeklyPlan')) || {
+                1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []
+            };
+
+            // Mobile navigation toggle
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const closeSidebar = document.getElementById('close-sidebar');
+            const showSidebarBtn = document.getElementById('show-sidebar-btn');
+            const showPlannerBtn = document.getElementById('show-planner-btn');
+            const mealPlanContainer = document.getElementById('meal-plan-container');
+
+            mobileMenuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('-translate-x-full');
+            });
+
+            closeSidebar.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+            });
+
+            showSidebarBtn.addEventListener('click', () => {
+                sidebar.classList.remove('-translate-x-full');
+                showSidebarBtn.querySelector('i').classList.add('text-primary');
+                showSidebarBtn.querySelector('span').classList.add('text-primary');
+                showPlannerBtn.querySelector('i').classList.remove('text-primary');
+                showPlannerBtn.querySelector('span').classList.remove('text-primary');
+            });
+
+            showPlannerBtn.addEventListener('click', () => {
+                sidebar.classList.add('-translate-x-full');
+                showPlannerBtn.querySelector('i').classList.add('text-primary');
+                showPlannerBtn.querySelector('span').classList.add('text-primary');
+                showSidebarBtn.querySelector('i').classList.remove('text-primary');
+                showSidebarBtn.querySelector('span').classList.remove('text-primary');
+            });
+
+            // Category accordion functionality
+            const categoryHeaders = document.querySelectorAll('.category-header');
+            categoryHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.fa-chevron-down');
+
+                    content.classList.toggle('hidden');
+                    icon.classList.toggle('rotate-180');
+                });
+            });
+
+            // Add meal functionality
+            const addMealForms = document.querySelectorAll('.add-meal-form');
+            addMealForms.forEach(form => {
+                const addButton = form.querySelector('.add-meal-btn');
+                addButton.addEventListener('click', () => {
+                    const categorySection = form.closest('.category-section');
+                    const categoryId = categorySection.id.split('-')[1]; // e.g., "chicken"
+                    const nameInput = form.querySelector('input[type="text"]');
+                    const urlInput = form.querySelector('input[type="url"]');
+                    const durationRadios = form.querySelectorAll('input[type="radio"]');
+
+                    const mealName = nameInput.value.trim();
+                    const mealUrl = urlInput.value.trim();
+                    let mealDuration = 1;
+
+                    durationRadios.forEach(radio => {
+                        if (radio.checked) {
+                            mealDuration = parseInt(radio.value);
+                        }
+                    });
+
+                    if (mealName) {
+                        // Generate a unique ID for the meal
+                        const mealId = 'meal-' + Date.now();
+
+                        // Create meal object
+                        const meal = {
+                            id: mealId,
+                            name: mealName,
+                            url: mealUrl,
+                            duration: mealDuration,
+                            category: categoryId
+                        };
+
+                        // Add to state
+                        meals[categoryId].push(meal);
+                        saveToLocalStorage();
+
+                        // Add to UI
+                        addMealToUI(meal, categoryId);
+
+                        // Reset form
+                        nameInput.value = '';
+                        urlInput.value = '';
+                        durationRadios[0].checked = true;
+                    }
+                });
+            });
+
+            // Function to add meal to UI
+            function addMealToUI(meal, categoryId) {
+                const mealList = document.querySelector(`#category-${categoryId} .meal-list`);
+
+                const mealElement = document.createElement('div');
+                mealElement.id = meal.id;
+                mealElement.className = 'meal-item bg-white border border-gray-200 rounded p-2 shadow-sm flex items-center cursor-move';
+                mealElement.setAttribute('draggable', 'true');
+                mealElement.setAttribute('data-meal-id', meal.id);
+                mealElement.setAttribute('data-duration', meal.duration);
+
+                let mealContent = `
+                            <div class="flex-1 min-w-0">
+                                <p class="font-medium text-sm truncate">${meal.name}</p>
+                                <div class="flex items-center mt-1">
+                                    <span class="text-xs bg-${meal.duration === 1 ? 'blue' : 'purple'}-100 text-${meal.duration === 1 ? 'blue' : 'purple'}-800 px-2 py-0.5 rounded-full">${meal.duration}-day</span>
+                                </div>
+                            </div>
+                        `;
+
+                // Add thumbnail placeholder or actual image
+                if (meal.url) {
+                    mealContent = `
+                                <div class="w-12 h-12 mr-2 rounded bg-gray-200 flex-shrink-0 overflow-hidden">
+                                    <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <i class="fa-solid fa-utensils"></i>
+                                    </div>
+                                </div>
+                                ${mealContent}
+                            `;
+                }
+
+                mealElement.innerHTML = mealContent;
+
+                // Add event listeners for drag and drop
+                mealElement.addEventListener('dragstart', handleDragStart);
+
+                mealList.appendChild(mealElement);
+            }
+
+            // Load saved meals into UI
+            function loadSavedMeals() {
+                for (const category in meals) {
+                    meals[category].forEach(meal => {
+                        addMealToUI(meal, category);
+                    });
+                }
+            }
+
+            // Load saved weekly plan
+            function loadSavedWeeklyPlan() {
+                for (const day in weeklyPlan) {
+                    const dayCell = document.getElementById(`day-${day}`);
+                    weeklyPlan[day].forEach(mealId => {
+                        const meal = findMealById(mealId);
+                        if (meal) {
+                            addMealToDayCell(meal, dayCell);
+                        }
+                    });
+                }
+            }
+
+            // Find meal by ID across all categories
+            function findMealById(mealId) {
+                for (const category in meals) {
+                    const foundMeal = meals[category].find(meal => meal.id === mealId);
+                    if (foundMeal) return foundMeal;
+                }
+                return null;
+            }
+
+            // Drag and drop functionality
+            function handleDragStart(e) {
+                e.dataTransfer.setData('text/plain', e.target.getAttribute('data-meal-id'));
+                e.dataTransfer.effectAllowed = 'copy';
+            }
+
+            // Initialize drop zones
+            const dropZones = document.querySelectorAll('.meal-dropzone');
+            dropZones.forEach(zone => {
+                zone.addEventListener('dragover', e => {
+                    e.preventDefault();
+                    zone.classList.add('bg-gray-50');
+                });
+
+                zone.addEventListener('dragleave', () => {
+                    zone.classList.remove('bg-gray-50');
+                });
+
+                zone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    zone.classList.remove('bg-gray-50');
+
+                    const mealId = e.dataTransfer.getData('text/plain');
+                    const meal = findMealById(mealId);
+
+                    if (meal) {
+                        const dayIndex = parseInt(zone.id.split('-')[1]);
+
+                        // Check if this is a 2-day meal and handle accordingly
+                        if (meal.duration === 2 && dayIndex < 7) {
+                            // Add to current day
+                            addMealToDayCell(meal, zone);
+                            weeklyPlan[dayIndex].push(mealId);
+
+                            // Add to next day automatically
+                            const nextDayCell = document.getElementById(`day-${dayIndex + 1}`);
+                            if (nextDayCell) {
+                                addMealToDayCell(meal, nextDayCell, true);
+                                weeklyPlan[dayIndex + 1].push(mealId);
+                            }
+                        } else {
+                            addMealToDayCell(meal, zone);
+                            weeklyPlan[dayIndex].push(mealId);
+                        }
+
+                        saveToLocalStorage();
+                    }
+                });
+            });
+
+            // Add meal to day cell
+            function addMealToDayCell(meal, cell, isSecondDay = false) {
+                const mealElement = document.createElement('div');
+                mealElement.className = 'meal-in-plan bg-white border border-gray-200 rounded p-2 mb-2 text-sm flex items-center';
+                mealElement.setAttribute('data-meal-id', meal.id);
+
+                let mealIcon = '';
+                switch (meal.category) {
+                    case 'chicken': mealIcon = '<i class="fa-solid fa-drumstick-bite text-amber-600 mr-2"></i>'; break;
+                    case 'fish': mealIcon = '<i class="fa-solid fa-fish text-blue-500 mr-2"></i>'; break;
+                    case 'beef': mealIcon = '<i class="fa-solid fa-burger text-red-600 mr-2"></i>'; break;
+                    case 'pork': mealIcon = '<i class="fa-solid fa-bacon text-pink-600 mr-2"></i>'; break;
+                    case 'vegetarian': mealIcon = '<i class="fa-solid fa-leaf text-green-600 mr-2"></i>'; break;
+                }
+
+                mealElement.innerHTML = `
+                            ${mealIcon}
+                            <span class="truncate flex-1">${meal.name}</span>
+                            ${isSecondDay ? '<span class="text-xs text-gray-500 ml-1">(cont.)</span>' : ''}
+                            <button class="remove-meal-btn ml-2 text-red-500 text-xs">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
+                        `;
+
+                const removeButton = mealElement.querySelector('.remove-meal-btn');
+                removeButton.addEventListener('click', () => {
+                    // Remove from UI
+                    mealElement.remove();
+
+                    // Remove from state
+                    const dayIndex = parseInt(cell.id.split('-')[1]);
+                    weeklyPlan[dayIndex] = weeklyPlan[dayIndex].filter(id => id !== meal.id);
+
+                    // If this is a 2-day meal, also remove from the other day
+                    if (meal.duration === 2) {
+                        const otherDayIndex = isSecondDay ? dayIndex - 1 : dayIndex + 1;
+                        if (weeklyPlan[otherDayIndex]) {
+                            weeklyPlan[otherDayIndex] = weeklyPlan[otherDayIndex].filter(id => id !== meal.id);
+
+                            // Remove from UI of other day
+                            const otherDayCell = document.getElementById(`day-${otherDayIndex}`);
+                            if (otherDayCell) {
+                                const otherMealElement = otherDayCell.querySelector(`[data-meal-id="${meal.id}"]`);
+                                if (otherMealElement) {
+                                    otherMealElement.remove();
+                                }
+                            }
+                        }
+                    }
+
+                    saveToLocalStorage();
+                });
+
+                cell.appendChild(mealElement);
+            }
+
+            // Save state to local storage
+            function saveToLocalStorage() {
+                localStorage.setItem('meals', JSON.stringify(meals));
+                localStorage.setItem('weeklyPlan', JSON.stringify(weeklyPlan));
+            }
+
+            // Initialize the app
+            loadSavedMeals();
+            loadSavedWeeklyPlan();
+
+            // Make meal lists in sidebar sortable
+            document.querySelectorAll('.meal-list').forEach(list => {
+                new Sortable(list, {
+                    group: {
+                        name: 'meals',
+                        pull: 'clone',
+                        put: false
+                    },
+                    animation: 150,
+                    sort: false
+                });
+            });
+
+            // Make day cells sortable
+            document.querySelectorAll('.day-cell').forEach(cell => {
+                new Sortable(cell, {
+                    group: {
+                        name: 'meals',
+                        pull: false
+                    },
+                    animation: 150,
+                    onAdd: function (evt) {
+                        const mealId = evt.item.getAttribute('data-meal-id');
+                        const meal = findMealById(mealId);
+                        const dayIndex = parseInt(cell.id.split('-')[1]);
+
+                        // Remove the cloned item that Sortable adds
+                        evt.item.remove();
+
+                        if (meal) {
+                            // Add to current day
+                            addMealToDayCell(meal, cell);
+                            weeklyPlan[dayIndex].push(mealId);
+
+                            // If 2-day meal, add to next day too
+                            if (meal.duration === 2 && dayIndex < 7) {
+                                const nextDayCell = document.getElementById(`day-${dayIndex + 1}`);
+                                if (nextDayCell) {
+                                    addMealToDayCell(meal, nextDayCell, true);
+                                    weeklyPlan[dayIndex + 1].push(mealId);
+                                }
+                            }
+
+                            saveToLocalStorage();
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

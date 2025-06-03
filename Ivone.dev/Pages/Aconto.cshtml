@@ -5,10 +5,11 @@
     Layout = null;
 }
 
-
-<html class="scroll-smooth">
-
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
 <head>
+    <meta charset="utf-8">
+    <title>@ViewData["Title"]</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -315,266 +316,700 @@
         };
     </script>
 
-</head>
+    <script>
+        // 1. Your translations object (abbreviated here; paste the full one you already built)
+        const translations = {
+            en: {
+                home: {
+                    intro: `Aconto Ltd. is an accounting and tax consulting company in Bulgaria.
 
+        Our range of services includes accounting and tax advice according to Bulgarian law for individuals and legal entities.
+
+        In our work, we operate with the highest level of honesty, confidentiality and accuracy, as well as customized solutions for every client.
+
+        We will be pleased to offer you our professional service and experience.`
+                },
+                services: {
+                    title: "Our services:",
+                    list: [
+                        "Financial accounting",
+                        "HR and payroll services",
+                        "Year-end closing and reporting",
+                        "Tax advisory",
+                        "Company registration"
+                    ]
+                },
+                financialAccounting: {
+                    title: "Financial accounting:",
+                    points: [
+                        "Account assignment of documents in accordance with the legal provisions",
+                        "Preparing and submitting monthly VAT returns to the Bulgarian National Revenue Agency",
+                        "Preparing and submitting Intrastat returns",
+                        "Preparation of payment orders",
+                        "Inventory accounting",
+                        "Fixed asset accounting",
+                        "Representation in tax procedures before tax authorities"
+                    ]
+                },
+                hrPayroll: {
+                    title: "HR and payroll:",
+                    points: [
+                        "Preparation of employment contracts",
+                        "Registration and deregistration of employment contracts at NRA",
+                        "Payroll calculation",
+                        "Creation of wage and tax statements",
+                        "Documenting and submitting sick leaves to National Social Security Institute",
+                        "Preparation of civil contracts",
+                        "Drawing up payment orders for salaries and obligatory payments",
+                        "Social security reports",
+                        "Representation in audits"
+                    ]
+                },
+                yearEndReporting: {
+                    title: "Year-end closing and reporting:",
+                    points: [
+                        "Preparation of tax returns for natural persons and legal entities",
+                        "Preparation of annual financial statements including balance sheet, income statement, statement of owner's equity, statement of cash flows, statement of fixed assets and others according to the specifics of the activity",
+                        "Preparation of statistical reports",
+                        "Submitting of annual tax returns to National Revenue Agency",
+                        "Submitting of annual financial reports incl. statistical summaries to National Statistic Institute",
+                        "Disclosure of the annual financial statements at the Bulgarian Commercial Register"
+                    ]
+                },
+                taxConsulting: {
+                    title: "Tax and management consulting:",
+                    points: [
+                        "Tax and economic consulting",
+                        "Advice on the choice of legal form",
+                        "Tax and insurance planning and forecasting",
+                        "Consulting for business and tax optimization"
+                    ]
+                },
+                companyRegistration: {
+                    title: "Company registration in Bulgaria:",
+                    points: [
+                        "Preparation of the foundation documents",
+                        "Accompaniment to the notary",
+                        "Opening capital bank account",
+                        "Support in the registration process",
+                        "VAT registration in Bulgaria",
+                        "Representation before authorities (Labour inspectorate, Commission for personal data protection etc.) in Bulgaria",
+                        "On request other administrative services"
+                    ]
+                },
+                prices: {
+                    title: "Prices",
+                    intro: "We offer customized solutions for every client.",
+                    criteria: [
+                        "Type of company activity - trade, services, production, etc.",
+                        "Volume of document turnover",
+                        "Number of employees",
+                        "Additional services"
+                    ],
+                    contact: "For any further information or a specific offer, please do not hesitate to contact us."
+                },
+                privacyPolicy: {
+                    title: "Privacy Policy of aconto.org",
+                    sections: {
+                        general: [
+                            "This Privacy Policy applies only to the website aconto.org, owned by Aconto Ltd., which has been created in accordance with the General Data Protection Regulation (EU) 2016/679.",
+                            "As data controller, we shall comply with the principles of personal data protection in accordance with Regulation (EU) 2016/679 and the laws of the European Union and the Republic of Bulgaria when processing personal data.",
+                            "By using this site, you agree to this Privacy Policy."
+                        ],
+                        informationWeCollect: [
+                            "We only collect personal data if you have sent it to us through a request - name, e-mail, telephone."
+                        ],
+                        purpose: [
+                            "The collected information will be used to reply on your requests and contact you as our customers.",
+                            "The transmitted personal data will be processed lawfully and in good faith and will not be processed in any way contrary to those purposes.",
+                            "We do not share personal information with third parties.",
+                            "If you disagree with the use of your submitted personal data, you have the right to withdraw your consent, for this it is necessary to contact us at Phone: +359 876 627 400 or by e-mail: info@aconto.org."
+                        ],
+                        cookies: ["We do not use cookies."],
+                        revision: "The current privacy policy of http://aconto.org/ was revised on May 22, 2018. Aconto Ltd. reserves the right to change it accordingly."
+                    }
+                },
+                contact: {
+                    title: "Contact",
+                    name: "Aconto Ltd.",
+                    address: "Svetlina Str. 11\nP.O. Box 226\n8800 Sliven / Bulgaria",
+                    phone: "+359 876 627 400",
+                    email: "info@aconto.org",
+                    website: "http://www.aconto.org"
+                },
+                company: "Aconto Ltd.",
+                tagline: "Professional accounting services",
+                copyright: "© 2025 Aconto Ltd. All rights reserved",
+                cta: "Get Started"
+            },
+            de: {
+                home: {
+                    intro: `Aconto GmbH ist eine deutschsprachige Steuerkanzlei in Bulgarien.
+
+        Unsere Leistungen umfassen Buchführung und Steuerberatung nach bulgarischem Recht für natürliche und juristische Personen mit Geschäftsaktivitäten in Bulgarien.
+
+        Bei unserer Arbeit legen wir grossen Wert auf Zuverlässigkeit, absolute Vertraulichkeit sowie individuell angepasste Lösungen für jeden Mandanten.
+
+        Wir würden uns freuen, auch Sie kompetent und gewissenhaft betreuen zu dürfen.`
+                },
+                services: {
+                    title: "Unsere Dienstleistungen im Überblick:",
+                    list: [
+                        "Finanzbuchhaltung",
+                        "Lohn- und Gehaltsabrechnung",
+                        "Jahresabschluss und Steuererklärungen",
+                        "Steuerberatung",
+                        "Firmengründung in Bulgarien"
+                    ]
+                },
+                financialAccounting: {
+                    title: "Finanzbuchhaltung",
+                    points: [
+                        "Kontieren und Erfassen der Buchhaltungsbelege gemäss der gesetzlichen Bestimmungen",
+                        "Monatliche Umsatzsteuer-Voranmeldung",
+                        "Erstellung von Intrastat-Meldungen",
+                        "Erstellung von Zahlungsanweisungen zur Erfüllung sämtlicher Steuerpflichten",
+                        "Lagerbuchhaltung",
+                        "Anlagenbuchhaltung",
+                        "Vertretung vor Finanzbehörden bei Buchprüfungen"
+                    ]
+                },
+                hrPayroll: {
+                    title: "Lohn- und Gehaltsabrechnung",
+                    points: [
+                        "Erstellung von Arbeitsverträgen",
+                        "An- und Abmelden der Arbeitsverträge beim Finanzamt",
+                        "Lohn- und Gehaltsabrechnung",
+                        "Lohnbescheinigungen",
+                        "Melden der Arbeitsunfähigkeitsbescheinigungen beim Nationalen Sozialversicherungsinstitut",
+                        "Erstellung von Honorarverträgen / Dienstverträgen mit allen Zusatzleistungen",
+                        "Abwicklung des personalbedingten Zahlungsverkehrs",
+                        "Sozialversicherungsmeldungen",
+                        "Begleitung von Sozialversicherungsprüfungen"
+                    ]
+                },
+                yearEndReporting: {
+                    title: "Jahresabschluss",
+                    points: [
+                        "Erstellung von Steuererklärungen für natürliche und juristische Personen",
+                        "Erstellung von Jahresabschlüssen (Bilanz, Gewinn- und Verlustrechnung, Eigenkapitalrechnung, Geldflussrechnung, Anlagen usw.) für alle Rechtsformen",
+                        "Erstellung von statistischen Jahresberichten",
+                        "Abgabe der Steuererklärungen beim Finanzamt",
+                        "Abgabe der Jahresabschlüsse inkl. statistischen Jahresberichte beim Nationalen Statistischen Amt",
+                        "Offenlegung des Jahresabschlusses und Erstellung der offenlegungspflichtigen Unterlagen für das Handelsregister"
+                    ]
+                },
+                taxConsulting: {
+                    title: "Steuer- und Unternehmensberatung",
+                    points: [
+                        "Steuer- und Wirtschaftsberatung",
+                        "Beratung zur Wahl der Rechtsform aus steuerlicher Sicht",
+                        "Prognosen über die anstehende Steuerbelastung",
+                        "Gestaltungsberatung zur betriebswirtschaftlichen und steuerlichen Optimierung"
+                    ]
+                },
+                companyRegistration: {
+                    title: "Firmengründung in Bulgarien",
+                    points: [
+                        "Erstellung der Gründungsunterlagen in deutscher und bulgarischer Sprache",
+                        "Begleitung zum Notar",
+                        "Unterstützung bei der Eröffnung eines Kapitalkontos",
+                        "Unterstützung bei der Handelsregistereintragung",
+                        "Beantragung einer Umsatzsteuernummer (USt-IdNr.) in Bulgarien",
+                        "Vertretung vor Ämtern und Behörden (Arbeitsinspektion, Datenschutzbehörde usw.) in Bulgarien",
+                        "Auf Anfrage - andere administrative Dienstleitungen"
+                    ]
+                },
+                prices: {
+                    title: "Preise",
+                    intro: "Wir entwickeln individuell angepasste Lösungen für jeden Mandanten.",
+                    criteria: [
+                        "Art Ihrer Firmentätigkeit – Dienstleistungen, Handel, Produktion usw.",
+                        "Anzahl Buchungsbelege pro Monat",
+                        "Anzahl Mitarbeiter",
+                        "Zusätzliche Leistungen pro Monat"
+                    ],
+                    contact: "Senden Sie uns eine unverbindliche Anfrage und wir werden Ihnen gerne unser Angebot unterbreiten."
+                },
+                privacyPolicy: {
+                    title: "Datenschutzerklärung von aconto.org",
+                    sections: {
+                        general: [
+                            "Diese Datenschutzerklärung gilt nur für die Webseite aconto.org, Eigentum von Aconto Ltd., die gemäß der Datenschutz-Grundverordnung (EU) 2016/679 erstellt wurde.",
+                            "Als Verantwortlicher für die Datenverarbeitung halten wir bei der Verarbeitung personenbezogener Daten die Grundsätze des Schutzes personenbezogener Daten gemäß der Verordnung (EU) 2016/679 und den Rechtsvorschriften der Europäischen Union und der Republik Bulgarien ein.",
+                            "Durch die Nutzung dieser Seite stimmen Sie dieser Datenschutzerklärung zu."
+                        ],
+                        informationWeCollect: [
+                            "Wir erheben personenbezogene Daten nur, wenn Sie uns diese, wie Name, E-Mail-Adresse, Telefon über eine Anfrage übermittelt haben."
+                        ],
+                        purpose: [
+                            "Die erhobenen Informationen werden verwendet, damit wir Ihre Anfragen bearbeiten können und Sie als unsere Kunden zu kontaktieren.",
+                            "Die übermittelten personenbezogenen Daten werden rechtmäßig und nach Treu und Glauben verarbeitet und dürfen nicht in einer Weise verarbeitet werden, die diesen Zwecken widerspricht.",
+                            "Wir geben keine persönlichen Informationen an Dritte weiter.",
+                            "Wenn Sie mit der Nutzung Ihrer übermittelten personenbezogenen Daten nicht einverstanden sind, haben Sie das Recht, Ihre Zustimmung zu diesem Zweck zurückzuziehen, dazu ist es notwendig, uns unter Tel. +359 876 627 400 oder E-Mail: info@aconto.org zu kontaktieren."
+                        ],
+                        cookies: ["Wir verwenden keine Cookies."],
+                        revision: "Die aktuelle Datenschutzerklärung von http://aconto.org/ wurde am 22.05.2018 angenommen. Aconto Ltd. behält sich das Recht vor, diese entsprechend zu ändern."
+                    }
+                },
+                contact: {
+                    title: "Kontakt",
+                    name: "Aconto GmbH",
+                    address: "Svetlina Str. 11\nP. O. Box 226\n8800 Sliven / Bulgarien",
+                    phone: "+359 876 627 400",
+                    email: "info@aconto.org",
+                    website: "http://www.aconto.org"
+                },
+                company: "Aconto GmbH",
+                tagline: "Professionelle Buchhaltungsdienstleistungen",
+                copyright: "© 2025 Aconto GmbH. Alle Rechte vorbehalten",
+                cta: "Loslegen"
+            },
+            ru: {
+                home: {
+                    intro: `Бухгалтерская контора "Аконто" предоставляет комплексное бухгалтерское обслуживание и налоговую консультацию в Болгарии.
+
+        Предложенные нами услуги ориентированы на физических и юридических лиц, развивающие свою деятельность в Болгарии.
+
+        В своей работе мы соблюдаем принципы конфиденциальности, точности и честности. Мы всегда стремимся к индивидуальному подходу, персональному отношению и вниманию к каждой детали.
+
+        Для нас будет удовольствие предложить Вам наше профессиональное сотрудничество.`
+                },
+                services: {
+                    title: "Бухгалтерские услуги, оказываемые нашей фирмой \"Аконто\", включают:",
+                    list: [
+                        "Проведение полного бухгалтерского обслуживания",
+                        "Расчет заработной платы и кадровой службы",
+                        "Годовая бухгалтерская отчетность",
+                        "Бухгалтерские и налоговые консультации",
+                        "Регистрация фирм"
+                    ]
+                },
+                financialAccounting: {
+                    title: "Бухгалтерское обслуживание",
+                    points: [
+                        "Разработка индивидуальной сметы и учетной политики",
+                        "Текущие бухгалтерские проводки в соответствии с действующими нормами",
+                        "Составление месячной справки-декларации по налогу на добавленную стоимость (НДС), VIES декларация, Интрастат-декларации и предоставление их в налоговую службу",
+                        "Составление платежных документов для оплаты бюджета",
+                        "Ведение склада",
+                        "Планы амортизации для внеоборотных активов",
+                        "Представительство и защита при проведении проверок и ревизий государственными органами"
+                    ]
+                },
+                hrPayroll: {
+                    title: "Расчет заработной платы и кадровая служба",
+                    points: [
+                        "Составление и регистрация в НАП трудовых договоров, дополнительных соглашений и прекращение трудовых договоров",
+                        "Составление ведомостей по зарплате, рабочих удостоверений, заявлений по отпускам",
+                        "Регистрация больничных листов в НОИ",
+                        "Составление гражданских договоров, счета оплаченных сумм и рабочих удостоверений",
+                        "Составление платежных документов для оплаты бюджета",
+                        "Предоставление информации для социально застрахованных лиц в Персональном регистре",
+                        "Заполнение трудовых и страховых книжек, заверка социально-страхового стажа",
+                        "Представительство перед компетентными органами при ревизии и проверке"
+                    ]
+                },
+                yearEndReporting: {
+                    title: "Годовая бухгалтерская отчетность",
+                    points: [
+                        "Составление годовых налоговых деклараций по ЗКПО и ЗДДФЛ",
+                        "Составление годовых финансовых отчетов, включающие баланс, отчет о приходах и расходах, отчет для денежного потока, отчет для собственного капитала, отчет внеоборотных активов и другие отчеты согласно специфики деятельности",
+                        "Составление статистических справок",
+                        "Предоставление годовых налогов в НАП",
+                        "Предоставление годовых финансовых отчетов, включающие статистические справки в НСИ",
+                        "Составление необходимых документов для публикации ГФО в Торговом регистре"
+                    ]
+                },
+                taxConsulting: {
+                    title: "Бухгалтерские и налоговые консультации",
+                    points: [
+                        "Налоговые и бизнес консультации",
+                        "Консультации при выборе правовой формы",
+                        "Налоговое и страховое планирование и прогнозирование",
+                        "Оптимизация налогов в соответствии с законными распоряжениями"
+                    ]
+                },
+                companyRegistration: {
+                    title: "Регистрация фирм в Болгарии",
+                    points: [
+                        "Составление учредительных документов",
+                        "Сопровождение нотариуса",
+                        "Открытие расчетного счета в банке",
+                        "Сопровождение при подаче документов в Торговый регистр",
+                        "Регистрация по НДС",
+                        "Представление перед государственными органами и институциями",
+                        "По запросу другие административные услуги"
+                    ]
+                },
+                prices: {
+                    title: "Цены",
+                    intro: "Основные критерии, которые являются ведущими при определении цены",
+                    criteria: [
+                        "Вид фирменной деятельности - торговля, услуги, производство и др.",
+                        "Объем документооборота",
+                        "Количество служителей",
+                        "Дополнительно заявленные услуги"
+                    ],
+                    contact: "Если Вы хотите получить дополнительную информацию или коммерческое предложение, пожалуйста, свяжитесь с нами."
+                },
+                // no privacy policy provided
+                contact: {
+                    title: "Контакты",
+                    name: "«Аконто» ЕООД",
+                    address: "ул. Светлина № 11\nа/я 226\n8800 г. Сливен",
+                    phone: "+359 876 627 400",
+                    email: "info@aconto.org",
+                    website: "http://www.aconto.org"
+                },
+                company: "Аконто ЕООД.",
+                tagline: "Профессиональные бухгалтерские услуги",
+                copyright: "© 2025 Aconto Ltd. Все права защищены",
+                cta: "Начать"
+
+            },
+            bg: {
+                home: {
+                    intro: `"Аконто" ЕООД е счетоводна кантора със седалище в гр. Сливен.
+        Предоставяме счетоводни услуги и данъчни консултации на български и немски език.
+
+        Конфиденциалност, прецизност в работата, както и индивидуален подход към всеки клиент са основните принципи, които следваме в своята дейност.
+
+        За нас ще бъде удоволствие да Ви предложим нашето професионално сътрудничество.`
+                },
+                services: {
+                    title: "Счетоводна кантора \"Аконто\" предоставя следните услуги:",
+                    list: [
+                        "Счетоводно обслужване",
+                        "ТРЗ и личен състав",
+                        "Годишно счетоводно приключване и ГДД",
+                        "Счетоводни и данъчни консултации",
+                        "Регистрация на фирми"
+                    ]
+                },
+                financialAccounting: {
+                    title: "Счетоводно обслужване",
+                    points: [
+                        "Разработване на индивидуален сметкоплан и счетоводна политика",
+                        "Текущо осчетоводяване на документите в съответствие с действащите нормативни актове",
+                        "Изготвяне на месечна справка-декларация по ЗДДС, VIES декларация, Интрастат декларация и представянето им в НАП",
+                        "Изготвяне на платежни документи за разплащания с бюджета",
+                        "Водене на склад",
+                        "Амортизационни планове за дълготрайни активи",
+                        "Представителство и защита при провеждане на проверки и ревизии от държавните органи"
+                    ]
+                },
+                hrPayroll: {
+                    title: "ТРЗ и личен състав",
+                    points: [
+                        "Изготвяне и регистриране в НАП на трудови договори, допълнителни споразумения и заповеди за прекратяване на трудови договори",
+                        "Изготвяне на ведомости за заплати, служебни бележки, заповеди за отпуск",
+                        "Регистриране на болнични листове в НОИ",
+                        "Изготвяне на граждански договори, сметки за изплатени суми и служебни бележки",
+                        "Изготвяне на платежни документи за разплащания към бюджета",
+                        "Представяне на информация за осигурените лица в Персонален регистър",
+                        "Попълване на трудови и осигурителни книжки, заверка на осигурителен стаж",
+                        "Представителство пред компетентните органи при ревизии и проверки"
+                    ]
+                },
+                yearEndReporting: {
+                    title: "Годишно счетоводно приключване",
+                    points: [
+                        "Изготвяне на годишни данъчни декларации по ЗКПО и ЗДДФЛ",
+                        "Изготвяне на годишни финансови отчети включващи баланс, отчет за приходите и разходите, отчет за паричния поток, отчет за собствения капитал, отчет за дълготрайните активи и други според спецификата на дейността",
+                        "Изготвяне на статистически справки",
+                        "Представяне на годишните данъчни декларации в НАП",
+                        "Представяне на годишните финансови отчети вкл. статистическите справки в НСИ",
+                        "Изготвяне на необходимите документи за публикуване на ГФО в Търговския регистър"
+                    ]
+                },
+                taxConsulting: {
+                    title: "Счетоводни и данъчни консултации",
+                    points: [
+                        "Данъчно и бизнес консултиране",
+                        "Консултации при избор на правна форма",
+                        "Данъчно и осигурително планиране и прогнозиране",
+                        "Оптимизиране на данъците в съответствие със законовите разпоредби"
+                    ]
+                },
+                companyRegistration: {
+                    title: "Регистрация на фирми",
+                    points: [
+                        "Изготвяне на учредителните документи",
+                        "Съдействие при откриване на набирателна сметка",
+                        "Съдействие при подаване на документите в Търговския регистър",
+                        "Регистрация по ЗДДС",
+                        "Представителство пред държавни органи и институции",
+                        "По желание - други административни услуги"
+                    ]
+                },
+                prices: {
+                    title: "Цени",
+                    intro: "Прилагаме индивидуален подход към всеки клиент, като при формирането на цената за счетоводно обслужване съществена роля имат следните критерии",
+                    criteria: [
+                        "Вид на фирмената дейност - търговия, услуги, производство и т.н.",
+                        "Обем на документооборота",
+                        "Брой служители",
+                        "Допълнително заявени услуги"
+                    ],
+                    contact: "За допълнителна информация или конкретна оферта, моля свържете се с нас!"
+                },
+                privacyPolicy: {
+                    title: "Политика за поверителност на уеб страница aconto.org",
+                    sections: {
+                        general: [
+                            "Настоящата политика за поверителност се отнася единствено за уеб страницата aconto.org, която е собственост на “Аконто” ЕООД и е съставена в съответствие с Общия регламент относно защитата на данните (ЕС) 2016/679.",
+                            "Като администратор на лични данни, при обработването на лични данни, ние спазваме принципите за защита на личните данни, предвидени в Регламент 2016/679 и законодателството на Европейския съюз и Република България.",
+                            "Като използвате тази страница Вие се съгласявате с настоящата политика."
+                        ],
+                        informationWeCollect: [
+                            "Ние събираме лични данни, единствено ако са ни предоставени от Вас чрез отправено запитване – име, имейл адрес, телефон."
+                        ],
+                        purpose: [
+                            "Събраната информация се използва с цел да отговорим на изпратени от Вас запитвания и осъществяване на връзка с Вас, като наши клиенти.",
+                            "Предоставените лични данни се обработват законосъобразно и добросъвестно и не могат да се обработват допълнително по начин, несъвместим с тези цели.",
+                            "Ние не предоставяме информацията на трети страни.",
+                            "Ако не желаете да използваме предоставените от Вас лични данни, Вие имате право да оттеглите своето съгласие, като за целта е необходимо да се свържете с нас на тел. 0876 627400 или на e-mail: info@aconto.org."
+                        ],
+                        cookies: ["Ние не използваме бисквитки."],
+                        revision: "Настоящата политика за поверителност на http://aconto.org/ е приета на 22.05.2018г. “Аконто” ЕООД си запазва правото да прави промени в нея."
+                    }
+                },
+                contact: {
+                    title: "Контакти",
+                    name: `"Аконто" ЕООД`,
+                    address: "ул. Светлина № 11, п.к. 226\n8800 гр. Сливен",
+                    phone: "+359 876 627 400",
+                    email: "info@aconto.org",
+                    website: "http://www.aconto.org"
+                },
+                company: "Аконто EООД",
+                tagline: "Професионални счетоводни услуги",
+                copyright: "© 2025 Аконто ООД. Всички права запазени",
+                cta:"Начало"
+            }
+        };
+
+
+        // 2. Apply a language: store it and update all [data-i18n] elements
+        function setLanguage(lang) {
+            localStorage.setItem('lang', lang);
+            document.documentElement.lang = lang;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n'),
+                    val = key.split('.').reduce((o, k) => o?.[k], translations[lang] || translations.en);
+                if (Array.isArray(val)) {
+                    if (el.tagName === 'UL' || el.tagName === 'OL') {
+                        el.innerHTML = val.map(i => `<li>${i}</li>`).join('');
+                    } else {
+                        el.innerHTML = val.join('<br>');
+                    }
+                } else if (typeof val === 'string') {
+                    el.innerHTML = val.replace(/\n/g, '<br>');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('lang') || 'en';
+            setLanguage(saved);
+
+            // flags must be in the same order as this array:
+            const codes = [ 'de', 'en', 'ru', 'bg'];
+            document.querySelectorAll('nav svg').forEach((svg, i) => {
+                svg.addEventListener('click', () => setLanguage(codes[i]));
+            });
+        });
+    </script>
+
+</head>
 <body class="h-full text-base-content">
     <div id="root" class="min-h-screen bg-white">
-        <header id="header" class="fixed w-full bg-white border-b border-neutral-200 z-50">
-            <div class="container mx-auto px-4">
-                <div class="flex items-center justify-between h-16">
-                    <div class="flex items-center">
-                        <div class="text-2xl text-[#480020] ml-2" style="max-width:40% !important"><img src="/images/aconto_logo.gif" /></div>
+        <!-- HEADER -->
+        <header class="fixed w-full bg-white border-b border-neutral-200 z-50">
+            <div class="container mx-auto px-4 flex items-center justify-between h-16">
+                <img src="/images/aconto_logo.gif" alt="Aconto logo" class="h-10">
+
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#hero" class="cursor-pointer" data-i18n="nav.home">Home</a>
+                    <a href="#services" class="cursor-pointer" data-i18n="nav.services">Services</a>
+                    <a href="#prices" class="cursor-pointer" data-i18n="nav.prices">Prices</a>
+                    <a href="#contact" class="cursor-pointer" data-i18n="nav.contact">Contact Us</a>
+
+                    <div class="flex space-x-4 ml-4">
+                        <!-- replace each inline SVG with your BG flag -->
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" class="w-6 h-6 cursor-pointer hover:opacity-80">
+                            <path fill="#fc0" d="M0 320h640v160H0z" />
+                            <path fill="#000001" d="M0 0h640v160H0z" />
+                            <path fill="red" d="M0 160h640v160H0z" />
+                        </svg>
+
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" class="w-6 h-6 cursor-pointer hover:opacity-80">
+                            <path fill="#012169" d="M0 0h640v480H0z" />
+                            <path fill="#FFF" d="m75 0 244 181L562 0h78v62L400 241l240 178v61h-80L320 301 81 480H0v-60l239-178L0 64V0z" />
+                            <path fill="#C8102E" d="m424 281 216 159v40L369 281zm-184 20 6 35L54 480H0zM640 0v3L391 191l2-44L590 0zM0 0l239 176h-60L0 42z" />
+                            <path fill="#FFF" d="M241 0v480h160V0zM0 160v160h640V160z" />
+                            <path fill="#C8102E" d="M0 193v96h640v-96zM273 0v480h96V0z" />
+                        </svg>
+
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" class="w-6 h-6 cursor-pointer hover:opacity-80">
+                            <path fill="#fff" d="M0 0h640v160H0z" />
+                            <path fill="#0039a6" d="M0 160h640v160H0z" />
+                            <path fill="#d52b1e" d="M0 320h640v160H0z" />
+                        </svg>
+
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"
+                             class="w-6 h-6 cursor-pointer hover:opacity-80">
+                            <path fill="#fff" d="M0 0h640v160H0z" />
+                            <path fill="#00966e" d="M0 160h640v160H0z" />
+                            <path fill="#d62612" d="M0 320h640v160H0z" />
+                        </svg>
                     </div>
+                </nav>
 
-                    <nav class="hidden md:flex items-center space-x-8">
-                        <a href="#hero" class="text-[#480020] hover:text-neutral-900 cursor-pointer">Home</a>
-                        <a href="#services" class="text-[#480020] hover:text-neutral-900 cursor-pointer">Services</a>
-                        <a href="#prices" class="text-[#480020] hover:text-neutral-900 cursor-pointer">Prices</a>
-                        <a href="#contact" class="text-[#480020] hover:text-neutral-900 cursor-pointer">Contact Us</a>
-
-                        <div class="flex space-x-4 ml-4">
-                            <!-- replace each inline SVG with your BG flag -->
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" class="w-6 h-6 cursor-pointer hover:opacity-80">
-                                <path fill="#fc0" d="M0 320h640v160H0z" />
-                                <path fill="#000001" d="M0 0h640v160H0z" />
-                                <path fill="red" d="M0 160h640v160H0z" />
-                            </svg>
-
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" class="w-6 h-6 cursor-pointer hover:opacity-80">
-                                <path fill="#012169" d="M0 0h640v480H0z" />
-                                <path fill="#FFF" d="m75 0 244 181L562 0h78v62L400 241l240 178v61h-80L320 301 81 480H0v-60l239-178L0 64V0z" />
-                                <path fill="#C8102E" d="m424 281 216 159v40L369 281zm-184 20 6 35L54 480H0zM640 0v3L391 191l2-44L590 0zM0 0l239 176h-60L0 42z" />
-                                <path fill="#FFF" d="M241 0v480h160V0zM0 160v160h640V160z" />
-                                <path fill="#C8102E" d="M0 193v96h640v-96zM273 0v480h96V0z" />
-                            </svg>
-
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" class="w-6 h-6 cursor-pointer hover:opacity-80">
-                                <path fill="#fff" d="M0 0h640v160H0z" />
-                                <path fill="#0039a6" d="M0 160h640v160H0z" />
-                                <path fill="#d52b1e" d="M0 320h640v160H0z" />
-                            </svg>
-
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480"
-                                 class="w-6 h-6 cursor-pointer hover:opacity-80">
-                                <path fill="#fff" d="M0 0h640v160H0z" />
-                                <path fill="#00966e" d="M0 160h640v160H0z" />
-                                <path fill="#d62612" d="M0 320h640v160H0z" />
-                            </svg>
-                        </div>
-                    </nav>
-
-
-
-
-                    <button class="md:hidden text-[#480020]">
-                        <i class="fa-solid fa-bars text-xl"></i>
-                    </button>
-                </div>
+                <button class="md:hidden text-[#480020]">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
             </div>
         </header>
-
+        <!-- HERO -->
         <section id="hero" class="pt-16 h-[800px] flex items-center bg-neutral-50">
-            <div class="container mx-auto px-4">
-                <div class="grid md:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <h1 class="text-5xl mb-6 text-[#480020]">Professional Accounting Services in Bulgaria</h1>
-
-                        <!-- original text added below -->
-                        <div class="space-y-4 text-lg text-neutral-600 mb-8">
-                            <p>Aconto Ltd. is an accounting and tax consulting company in Bulgaria.</p>
-                            <p>Our range of services includes accounting and tax advice according to Bulgarian law for individuals and legal entities.</p>
-                            <p>In our work, we operate with the highest level of honesty, confidentiality and accuracy, as well as customized solutions for every client.</p>
-                            <p>We will be pleased to offer you our professional service and experience.</p>
-                        </div>
-
-                        <div class="flex space-x-4">
-                            <a href="#services"
-                               class="inline-block bg-[#480020] text-white px-6 py-3 rounded-lg hover:bg-neutral-800">
-                                Get Started
-                            </a>
-                        
-                        </div>
+            <div class="container mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h1 data-i18n="tagline" class="text-5xl mb-6 text-[#480020]">
+                        Professional Accounting Services
+                    </h1>
+                    <div class="space-y-4 text-lg text-neutral-600 mb-8"
+                         data-i18n="home.intro">
+                        <!-- will be filled from translations.home.intro -->
                     </div>
-                    <div class="bg-neutral-300 h-[400px] rounded-xl flex items-center justify-center">
-                        <span class="text-white text-lg">Professional Accounting Image</span>
-                    </div>
+                    <a href="#contact"
+                       class="inline-block bg-[#480020] text-white px-6 py-3 rounded-lg hover:bg-neutral-800" data-i18n="cta">
+                        Get Started
+                    </a>
+                </div>
+                <div class="bg-neutral-300 h-[400px] rounded-xl flex items-center justify-center">
+                    <img src="~/images/acc.jpg" />
                 </div>
             </div>
         </section>
 
-
+        <!-- SERVICES -->
         <section id="services" class="py-20">
             <div class="container mx-auto px-4">
-                <h2 class="text-3xl text-center mb-12 text-[#480020]">Our Services</h2>
-                <div class="grid md:grid-cols-3 gap-8">
+                <h2 class="text-3xl text-center mb-12 text-[#480020]"
+                    data-i18n="services.title">
+                    <!-- will be filled from translations.services.title -->
+                </h2>
+          @*       <ul class="max-w-md mx-auto list-disc list-inside space-y-2 text-neutral-600"
+                    data-i18n="services.list">
+                    <!-- will be filled from translations.services.list -->
+                </ul> *@
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
                     <!-- Financial Accounting -->
                     <div class="p-6 border rounded-xl">
-                        <i class="fa-solid fa-calculator text-3xl mb-4 text-[#480020]"></i>
-                        <h3 class="text-xl mb-3">Financial Accounting</h3>
-                        <ul class="list-disc list-inside text-neutral-600 text-sm space-y-1">
-                            <li>Account assignment of documents in accordance with the legal provisions;</li>
-                            <li>Preparing and submitting monthly VAT returns to the Bulgarian National Revenue Agency;</li>
-                            <li>Preparing and submitting Intrastat returns;</li>
-                            <li>Preparation of payment orders;</li>
-                            <li>Inventory accounting;</li>
-                            <li>Fixed asset accounting;</li>
-                            <li>Representation in tax procedures before tax authorities.</li>
+                        <h3 class="text-xl mb-3"
+                            data-i18n="financialAccounting.title">
+                            <!-- translations.financialAccounting.title -->
+                        </h3>
+                        <ul class="list-disc list-inside space-y-1 text-neutral-600"
+                            data-i18n="financialAccounting.points">
+                            <!-- translations.financialAccounting.points -->
+                        </ul>
+                    </div>
+                    <!-- HR & Payroll -->
+                    <div class="p-6 border rounded-xl">
+                        <h3 class="text-xl mb-3"
+                            data-i18n="hrPayroll.title">
+                        </h3>
+                        <ul class="list-disc list-inside space-y-1 text-neutral-600"
+                            data-i18n="hrPayroll.points">
                         </ul>
                     </div>
 
-                    <!-- Company Registration in Bulgaria -->
+                    <!-- Year‐end Reporting -->
                     <div class="p-6 border rounded-xl">
-                        <i class="fa-solid fa-building text-3xl mb-4 text-[#480020]"></i>
-                        <h3 class="text-xl mb-3">Company Registration</h3>
-                        <ul class="list-disc list-inside text-neutral-600 text-sm space-y-1">
-                            <li>Preparation of the foundation documents;</li>
-                            <li>Accompaniment to the notary;</li>
-                            <li>Opening capital bank account;</li>
-                            <li>Support in the registration process;</li>
-                            <li>VAT registration in Bulgaria;</li>
-                            <li>Representation before authorities;</li>
-                            <li>Other administrative services on request.</li>
-                        </ul>
-                    </div>
-
-                    <!-- Tax & Management Consulting -->
-                    <div class="p-6 border rounded-xl">
-                        <i class="fa-solid fa-chart-line text-3xl mb-4 text-[#480020]"></i>
-                        <h3 class="text-xl mb-3">Tax & Management Consulting</h3>
-                        <ul class="list-disc list-inside text-neutral-600 text-sm space-y-1">
-                            <li>Tax and economic consulting;</li>
-                            <li>Advice on the choice of legal form;</li>
-                            <li>Tax and insurance planning and forecasting;</li>
-                            <li>Consulting for business and tax optimization.</li>
+                        <h3 class="text-xl mb-3"
+                            data-i18n="yearEndReporting.title">
+                        </h3>
+                        <ul class="list-disc list-inside space-y-1 text-neutral-600"
+                            data-i18n="yearEndReporting.points">
                         </ul>
                     </div>
                     </div>
                     <br/>
-                    <div class="grid md:grid-cols-2 gap-8">
-               
-
-                    <!-- Year-End Closing & Reporting -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-2 gap-8 mt-12">
+                    <!-- Company Registration -->
                     <div class="p-6 border rounded-xl">
-                        <i class="fa-solid fa-file-invoice text-3xl mb-4 text-[#480020]"></i>
-                        <h3 class="text-xl mb-3">Year-End Closing & Reporting</h3>
-                        <ul class="list-disc list-inside text-neutral-600 text-sm space-y-1">
-                            <li>Preparation of tax returns for natural persons and legal entities;</li>
-                            <li>Preparation of annual financial statements (balance sheet, income statement, etc.);</li>
-                            <li>Preparation of statistical reports;</li>
-                            <li>Submitting of annual tax returns to National Revenue Agency;</li>
-                            <li>Submitting of annual financial reports to National Statistical Institute;</li>
-                            <li>Disclosure of the annual financial statements at the Bulgarian Commercial Register.</li>
+                        <h3 class="text-xl mb-3"
+                            data-i18n="companyRegistration.title">
+                        </h3>
+                        <ul class="list-disc list-inside space-y-1 text-neutral-600"
+                            data-i18n="companyRegistration.points">
                         </ul>
                     </div>
-
-
-                    <!-- HR & Payroll Services -->
+                    <!-- Tax Consulting -->
                     <div class="p-6 border rounded-xl">
-                        <i class="fa-solid fa-users text-3xl mb-4 text-[#480020]"></i>
-                        <h3 class="text-xl mb-3">HR & Payroll Services</h3>
-                        <ul class="list-disc list-inside text-neutral-600 text-sm space-y-1">
-                            <li>Preparation of employment contracts;</li>
-                            <li>Registration and deregistration of employment contracts at NRA;</li>
-                            <li>Payroll calculation;</li>
-                            <li>Creation of wage and tax statements;</li>
-                            <li>Documenting and submitting sick leaves to National Social Security Institute;</li>
-                            <li>Preparation of civil contracts;</li>
-                            <li>Drawing up payment orders for salaries and obligatory payments;</li>
-                            <li>Social security reports;</li>
-                            <li>Representation in audits.</li>
+                        <h3 class="text-xl mb-3"
+                            data-i18n="taxConsulting.title">
+                        </h3>
+                        <ul class="list-disc list-inside space-y-1 text-neutral-600"
+                            data-i18n="taxConsulting.points">
                         </ul>
                     </div>
+                   
+
                 </div>
             </div>
         </section>
-
 
         <section id="prices" class="py-20 bg-neutral-50">
-            <div class="container mx-auto px-4 text-neutral-600">
-                <h2 class="text-3xl text-center mb-8 text-[#480020]">Transparent Pricing</h2>
-
-                <div class="max-w-2xl mx-auto space-y-6 text-lg">
-                    <p>We offer customized solutions for every client.</p>
-
-                    <div class="space-y-2">
-                        <p>The following criteria are essential for price determination:</p>
-                        <ul class="list-disc list-inside space-y-1">
-                            <li>Type of company activity ― trade, services, production, etc.</li>
-                            <li>Volume of document turnover</li>
-                            <li>Number of employees</li>
-                            <li>Additional services</li>
-                        </ul>
-                    </div>
-
-                    <p>For any further information or a specific offer, please do not hesitate to <a href="#contact" class="underline text-[#480020]">contact us</a>.</p>
-                </div>
+            <div class="container mx-auto px-4 flex flex-col items-center text-center text-neutral-600">
+                <h2 class="text-3xl mb-8 text-[#480020]"
+                    data-i18n="prices.title">
+                    Transparent Pricing
+                </h2>
+                <p class="mb-4 max-w-xl" data-i18n="prices.intro"></p>
+                <ul class="list-disc list-inside mb-4 space-y-1 max-w-md"
+                    data-i18n="prices.criteria"></ul>
+                <p class="max-w-xl" data-i18n="prices.contact"></p>
             </div>
         </section>
 
+
+        <!-- CONTACT -->
         <section id="contact" class="py-20 bg-neutral-50">
-            <div class="container mx-auto px-4 text-neutral-600">
-                <h2 class="text-3xl text-center mb-8 text-[#480020]">Get in Touch</h2>
-
-                <div class="max-w-2xl mx-auto space-y-6 text-lg">
-                    <p>Aconto Ltd.</p>
-                    <p>Svetlina Str. 11</p>
-                    <p>P.O. Box 226</p>
-                    <p>8800 Sliven / Bulgaria</p>
-                    <p>Phone: +359 876 627 400</p>
-                    <p>
-                        E-mail:
-                        <a href="mailto:info@aconto.org" class="underline text-[#480020]">
-                            info@aconto.org
-                        </a>
-                    </p>
-                    <p>
-                        <a href="http://www.aconto.org"
-                           target="_blank"
-                           rel="noopener"
-                           class="underline text-[#480020]">
-                            www.aconto.org
-                        </a>
-                    </p>
-                </div>
+            <div class="container mx-auto px-4 flex flex-col items-center text-center text-neutral-600">
+                <h2 class="text-3xl mb-8 text-[#480020]"
+                    data-i18n="contact.title">
+                    Contact
+                </h2>
+                <p data-i18n="contact.name"></p>
+                <p data-i18n="contact.address"></p>
+                <p>
+                    <span>Phone:</span>
+                    <a href="tel:+359876627400" class="underline" data-i18n="contact.phone"></a>
+                </p>
+                <p>
+                    <span>E-mail:</span>
+                    <a href="mailto:info@aconto.org" class="underline" data-i18n="contact.email"></a>
+                </p>
+                <p>
+                    <a href="http://www.aconto.org" target="_blank" rel="noopener"
+                       class="underline" data-i18n="contact.website"></a>
+                </p>
             </div>
         </section>
 
-
-
-        <footer id="footer" class="bg-[#480020] text-white py-12">
-            <div class="container mx-auto px-4">
-                <div class="grid md:grid-cols-4 gap-8">
-                    <div>
-                        <h3 class="text-xl mb-4">Aconto Ltd.</h3>
-                        <p class="text-neutral-400">Professional accounting services in Bulgaria</p>
-                    </div>
-                    <div>
-                        <h4 class="mb-4">Services</h4>
-                        <ul class="space-y-2 text-neutral-400">
-                            <li>Financial Accounting</li>
-                            <li>HR & Payroll</li>
-                            <li>Tax Advisory</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="mb-4">Company</h4>
-                        <ul class="space-y-2 text-neutral-400">
-                            <li>About Us</li>
-                            <li>Careers</li>
-                            <li>Contact</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="mb-4">Follow Us</h4>
-                        <div class="flex space-x-4">
-                            <i class="fa-brands fa-linkedin text-xl"></i>
-                            <i class="fa-brands fa-facebook text-xl"></i>
-                            <i class="fa-brands fa-twitter text-xl"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="border-t border-neutral-800 mt-8 pt-8 text-center text-neutral-400">
-                    <p>&copy; 2025 Aconto Ltd. All rights reserved.</p>
+        <footer class="bg-[#480020] text-white py-12">
+          
+            <!-- Updated bottom bar -->
+            <div class="border-t border-neutral-800 mt-8 pt-8">
+                <div class="container mx-auto px-4 flex items-center justify-between text-neutral-400">
+                    <h3 class="text-lg font-semibold" data-i18n="company"></h3>
+                    <p data-i18n="copyright" class="text-center"></p>
+                    <p class="text-neutral-400" data-i18n="tagline"></p>
                 </div>
             </div>
         </footer>

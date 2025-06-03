@@ -1,4 +1,5 @@
 ﻿
+using Ivone.dev.Data.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace ivone.dev.Data.Contexts
@@ -9,6 +10,8 @@ namespace ivone.dev.Data.Contexts
         {
         }
 
+
+        public DbSet<RegionStat> RegionStats { get; set; }
         public DbSet<MortgageScenario> MortgageScenarios { get; set; }
         public DbSet<User> Users { get; set; }
 
