@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transactions • Budget Tracker</title>
+
+  <!-- Tailwind via CDN (swap to bundling if you use strict CSP) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Mobile-friendly, sticky new-transaction card */
+    .sticky-card { position: sticky; top: 0; z-index: 30; }
+    @media (min-width: 768px) {
+      .sticky-card { top: 0.5rem; }
+    }
+    /* Simple toast */
+    #toast { transition: opacity .2s ease, transform .2s ease; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <header class="p-4 md:p-6 border-b bg-white">
+    <div class="max-w-5xl mx-auto flex items-center gap-3">
+      <div class="rounded-xl bg-slate-900 text-white w-9 h-9 grid place-items-center font-bold">₿</div>
+      <div>
+        <h1 class="text-lg md:text-xl font-semibold">Budget Tracker</h1>
+        <p class="text-xs md:text-sm text-slate-500">Fast entry • Smart categories • Mobile first</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-4 md:p-6">
+    <!-- Tabs -->
+    <div class="mb-4 md:mb-6">
+      <nav class="flex gap-1 text-sm">
+        <button class="px-3 py-2 rounded-lg bg-slate-900 text-white" data-tab="transactions">Transactions</button>
+        <button class="px-3 py-2 rounded-lg hover:bg-slate-200" data-tab="budget">Budget</button>
+        <button class="px-3 py-2 rounded-lg hover:bg-slate-200" data-tab="reports">Reports</button>
+        <button class="px-3 py-2 rounded-lg hover:bg-slate-200" data-tab="accounts">Accounts</button>
+      </nav>
+    </div>
+
+    <!-- New Transaction (front and center) -->
+    <section class="sticky-card">
+      <div class="bg-white rounded-2xl shadow p-4 md:p-6 border">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base md:text-lg font-semibold">New Transaction</h2>
+          <span class="text-xs text-slate-500">Press Enter in Amount to submit</span>
+        </div>
+
+        <form id="txn-form" class="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4" autocomplete="off">
+          <!-- Type -->
+          <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="type">Type</label>
+            <select id="type" name="type" class="w-full rounded-xl border-slate-300" required>
+              <option value="Expense">Expense</option>
+              <option value="Income">Income</option>
+              <option value="Transfer">Transfer</option>
+            </select>
+          </div>
+
+          <!-- Date -->
+          <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="date">Date</label>
+            <input id="date" name="date" type="date" class="w-full rounded-xl border-slate-300" required />
+          </div>
+
+          <!-- Amount -->
+          <div class="md:col-span-2">
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="amount">Amount</label>
+            <input id="amount" name="amount" type="number" step="0.01" inputmode="decimal"
+                   class="w-full rounded-xl border-slate-300 text-right font-semibold"
+                   placeholder="0.00" required />
+          </div>
+
+          <!-- Category -->
+          <div class="md:col-span-3">
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="category">Category</label>
+            <select id="category" name="category" class="w-full rounded-xl border-slate-300" required></select>
+          </div>
+
+          <!-- Account -->
+          <div class="md:col-span-3">
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="account">Account</label>
+            <select id="account" name="account" class="w-full rounded-xl border-slate-300" required></select>
+          </div>
+
+          <!-- Description -->
+          <div class="md:col-span-4">
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="description">Description</label>
+            <input id="description" name="description" type="text" class="w-full rounded-xl border-slate-300"
+                   placeholder="e.g., Groceries at Market" />
+          </div>
+
+          <!-- Vendor -->
+          <div class="md:col-span-4">
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="vendor">Vendor (optional)</label>
+            <input id="vendor" name="vendor" type="text" class="w-full rounded-xl border-slate-300"
+                   placeholder="Merchant or payee" />
+          </div>
+
+          <!-- Tags -->
+          <div class="md:col-span-4">
+            <label class="block text-xs font-medium text-slate-600 mb-1" for="tags">Tags (comma-separated)</label>
+            <input id="tags" name="tags" type="text" class="w-full rounded-xl border-slate-300"
+                   placeholder="e.g., family, recurring" />
+          </div>
+
+          <div class="md:col-span-12 flex items-center gap-2">
+            <button id="submit-btn" type="submit"
+                    class="rounded-xl bg-slate-900 text-white px-4 py-2 font-medium hover:opacity-90">
+              Save Transaction
+            </button>
+            <button type="button" id="reset-btn"
+                    class="rounded-xl bg-slate-200 px-3 py-2 text-slate-700 hover:bg-slate-300">
+              Reset
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Transactions List -->
+    <section id="tab-transactions" class="mt-6">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-base md:text-lg font-semibold">Recent Transactions</h3>
+        <div class="text-xs text-slate-500" id="recent-range"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow border overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-slate-100 text-slate-600">
+            <tr>
+              <th class="text-left p-3">Date</th>
+              <th class="text-left p-3">Description</th>
+              <th class="text-left p-3">Category</th>
+              <th class="text-right p-3">Amount</th>
+              <th class="text-left p-3">Type</th>
+              <th class="text-left p-3">Account</th>
+              <th class="text-left p-3">Tags</th>
+            </tr>
+          </thead>
+          <tbody id="txn-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Placeholder tabs -->
+    <section id="tab-budget" class="mt-6 hidden">
+      <div class="bg-white rounded-2xl shadow p-4 border text-sm">
+        Hook this tab to your existing *Budget* and *YTD Budget vs Actual* logic.
+      </div>
+    </section>
+
+    <section id="tab-reports" class="mt-6 hidden">
+      <div class="bg-white rounded-2xl shadow p-4 border text-sm">
+        Summaries can mirror *Expense Overview*, *Monthly Breakdown*, and *Budget vs Actual*.
+      </div>
+    </section>
+
+    <section id="tab-accounts" class="mt-6 hidden">
+      <div class="bg-white rounded-2xl shadow p-4 border text-sm">
+        Manage accounts (from *One-time Setup* → Accounts). Currently shows “Checking”.
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast"
+       class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm rounded-xl px-4 py-2 shadow opacity-0 pointer-events-none">
+    Saved!
+  </div>
+
+  <script>
+    // ======= CONFIG (adjust endpoints for your API) =======
+    const ENDPOINTS = {
+      create: '/api/transactions',                // POST
+      list:   '/api/transactions?limit=50'        // GET
+    };
+
+    // ======= LOOKUPS (extracted from your workbook) =======
+    // Category → { group, type }
+    const CATEGORY_MAP = {
+      "Housing":{"group":"Fixed","type":"Expense"},
+      "Grocery":{"group":"Fixed","type":"Expense"},
+      "Take-out/Going out":{"group":"Fixed","type":"Expense"},
+      "Utilities":{"group":"Fixed","type":"Expense"},
+      "Subscriptions":{"group":"Fixed","type":"Expense"},
+      "Transportation":{"group":"Fixed","type":"Expense"},
+      "Household":{"group":"Fixed","type":"Expense"},
+      "Clothing":{"group":"Discretionary","type":"Expense"},
+      "Self Care":{"group":"Discretionary","type":"Expense"},
+      "Travel, Entertainment":{"group":"Discretionary","type":"Expense"},
+      "Big Purchases":{"group":"Discretionary","type":"Expense"},
+      "Paycheck":{"group":"Active Income","type":"Income"},
+      "Transfer":{"group":"Transfer","type":"Transfer"}
+    };
+
+    const EXPENSE_CATEGORIES = [
+      "Big Purchases","Clothing","Grocery","Household","Housing","Self Care",
+      "Subscriptions","Take-out/Going out","Transportation","Travel, Entertainment","Utilities"
+    ];
+
+    const INCOME_CATEGORIES = ["Paycheck"];
+
+    const ACCOUNTS = ["Checking"]; // from One-time Setup (expand as you add more)
+
+    // ======= UTILITIES =======
+    const $$ = (q, el = document) => el.querySelector(q);
+    const $$$ = (q, el = document) => Array.from(el.querySelectorAll(q));
+
+    const fmtMoney = n => {
+      if (typeof n !== 'number') n = parseFloat(n);
+      return (n < 0 ? '-' : '') + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    const toISODate = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0, 10);
+    const monthStart = d => new Date(d.getFullYear(), d.getMonth(), 1);
+
+    // ======= INIT =======
+    (function init() {
+      // default to today's date
+      const today = new Date();
+      $('#date').value = toISODate(today);
+      // focus the description first so you can type immediately
+      $('#description').focus();
+
+      // build category dropdown (with groups)
+      buildCategorySelect();
+      // accounts
+      buildAccountSelect();
+
+      // wire up events
+      $('#category').addEventListener('change', syncTypeFromCategory);
+      $('#type').addEventListener('change', ensureAmountSignHint);
+      $('#txn-form').addEventListener('submit', onSubmit);
+      $('#reset-btn').addEventListener('click', resetForm);
+      $$$('nav [data-tab]').forEach(btn => btn.addEventListener('click', switchTab));
+
+      // load recent
+      loadRecent();
+    })();
+
+    function $(id){ return document.getElementById(id); }
+
+    function buildCategorySelect() {
+      const el = $('#category');
+      el.innerHTML = '';
+      const opt = (v,t)=>{ const o=document.createElement('option'); o.value=v; o.textContent=t||v; return o; };
+      // For Expense
+      const gExpense = document.createElement('optgroup');
+      gExpense.label = 'Expenses';
+      EXPENSE_CATEGORIES.slice().sort().forEach(c => gExpense.appendChild(opt(c)));
+      // For Income
+      const gIncome = document.createElement('optgroup');
+      gIncome.label = 'Income';
+      INCOME_CATEGORIES.slice().sort().forEach(c => gIncome.appendChild(opt(c)));
+      // Transfer
+      const gOther = document.createElement('optgroup');
+      gOther.label = 'Other';
+      gOther.appendChild(opt('Transfer'));
+      el.appendChild(gExpense); el.appendChild(gIncome); el.appendChild(gOther);
+      // Default selection
+      el.value = 'Grocery';
+      syncTypeFromCategory();
+    }
+
+    function buildAccountSelect() {
+      const el = $('#account');
+      el.innerHTML = '';
+      ACCOUNTS.forEach(a => {
+        const o = document.createElement('option'); o.value = a; o.textContent = a; el.appendChild(o);
+      });
+      el.value = 'Checking';
+    }
+
+    function syncTypeFromCategory() {
+      const category = $('#category').value;
+      const meta = CATEGORY_MAP[category];
+      if (meta && meta.type) {
+        $('#type').value = meta.type;
+      }
+      ensureAmountSignHint();
+    }
+
+    function ensureAmountSignHint() {
+      const type = $('#type').value;
+      const amt = $('#amount');
+      amt.placeholder = (type === 'Expense') ? 'e.g., 28.00 (will save as -28)' :
+                        (type === 'Income')  ? 'e.g., 7000.00' :
+                        'e.g., 200.00';
+    }
+
+    async function onSubmit(e) {
+      e.preventDefault();
+      const btn = $('#submit-btn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+
+      // Gather form data
+      const type = $('#type').value;
+      const date = $('#date').value;
+      const description = $('#description').value.trim();
+      const category = $('#category').value;
+      const account = $('#account').value;
+      const vendor = $('#vendor').value.trim() || null;
+      const tags = $('#tags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+      let amount = parseFloat($('#amount').value);
+      if (!isFinite(amount)) { amount = 0; }
+      // Ensure sign convention: expenses negative, income positive
+      if (type === 'Expense' && amount > 0) amount = -amount;
+      if (type === 'Income' && amount < 0) amount = Math.abs(amount);
+
+      const catMeta = CATEGORY_MAP[category] || {};
+      const jsDate = new Date(date + 'T00:00:00');
+      const month = toISODate(monthStart(jsDate));
+      const quarterStart = (() => {
+        const q = Math.floor(jsDate.getMonth() / 3) * 3;
+        return toISODate(new Date(jsDate.getFullYear(), q, 1));
+      })();
+
+      const payload = {
+        date,                       // "YYYY-MM-DD"
+        description,
+        category,
+        amount,                     // negative for expenses
+        account,
+        vendor,
+        tags,                       // array of strings
+        type,                       // Expense | Income | Transfer
+        group: catMeta.group || null,
+        month,                      // derived (month start)
+        quarter: quarterStart,
+        positiveAmount: Math.abs(amount)
+      };
+
+      try {
+        const res = await fetch(ENDPOINTS.create, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+            // If you use antiforgery: 'RequestVerificationToken': token
+          },
+          body: JSON.stringify(payload),
+          credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('Failed to save. ' + res.status);
+        const created = await res.json().catch(() => payload);
+
+        showToast('Saved!');
+        prependTxn(created);
+        resetForm(true);
+      } catch (err) {
+        console.error(err);
+        showToast('Save failed', true);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Save Transaction';
+      }
+    }
+
+    function resetForm(keepDate=false) {
+      if (!keepDate) $('#date').value = toISODate(new Date());
+      $('#type').value = 'Expense';
+      $('#amount').value = '';
+      $('#category').value = 'Grocery';
+      $('#account').value = ACCOUNTS[0] || '';
+      $('#description').value = '';
+      $('#vendor').value = '';
+      $('#tags').value = '';
+      $('#description').focus();
+      ensureAmountSignHint();
+    }
+
+    async function loadRecent() {
+      try {
+        const res = await fetch(ENDPOINTS.list, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('Failed to load transactions');
+        const data = await res.json();
+        renderRecent(data || []);
+      } catch (e) {
+        console.warn('Using empty transaction list as fallback.');
+        renderRecent([]);
+      }
+    }
+
+    function renderRecent(items) {
+      const tbody = $('#txn-tbody');
+      tbody.innerHTML = '';
+      const rows = (items || []).map(toRow).join('');
+      tbody.innerHTML = rows;
+      // range helper
+      if (items && items.length) {
+        const dates = items.map(x => new Date(x.date));
+        const min = new Date(Math.min.apply(null, dates));
+        const max = new Date(Math.max.apply(null, dates));
+        $('#recent-range').textContent = toISODate(min) + ' → ' + toISODate(max);
+      } else {
+        $('#recent-range').textContent = '';
+      }
+    }
+
+    function prependTxn(txn) {
+      const tbody = $('#txn-tbody');
+      const tr = document.createElement('tr');
+      tr.innerHTML = toRow(txn);
+      tbody.prepend(tr.firstElementChild || tr);
+    }
+
+    function toRow(x) {
+      const date = x.date || '';
+      const desc = x.description || '';
+      const cat = x.category || '';
+      const type = x.type || (CATEGORY_MAP[cat]?.type ?? '');
+      const acct = x.account || '';
+      const tagStr = Array.isArray(x.tags) ? x.tags.join(', ') : (x.tags || '');
+      const amt = typeof x.amount === 'number' ? x.amount : parseFloat(x.amount || 0);
+
+      const amtClass = amt < 0 ? 'text-red-600' : 'text-emerald-600';
+      return `
+        <tr class="border-t last:border-b">
+          <td class="p-3 whitespace-nowrap">${date}</td>
+          <td class="p-3">${escapeHtml(desc)}</td>
+          <td class="p-3">${escapeHtml(cat)}</td>
+          <td class="p-3 text-right font-medium ${amtClass}">${fmtMoney(amt)}</td>
+          <td class="p-3">${escapeHtml(type)}</td>
+          <td class="p-3">${escapeHtml(acct)}</td>
+          <td class="p-3">${escapeHtml(tagStr)}</td>
+        </tr>
+      `;
+    }
+
+    function showToast(msg, isError=false) {
+      const el = $('#toast');
+      el.textContent = msg;
+      el.classList.toggle('bg-red-600', !!isError);
+      el.classList.toggle('bg-slate-900', !isError);
+      el.style.opacity = '1';
+      el.style.transform = 'translate(-50%, 0)';
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.transform = 'translate(-50%, 8px)';
+      }, 1600);
+    }
+
+    function escapeHtml(s) {
+      return (s ?? '').toString()
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#039;');
+    }
+
+    // Simple tab switcher (Transactions default)
+    function switchTab(e) {
+      const to = e.currentTarget.getAttribute('data-tab');
+      $$$('[id^="tab-"]').forEach(sec => sec.classList.add('hidden'));
+      $$$('nav [data-tab]').forEach(btn => btn.classList.remove('bg-slate-900','text-white'));
+      e.currentTarget.classList.add('bg-slate-900','text-white');
+      $('#tab-' + to).classList.remove('hidden');
+      if (to === 'transactions') $('#description').focus();
+    }
+  </script>
+</body>
+</html>
