@@ -1,82 +1,70 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Ivone.dev</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Ivone.dev.styles.css" asp-append-version="true" />
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6479977081378145"
-            crossorigin="anonymous"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(string.IsNullOrWhiteSpace(ViewData["Title"] as string) ? "Ivone.dev - Mobile Lab" : $"{ViewData["Title"]} - Ivone.dev")</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: linear-gradient(160deg, #0f172a, #1e1b4b 40%, #312e81);
+            --surface: rgba(15, 23, 42, 0.75);
+            --text: #f8fafc;
+            --text-muted: rgba(248, 250, 252, 0.75);
+            --accent: #7c3aed;
+            --accent-soft: rgba(124, 58, 237, 0.15);
+        }
 
-    @* Render the Styles section if it's defined *@
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 1.25rem;
+            gap: 1rem;
+        }
+
+        .app-footer {
+            display: none;
+        }
+
+        @@media (min-width: 640px) {
+            body {
+                padding: 1.5rem 0;
+            }
+        }
+    </style>
     @RenderSection("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">Ivone.dev</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
-                        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="https://gtaguessr.com/">gtaguessr.com</a>
-                        </li>
-                    
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Mortgage">Mortgage Calculator</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Timeline">Timeline</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" href="https://uk-test.co.uk/">Life In the UK test app</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Aconto">Aconto</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/MealPrep">Meal Prep</a>
-                        </li>
-
-                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/SofiaProps">Sofia Property Analysis</a>
-                        </li>
-
-                     <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Budget">Budget Tracker</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+    <div class="app-shell">
+        <main role="main" class="app-main" style="background: rgba(15,23,42,0.8); border-radius: 1.5rem; padding: 1.25rem 1.25rem 0; flex: 1;">
             @RenderBody()
         </main>
+
+        <footer class="app-footer">
+            &copy; @DateTime.UtcNow.Year
+        </footer>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - Ivone.dev - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
-
-    <link rel="stylesheet" href="~/react-app/index.css" />
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
-    @* Render the Scripts section if it's defined *@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace Ivone.dev.Pages
 {
 
-    public class IndexModel : PageModel
+    public class OGIndexBackupModel : PageModel
     {
         private readonly IMortgageScenarioService _mortgageScenarioService;
-        private readonly ILogger<IndexModel> _logger;
+        private readonly ILogger<OGIndexBackupModel> _logger;
 
-        public IndexModel(ILogger<IndexModel> logger, IMortgageScenarioService mortgageScenarioService)
+        public OGIndexBackupModel(ILogger<OGIndexBackupModel> logger, IMortgageScenarioService mortgageScenarioService)
         {
             _logger = logger;
             _mortgageScenarioService = mortgageScenarioService;
