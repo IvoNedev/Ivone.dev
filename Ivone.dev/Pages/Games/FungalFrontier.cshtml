@@ -1,0 +1,89 @@
+@page "/games/fungal-frontier"
+@model Ivone.dev.Pages.Games.FungalFrontierModel
+@{
+    ViewData["Title"] = "Fungal Frontier";
+}
+
+<section class="game-hero">
+    <div>
+        <p class="eyebrow">Procedural Colony</p>
+        <h1>Fungal Frontier</h1>
+        <p>Grow a resilient mycelium colony across nutrient and moisture-rich tiles, unlock mutations, build pits and push back insect waves. PixiJS renders the grid while DOM overlays host HUD and menus.</p>
+        <p class="hint">Click adjacent tiles to claim them (costs biomass), then build mutation pits and spread units. Each survival wave contributes to meta progression.</p>
+    </div>
+</section>
+
+<div class="game-stage fungal">
+    <div id="fungal-frontier-root" class="game-canvas"></div>
+</div>
+
+<style>
+    .game-stage.fungal {
+        min-height: 760px;
+        border-radius: 1rem;
+        border: 1px solid #14213d;
+        padding: 1rem;
+        background: #050607;
+    }
+    #fungal-frontier-root {
+        position: relative;
+    }
+    #fungal-frontier-root canvas {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+    .fungal-ui {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 220px;
+        background: rgba(11, 12, 16, 0.85);
+        color: #f0efeb;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        font-size: 0.9rem;
+    }
+    .fungal-ui button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        padding: 0.4rem;
+        border: none;
+        border-radius: 0.4rem;
+        background: #5a189a;
+        color: white;
+        cursor: pointer;
+    }
+    .fungal-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        text-align: center;
+        padding: 2rem;
+    }
+    .fungal-overlay button {
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: none;
+        background: #00b4d8;
+        color: #03045e;
+        cursor: pointer;
+    }
+    .fungal-overlay .strain-options button {
+        margin: 0.25rem;
+    }
+    .fungal-overlay .strain-options button.active {
+        background: #ffba08;
+        color: #03045e;
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/games/fungal-frontier.bundle.js" defer></script>
+}

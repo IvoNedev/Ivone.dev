@@ -1,0 +1,36 @@
+@page "/games/clockwork-siege"
+@model Ivone.dev.Pages.Games.ClockworkSiegeModel
+@{
+    ViewData["Title"] = "Clockwork Siege";
+}
+
+<section class="game-hero">
+    <div>
+        <p class="eyebrow">Shifting City Defense</p>
+        <h1>Clockwork Siege</h1>
+        <p>Protect a steam core by placing turrets and automaton pads around a mutable city graph. Between waves the streets reshuffle, pads vanish or appear, and new traits unlock through meta progression.</p>
+        <p class="hint">Click pads to build or upgrade defenses, use the bottom buttons to choose the current build type, and survive as many waves as possible.</p>
+    </div>
+</section>
+
+<div class="game-stage">
+    <div id="clockwork-siege-root" class="game-canvas"></div>
+</div>
+
+<style>
+    .game-stage {
+        border: 1px solid #0b132b;
+        border-radius: 1rem;
+        padding: 0.5rem;
+        background: linear-gradient(145deg, #0b132b, #1b263b);
+        min-height: 520px;
+    }
+    #clockwork-siege-root canvas {
+        width: 100%;
+        height: auto;
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/games/clockwork-siege.bundle.js" defer></script>
+}

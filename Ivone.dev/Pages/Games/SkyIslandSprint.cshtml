@@ -1,0 +1,36 @@
+@page "/games/sky-island-sprint"
+@model Ivone.dev.Pages.Games.SkyIslandSprintModel
+@{
+    ViewData["Title"] = "Sky Island Sprint";
+}
+
+<section class="game-hero">
+    <div>
+        <p class="eyebrow">Shifting Islands</p>
+        <h1>Sky Island Sprint</h1>
+        <p>Control a command balloon and nimble troops hopping across floating islands. Every 60 seconds the sky shifts: bridges are rewired, islands fall and you must buy upgrades to keep going.</p>
+        <ul>
+            <li>Commander selection with persistent unlocks via localStorage.</li>
+            <li>Island graph rewiring, Sky Shift countdown, upgrade pauses.</li>
+            <li>Simple RTS controls: drag select, right click to move, dedicated balloon command button.</li>
+        </ul>
+    </div>
+</section>
+
+<div class="game-stage tall">
+    <div id="sky-island-sprint-root" class="game-canvas"></div>
+</div>
+
+<style>
+    .game-stage.tall {
+        min-height: 600px;
+        border-radius: 1rem;
+        border: 1px solid #14213d;
+        padding: 0.5rem;
+        background: linear-gradient(120deg, #14213d, #0b132b);
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/games/sky-island-sprint.bundle.js" defer></script>
+}

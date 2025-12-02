@@ -1,0 +1,173 @@
+@page "/draw"
+@model Ivone.dev.Pages.DrawModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Draw - Ivone.dev</title>
+    <link rel="stylesheet" href="~/css/draw.css" asp-append-version="true" />
+</head>
+<body>
+    <canvas id="drawCanvas" aria-label="Drawing canvas"></canvas>
+
+    <button id="resetBtn" class="reset-btn" type="button">Reset</button>
+
+    <div class="palette" aria-label="Colour palette">
+        <p class="palette__label">Colours</p>
+        <div class="palette__grid" id="paletteGrid"></div>
+    </div>
+
+    <script>
+        (() => {
+            const canvas = document.getElementById('drawCanvas');
+            const paletteGrid = document.getElementById('paletteGrid');
+            const resetBtn = document.getElementById('resetBtn');
+            const ctx = canvas.getContext('2d');
+
+            const colors = [
+                '#111827', '#374151', '#6b7280', '#f8fafc', '#ef4444',
+                '#f97316', '#f59e0b', '#facc15', '#84cc16', '#22c55e',
+                '#10b981', '#14b8a6', '#06b6d4', '#3b82f6', '#6366f1',
+                '#8b5cf6', '#a855f7', '#ec4899', '#f43f5e', '#fb7185'
+            ];
+
+            let brushColor = colors[0];
+            let brushSize = 6;
+            let drawing = false;
+            let lastPoint = null;
+            let currentDpr = 1;
+
+            const makePalette = () => {
+                colors.forEach((color, index) => {
+                    const swatch = document.createElement('button');
+                    swatch.className = 'swatch' + (index === 0 ? ' is-active' : '');
+                    swatch.style.setProperty('--swatch-color', color);
+                    swatch.setAttribute('type', 'button');
+                    swatch.setAttribute('aria-label', `Use ${color} paint`);
+                    swatch.dataset.color = color;
+                    swatch.addEventListener('click', () => selectColor(color, swatch));
+                    paletteGrid.appendChild(swatch);
+                });
+            };
+
+            const selectColor = (color, element) => {
+                brushColor = color;
+                document.querySelectorAll('.swatch').forEach(btn => btn.classList.remove('is-active'));
+                if (element) {
+                    element.classList.add('is-active');
+                }
+            };
+
+            const resizeCanvas = () => {
+                const rect = canvas.getBoundingClientRect();
+                currentDpr = Math.max(window.devicePixelRatio || 1, 1);
+
+                const snapshot = document.createElement('canvas');
+                snapshot.width = canvas.width;
+                snapshot.height = canvas.height;
+                snapshot.getContext('2d').drawImage(canvas, 0, 0);
+
+                canvas.width = Math.max(Math.round(rect.width * currentDpr), 1);
+                canvas.height = Math.max(Math.round(rect.height * currentDpr), 1);
+
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(currentDpr, currentDpr);
+
+                ctx.drawImage(snapshot, 0, 0, snapshot.width, snapshot.height, 0, 0, canvas.width, canvas.height);
+
+                const relativeSize = Math.min(rect.width, rect.height) / 120;
+                brushSize = Math.max(4, Math.min(10, relativeSize || 6));
+            };
+            
+            const clearCanvas = () => {
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            };
+
+            const getCanvasPos = (event) => {
+                const rect = canvas.getBoundingClientRect();
+                return {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                };
+            };
+
+            const ensureFullscreen = () => {
+                if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => { });
+                }
+            };
+
+            const drawDot = (point) => {
+                ctx.fillStyle = brushColor;
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
+                ctx.fill();
+            };
+
+            const startDrawing = (event) => {
+                event.preventDefault();
+                ensureFullscreen();
+                drawing = true;
+                canvas.setPointerCapture(event.pointerId);
+                lastPoint = getCanvasPos(event);
+                drawDot(lastPoint);
+            };
+
+            const draw = (event) => {
+                if (!drawing) return;
+                const point = getCanvasPos(event);
+                ctx.strokeStyle = brushColor;
+                ctx.lineWidth = brushSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(point.x, point.y);
+                ctx.stroke();
+                lastPoint = point;
+            };
+
+            const stopDrawing = (event) => {
+                if (!drawing) return;
+                drawing = false;
+                lastPoint = null;
+                if (event.pointerId !== undefined) {
+                    canvas.releasePointerCapture(event.pointerId);
+                }
+            };
+
+            resetBtn.addEventListener('click', () => {
+                ensureFullscreen();
+                clearCanvas();
+            });
+
+            makePalette();
+            resizeCanvas();
+
+            window.addEventListener('resize', resizeCanvas);
+            window.visualViewport?.addEventListener('resize', resizeCanvas);
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    ensureFullscreen();
+                }
+            });
+
+            canvas.addEventListener('pointerdown', startDrawing);
+            canvas.addEventListener('pointermove', draw);
+            canvas.addEventListener('pointerup', stopDrawing);
+            canvas.addEventListener('pointercancel', stopDrawing);
+            canvas.addEventListener('pointerleave', stopDrawing);
+
+            setTimeout(ensureFullscreen, 300);
+        })();
+    </script>
+</body>
+</html>

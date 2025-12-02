@@ -1,0 +1,39 @@
+@page "/games/micro-kingdom-skirmish"
+@model Ivone.dev.Pages.Games.MicroKingdomSkirmishModel
+@{
+    ViewData["Title"] = "Micro Kingdom Skirmish";
+}
+
+<section class="game-hero">
+    <div>
+        <p class="eyebrow">Draft + RTS</p>
+        <h1>Micro Kingdom Skirmish</h1>
+        <p>Assemble a miniature army on a bite-sized 20x20 grid map, gather gold, draft new unit archetypes and push back the rival lord. Phaser 3 drives selection, pathfinding, drag boxes and AI waves.</p>
+        <ul>
+            <li>Pre-match unit draft that pulls from unlocked archetypes.</li>
+            <li>Peasants gather gold automatically while you micro squads.</li>
+            <li>Meta progression unlocks more units as you win matches.</li>
+        </ul>
+        <p class="hint">Controls: drag left mouse to select, right click to move/attack, number display shows resources, buttons train drafted units. Playable on desktop browsers.</p>
+    </div>
+</section>
+
+<div class="game-stage">
+    <div id="micro-kingdom-skirmish-root" class="game-canvas tall"></div>
+</div>
+
+<style>
+    .game-stage .game-canvas {
+        min-height: 760px;
+    }
+    .game-stage {
+        border: 1px solid #0d1b2a;
+        border-radius: 1rem;
+        padding: 0.5rem;
+        background: linear-gradient(180deg, #0d1b2a, #1b263b);
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/games/micro-kingdom-skirmish.bundle.js" defer></script>
+}
