@@ -8,6 +8,9 @@ public class TimelineEvent
     public string Title { get; set; }
     public string Notes { get; set; }
     public string? Address { get; set; }
+    public string? Url { get; set; }
+    public string? MediaUrls { get; set; }
+    public string? DatePrecision { get; set; }
 
     // Link to a Timeline
     public int TimelineId { get; set; }

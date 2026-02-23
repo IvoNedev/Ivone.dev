@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewData["Title"] ?? "????? ????")</title>
+    <link rel="stylesheet" href="~/css/pyt.css" asp-append-version="true" />
+</head>
+<body class="pyt-body">
+    <header class="pyt-topbar">
+        <div class="pyt-brand">????? ????</div>
+        <nav class="pyt-nav">
+            <a asp-area="Pyt" asp-page="/Trips/Index">Trips</a>
+            <a asp-area="Pyt" asp-page="/Vehicles/Index">Vehicles</a>
+            <a asp-area="Pyt" asp-page="/Drivers/Index">Drivers</a>
+            <a asp-area="Pyt" asp-page="/Locations/Index">Locations</a>
+        </nav>
+        <button id="pyt-logout-btn" type="button" class="btn-secondary">Logout</button>
+    </header>
+
+    <main class="pyt-main">
+        @RenderBody()
+    </main>
+
+    <script src="~/js/pyt/common.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

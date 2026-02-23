@@ -1,0 +1,1151 @@
+@page "/timer"
+@model Ivone.dev.Pages.TimerModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timer Wall Clock - Ivone.dev</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --dynamic-text: #133447;
+            --dynamic-bg: #fff3d6;
+            --panel-bg: rgba(255, 255, 255, 0.8);
+            --ink-soft: #3b657a;
+            --focus: #0f766e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--dynamic-text);
+            font-family: "Fredoka", "Segoe UI", sans-serif;
+            background: linear-gradient(160deg, color-mix(in srgb, var(--dynamic-bg) 88%, #ffffff 12%), color-mix(in srgb, var(--dynamic-bg) 70%, #f6b36c 30%));
+            transition: background 400ms ease, color 400ms ease;
+        }
+
+        .wall {
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .wall::before,
+        .wall::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .wall::before {
+            width: 45vmax;
+            height: 45vmax;
+            top: -10vmax;
+            left: -12vmax;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0));
+        }
+
+        .wall::after {
+            width: 38vmax;
+            height: 38vmax;
+            right: -10vmax;
+            bottom: -13vmax;
+            background: radial-gradient(circle at center, rgba(255, 239, 215, 0.7), rgba(255, 255, 255, 0));
+        }
+
+        .screen {
+            position: relative;
+            z-index: 2;
+            width: min(1180px, 100%);
+            border-radius: 34px;
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            background: var(--panel-bg);
+            box-shadow: 0 28px 70px rgba(85, 52, 17, 0.24);
+            min-height: min(92vh, 800px);
+            overflow: hidden;
+        }
+
+        .lock-panel,
+        .clock-panel {
+            min-height: inherit;
+            padding: 1.4rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .lock-panel {
+            display: grid;
+            gap: 1rem;
+            align-content: center;
+            text-align: center;
+            justify-items: center;
+        }
+
+        .lock-panel h1 {
+            margin: 0;
+            font-family: "Baloo 2", "Fredoka", sans-serif;
+            font-size: clamp(2rem, 6vw, 3.6rem);
+            line-height: 0.95;
+        }
+
+        .lock-panel p {
+            margin: 0;
+            max-width: 40ch;
+            color: var(--ink-soft);
+            font-size: clamp(1rem, 2.4vw, 1.2rem);
+        }
+
+        .unlock-form {
+            width: min(480px, 100%);
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .unlock-form input {
+            flex: 1 1 230px;
+            border: 1px solid rgba(44, 93, 115, 0.3);
+            border-radius: 999px;
+            padding: 0.75rem 1rem;
+            font: inherit;
+            color: inherit;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .unlock-form input:focus {
+            outline: 2px solid var(--focus);
+            outline-offset: 1px;
+        }
+
+        .unlock-form button {
+            border: none;
+            border-radius: 999px;
+            padding: 0.75rem 1.2rem;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(120deg, #0f766e, #155e75);
+            box-shadow: 0 8px 22px rgba(21, 94, 117, 0.28);
+        }
+
+        .lock-message {
+            min-height: 1.3rem;
+            margin: 0;
+            font-weight: 700;
+            color: var(--ink-soft);
+        }
+
+        .lock-message.error {
+            color: #b91c1c;
+        }
+
+        .clock-panel {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            align-content: space-between;
+        }
+
+        .clock-head {
+            display: grid;
+            gap: 0.3rem;
+            justify-items: center;
+            text-align: center;
+        }
+
+        .time-digital {
+            font-family: "Baloo 2", "Fredoka", sans-serif;
+            font-size: clamp(3rem, 13vw, 8.4rem);
+            line-height: 0.9;
+            letter-spacing: 0.03em;
+            margin: 0;
+            text-shadow: 0 8px 20px rgba(255, 255, 255, 0.45);
+        }
+
+        .analog-wrap {
+            display: grid;
+            place-items: center;
+            width: 100%;
+        }
+
+        .analog-clock {
+            position: relative;
+            width: min(62vw, 430px);
+            aspect-ratio: 1;
+            border-radius: 50%;
+            overflow: hidden;
+            background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.95), rgba(242, 228, 207, 0.9));
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.3), 0 18px 34px rgba(69, 52, 33, 0.18);
+        }
+
+        .analog-clock::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background: repeating-conic-gradient(from -90deg, rgba(24, 52, 70, 0.28) 0deg 1deg, transparent 1deg 30deg);
+            opacity: 0.45;
+            pointer-events: none;
+        }
+
+        .analog-sector-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .analog-labels {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .analog-numbers {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .analog-number {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+            font-weight: 700;
+            color: #173245;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        .analog-rule-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-size: clamp(0.52rem, 1.4vw, 0.8rem);
+            line-height: 1.1;
+            text-align: center;
+            color: #173245;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 0.15rem 0.3rem;
+            max-width: 72px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .analog-hand {
+            position: absolute;
+            left: 50%;
+            bottom: 50%;
+            transform-origin: center bottom;
+            border-radius: 999px;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .analog-hand.hour {
+            width: 9px;
+            height: 27%;
+            background: #173245;
+        }
+
+        .analog-hand.minute {
+            width: 6px;
+            height: 36%;
+            background: #1f445d;
+        }
+
+        .analog-hand.second {
+            width: 3px;
+            height: 42%;
+            background: #d62828;
+        }
+
+        .analog-center-dot {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 14px;
+            height: 14px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            background: #173245;
+            border: 2px solid #fff;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .date-line {
+            margin: 0;
+            font-size: clamp(1rem, 2.7vw, 1.5rem);
+            color: var(--ink-soft);
+        }
+
+        .activity-message {
+            margin: 0;
+            text-align: center;
+            font-family: "Baloo 2", "Fredoka", sans-serif;
+            font-size: clamp(1.8rem, 5vw, 3.5rem);
+            line-height: 1;
+            letter-spacing: 0.01em;
+        }
+
+        .next-activity-countdown {
+            margin: -0.15rem 0 0;
+            text-align: center;
+            font-size: clamp(0.95rem, 2.2vw, 1.25rem);
+            font-weight: 600;
+            color: #24485e;
+            background: rgba(255, 255, 255, 0.62);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            border-radius: 999px;
+            padding: 0.3rem 0.75rem;
+            width: fit-content;
+            justify-self: center;
+        }
+
+        .activity-image-wrap {
+            width: min(100%, 480px);
+            margin: 0 auto;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.45);
+            height: 240px;
+            max-height: 240px;
+            display: grid;
+            place-items: center;
+        }
+
+        .activity-image-wrap img {
+            width: auto;
+            max-width: 100%;
+            height: auto;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .activity-image-wrap .empty {
+            color: var(--ink-soft);
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .override-card {
+            border-radius: 26px;
+            border: 1px solid rgba(255, 255, 255, 0.78);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.85));
+            box-shadow: 0 16px 40px rgba(122, 68, 18, 0.16);
+            padding: 1.2rem;
+            text-align: center;
+            display: grid;
+            gap: 0.4rem;
+        }
+
+        .override-layout {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 0.9rem;
+        }
+
+        .override-ring-wrap {
+            position: relative;
+            width: clamp(82px, 20vw, 116px);
+            aspect-ratio: 1;
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+        }
+
+        .override-ring {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .override-ring-track {
+            fill: none;
+            stroke: rgba(23, 50, 69, 0.15);
+            stroke-width: 10;
+        }
+
+        .override-ring-progress {
+            fill: none;
+            stroke: #ef7f43;
+            stroke-width: 10;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 240ms linear;
+        }
+
+        .override-ring-minutes {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            font-size: clamp(0.85rem, 2vw, 1rem);
+            font-weight: 700;
+            color: #173245;
+            pointer-events: none;
+        }
+
+        .override-meta {
+            min-width: 0;
+            display: grid;
+            gap: 0.2rem;
+            text-align: left;
+        }
+
+        .override-label {
+            margin: 0;
+            font-size: clamp(1.1rem, 3vw, 1.6rem);
+            color: var(--ink-soft);
+        }
+
+        .override-countdown {
+            margin: 0;
+            font-family: "Baloo 2", "Fredoka", sans-serif;
+            font-size: clamp(3.5rem, 16vw, 9rem);
+            line-height: 0.84;
+            letter-spacing: 0.035em;
+        }
+
+        .clock-panel.time-up-flash .override-card {
+            animation: time-up-flash-bg 0.9s steps(1, end) infinite;
+            border-color: #fff;
+        }
+
+        .clock-panel.time-up-flash .override-label,
+        .clock-panel.time-up-flash .override-countdown {
+            animation: time-up-flash-text 0.9s steps(1, end) infinite;
+        }
+
+        .clock-panel.time-up-flash .override-ring-minutes {
+            animation: time-up-flash-text 0.9s steps(1, end) infinite;
+        }
+
+        @@keyframes time-up-flash-bg {
+            0%, 49.9% {
+                background: #d62828;
+                box-shadow: 0 0 0 6px rgba(214, 40, 40, 0.18), 0 16px 40px rgba(122, 68, 18, 0.16);
+            }
+
+            50%, 100% {
+                background: #ffffff;
+                box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.4), 0 16px 40px rgba(122, 68, 18, 0.16);
+            }
+        }
+
+        @@keyframes time-up-flash-text {
+            0%, 49.9% {
+                color: #ffffff;
+            }
+
+            50%, 100% {
+                color: #b91c1c;
+            }
+        }
+
+        .clock-panel.override-active .activity-message,
+        .clock-panel.override-active .activity-image-wrap {
+            opacity: 0.6;
+            transform: scale(0.98);
+            transition: transform 220ms ease, opacity 220ms ease;
+        }
+
+        @@media (max-width: 680px) {
+            .screen {
+                border-radius: 20px;
+                min-height: 95vh;
+            }
+
+            .lock-panel,
+            .clock-panel {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="wall" id="wall">
+        <section class="screen">
+            <section class="lock-panel" id="lockPanel">
+                <h1>Family Timer Clock</h1>
+                <p>Enter the host password to sync the child-friendly schedule.</p>
+                <form class="unlock-form" id="unlockForm" autocomplete="off">
+                    <input id="guestPassword" type="password" placeholder="Enter password" />
+                    <button type="submit">Unlock</button>
+                </form>
+                <p id="lockMessage" class="lock-message"></p>
+            </section>
+
+            <section class="clock-panel hidden" id="clockPanel">
+                <header class="clock-head">
+                    <h1 id="clockValue" class="time-digital">00:00:00</h1>
+                    <div id="analogClockWrap" class="analog-wrap hidden">
+                        <div class="analog-clock" id="analogClockFace">
+                            <svg id="analogSectorSvg" class="analog-sector-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg>
+                            <div id="analogNumbers" class="analog-numbers"></div>
+                            <div id="analogLabels" class="analog-labels"></div>
+                            <div id="hourHand" class="analog-hand hour"></div>
+                            <div id="minuteHand" class="analog-hand minute"></div>
+                            <div id="secondHand" class="analog-hand second"></div>
+                            <div class="analog-center-dot"></div>
+                        </div>
+                    </div>
+                    <p id="clockDate" class="date-line">Loading date...</p>
+                </header>
+
+                <p id="activityMessage" class="activity-message">Waiting for schedule...</p>
+                <p id="nextActivityCountdown" class="next-activity-countdown hidden"></p>
+
+                <div id="activityImageWrap" class="activity-image-wrap">
+                    <div class="empty">No image set</div>
+                </div>
+
+                <section id="overrideCard" class="override-card hidden">
+                    <div class="override-layout">
+                        <div class="override-ring-wrap" aria-hidden="true">
+                            <svg class="override-ring" viewBox="0 0 120 120">
+                                <circle class="override-ring-track" cx="60" cy="60" r="46"></circle>
+                                <circle id="overrideRingProgress" class="override-ring-progress" cx="60" cy="60" r="46"></circle>
+                            </svg>
+                            <span id="overrideRingMinutes" class="override-ring-minutes">0m</span>
+                        </div>
+                        <div class="override-meta">
+                            <p id="overrideLabel" class="override-label">Timer</p>
+                            <p id="overrideCountdown" class="override-countdown">00:00:00</p>
+                        </div>
+                    </div>
+                </section>
+            </section>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/microsoft-signalr@8.0.7/dist/browser/signalr.min.js"></script>
+    <script>
+        (() => {
+            const CLOCK_MODE_DIGITAL = "digital";
+            const CLOCK_MODE_ANALOG = "analog";
+            const IMAGE_MAX_WIDTH_PX = 460;
+            const IMAGE_MAX_HEIGHT_PX = 220;
+            const storageKey = "ivonedev.timer.guest.password";
+            const lockPanel = document.getElementById("lockPanel");
+            const clockPanel = document.getElementById("clockPanel");
+            const guestPasswordInput = document.getElementById("guestPassword");
+            const unlockForm = document.getElementById("unlockForm");
+            const lockMessage = document.getElementById("lockMessage");
+            const clockValue = document.getElementById("clockValue");
+            const analogClockWrap = document.getElementById("analogClockWrap");
+            const analogSectorSvg = document.getElementById("analogSectorSvg");
+            const analogNumbers = document.getElementById("analogNumbers");
+            const analogLabels = document.getElementById("analogLabels");
+            const hourHand = document.getElementById("hourHand");
+            const minuteHand = document.getElementById("minuteHand");
+            const secondHand = document.getElementById("secondHand");
+            const clockDate = document.getElementById("clockDate");
+            const activityMessage = document.getElementById("activityMessage");
+            const nextActivityCountdown = document.getElementById("nextActivityCountdown");
+            const activityImageWrap = document.getElementById("activityImageWrap");
+            const overrideCard = document.getElementById("overrideCard");
+            const overrideRingProgress = document.getElementById("overrideRingProgress");
+            const overrideRingMinutes = document.getElementById("overrideRingMinutes");
+            const overrideLabel = document.getElementById("overrideLabel");
+            const overrideCountdown = document.getElementById("overrideCountdown");
+
+            const OVERRIDE_RING_MAX_MINUTES = 60;
+            const OVERRIDE_RING_RADIUS = 46;
+            const OVERRIDE_RING_CIRCUMFERENCE = 2 * Math.PI * OVERRIDE_RING_RADIUS;
+
+            let password = "";
+            let config = null;
+            let tickInterval = null;
+            let refreshInterval = null;
+            let hubConnection = null;
+            let refreshInFlight = false;
+            let analogDecorSignature = "";
+
+            overrideRingProgress.style.strokeDasharray = `${OVERRIDE_RING_CIRCUMFERENCE}`;
+            overrideRingProgress.style.strokeDashoffset = `${OVERRIDE_RING_CIRCUMFERENCE}`;
+
+            function setLockMessage(message, isError) {
+                lockMessage.textContent = message;
+                lockMessage.classList.toggle("error", !!isError);
+            }
+
+            async function requestConfig(currentPassword) {
+                const response = await fetch("/api/timer/access", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ password: currentPassword })
+                });
+
+                const raw = await response.text();
+                let payload = {};
+                if (raw) {
+                    try {
+                        payload = JSON.parse(raw);
+                    } catch {
+                        payload = {};
+                    }
+                }
+
+                if (!response.ok) {
+                    throw new Error(payload.message || `Request failed (${response.status})`);
+                }
+
+                return payload;
+            }
+
+            function toMinutes(clockText) {
+                const parts = (clockText || "").split(":");
+                if (parts.length !== 2) {
+                    return null;
+                }
+
+                const hours = Number.parseInt(parts[0], 10);
+                const minutes = Number.parseInt(parts[1], 10);
+                if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+                    return null;
+                }
+                if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+                    return null;
+                }
+
+                return (hours * 60) + minutes;
+            }
+
+            function isRuleActive(rule, nowMinutes) {
+                const start = toMinutes(rule.start);
+                const end = toMinutes(rule.end);
+                if (start === null || end === null) {
+                    return false;
+                }
+
+                if (start === end) {
+                    return true;
+                }
+
+                if (start < end) {
+                    return nowMinutes >= start && nowMinutes < end;
+                }
+
+                return nowMinutes >= start || nowMinutes < end;
+            }
+
+            function formatTime(now) {
+                return now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+            }
+
+            function formatDate(now) {
+                return now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+            }
+
+            function formatRemaining(ms) {
+                const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+            }
+
+            function updateOverrideRing(remainingMs) {
+                const remainingMinutesRaw = Math.max(0, Math.ceil(remainingMs / 60000));
+                const ringMinutes = Math.min(OVERRIDE_RING_MAX_MINUTES, remainingMinutesRaw);
+                const fillRatio = ringMinutes / OVERRIDE_RING_MAX_MINUTES;
+                const dashOffset = OVERRIDE_RING_CIRCUMFERENCE * (1 - fillRatio);
+
+                overrideRingProgress.style.strokeDashoffset = `${dashOffset.toFixed(2)}`;
+                overrideRingMinutes.textContent = `${ringMinutes}m`;
+            }
+
+            function resolveClockMode() {
+                if (!config || typeof config.clockMode !== "string") {
+                    return CLOCK_MODE_DIGITAL;
+                }
+
+                return config.clockMode.toLowerCase() === CLOCK_MODE_ANALOG ? CLOCK_MODE_ANALOG : CLOCK_MODE_DIGITAL;
+            }
+
+            function applyClockMode() {
+                const isAnalog = resolveClockMode() === CLOCK_MODE_ANALOG;
+                clockValue.classList.toggle("hidden", isAnalog);
+                analogClockWrap.classList.toggle("hidden", !isAnalog);
+            }
+
+            function applyImage(url) {
+                activityImageWrap.innerHTML = "";
+                if (!url) {
+                    const fallback = document.createElement("div");
+                    fallback.className = "empty";
+                    fallback.textContent = "No image set";
+                    activityImageWrap.appendChild(fallback);
+                    return;
+                }
+
+                const img = document.createElement("img");
+                img.src = url;
+                img.alt = "Scheduled image";
+                img.style.maxWidth = `${IMAGE_MAX_WIDTH_PX}px`;
+                img.style.maxHeight = `${IMAGE_MAX_HEIGHT_PX}px`;
+                img.onerror = () => {
+                    activityImageWrap.innerHTML = "";
+                    const fallback = document.createElement("div");
+                    fallback.className = "empty";
+                    fallback.textContent = "Image could not load";
+                    activityImageWrap.appendChild(fallback);
+                };
+                activityImageWrap.appendChild(img);
+            }
+
+            function hideNextActivityCountdown() {
+                nextActivityCountdown.textContent = "";
+                nextActivityCountdown.classList.add("hidden");
+            }
+
+            function resolveActiveDisplay(now) {
+                if (!config) {
+                    return null;
+                }
+
+                const nowMinutes = (now.getHours() * 60) + now.getMinutes();
+                const rules = Array.isArray(config.rules) ? config.rules : [];
+                for (const rule of rules) {
+                    if (isRuleActive(rule, nowMinutes)) {
+                        return rule;
+                    }
+                }
+
+                return {
+                    message: config.defaultMessage,
+                    textColor: config.defaultTextColor,
+                    backgroundColor: config.defaultBackgroundColor,
+                    imageUrl: config.defaultImageUrl
+                };
+            }
+
+            function resolveNextActivity(now) {
+                if (!config) {
+                    return null;
+                }
+
+                const rules = Array.isArray(config.rules) ? config.rules : [];
+                let candidate = null;
+
+                for (const rule of rules) {
+                    const startMinutes = toMinutes(rule.start);
+                    if (startMinutes === null) {
+                        continue;
+                    }
+
+                    const nextStart = new Date(now);
+                    const startHour = Math.floor(startMinutes / 60);
+                    const startMinute = startMinutes % 60;
+                    nextStart.setHours(startHour, startMinute, 0, 0);
+                    if (nextStart <= now) {
+                        nextStart.setDate(nextStart.getDate() + 1);
+                    }
+
+                    const diffMs = nextStart.getTime() - now.getTime();
+                    if (!candidate || diffMs < candidate.diffMs) {
+                        candidate = {
+                            rule,
+                            diffMs
+                        };
+                    }
+                }
+
+                return candidate;
+            }
+
+            function updateNextActivityCountdown(now, hasAnyOverride) {
+                if (!config || hasAnyOverride) {
+                    hideNextActivityCountdown();
+                    return;
+                }
+
+                const leadMinutesRaw = Number.parseInt(config.showMinutesBeforeNextActivity, 10);
+                const leadMinutes = Number.isFinite(leadMinutesRaw) ? Math.max(0, leadMinutesRaw) : 0;
+                if (leadMinutes <= 0) {
+                    hideNextActivityCountdown();
+                    return;
+                }
+
+                const upcoming = resolveNextActivity(now);
+                if (!upcoming) {
+                    hideNextActivityCountdown();
+                    return;
+                }
+
+                const minutesRemaining = Math.max(0, Math.ceil(upcoming.diffMs / 60000));
+                if (minutesRemaining <= 0 || minutesRemaining > leadMinutes) {
+                    hideNextActivityCountdown();
+                    return;
+                }
+
+                const label = (upcoming.rule.message || "next activity").trim().slice(0, 44);
+                nextActivityCountdown.textContent = `${minutesRemaining}m to ${label}`;
+                nextActivityCountdown.classList.remove("hidden");
+            }
+
+            function toDegreesFromMinutes(minutes) {
+                const minutesOnDial = ((minutes % 720) + 720) % 720;
+                return (minutesOnDial / 720) * 360;
+            }
+
+            function getPolarPoint(angleDeg, radius) {
+                const radians = (angleDeg * Math.PI) / 180;
+                const x = 50 + (radius * Math.sin(radians));
+                const y = 50 - (radius * Math.cos(radians));
+                return { x, y };
+            }
+
+            function createSectorPath(startDeg, endDeg) {
+                const clampedStart = Math.max(0, Math.min(360, startDeg));
+                const clampedEnd = Math.max(0, Math.min(360, endDeg));
+                const sweep = clampedEnd - clampedStart;
+                if (sweep <= 0) {
+                    return "";
+                }
+
+                const start = getPolarPoint(clampedStart, 49);
+                const end = getPolarPoint(clampedEnd, 49);
+                const largeArcFlag = sweep > 180 ? 1 : 0;
+                return `M 50 50 L ${start.x.toFixed(3)} ${start.y.toFixed(3)} A 49 49 0 ${largeArcFlag} 1 ${end.x.toFixed(3)} ${end.y.toFixed(3)} Z`;
+            }
+
+            function renderAnalogNumbers() {
+                if (analogNumbers.childElementCount > 0) {
+                    return;
+                }
+
+                for (let hour = 1; hour <= 12; hour++) {
+                    const angle = (hour % 12) * 30;
+                    const point = getPolarPoint(angle, 43);
+                    const number = document.createElement("div");
+                    number.className = "analog-number";
+                    number.style.left = `${point.x}%`;
+                    number.style.top = `${point.y}%`;
+                    number.textContent = String(hour);
+                    analogNumbers.appendChild(number);
+                }
+            }
+
+            function expandSegments(startMinutes, endMinutes) {
+                if (startMinutes === endMinutes) {
+                    return [{ startDeg: 0, endDeg: 360 }];
+                }
+
+                if (startMinutes < endMinutes) {
+                    return [{
+                        startDeg: toDegreesFromMinutes(startMinutes),
+                        endDeg: toDegreesFromMinutes(endMinutes)
+                    }];
+                }
+
+                return [
+                    {
+                        startDeg: toDegreesFromMinutes(startMinutes),
+                        endDeg: 360
+                    },
+                    {
+                        startDeg: 0,
+                        endDeg: toDegreesFromMinutes(endMinutes)
+                    }
+                ];
+            }
+
+            function renderAnalogDecorations() {
+                if (!config) {
+                    return;
+                }
+
+                const rules = Array.isArray(config.rules) ? config.rules : [];
+                const signature = JSON.stringify(
+                    rules.map(rule => [rule.start, rule.end, rule.message, rule.backgroundColor])
+                );
+                if (signature === analogDecorSignature) {
+                    return;
+                }
+
+                analogDecorSignature = signature;
+                analogSectorSvg.innerHTML = "";
+                analogLabels.innerHTML = "";
+
+                for (const rule of rules) {
+                    const startMinutes = toMinutes(rule.start);
+                    const endMinutes = toMinutes(rule.end);
+                    if (startMinutes === null || endMinutes === null) {
+                        continue;
+                    }
+
+                    const color = (rule.backgroundColor || "#fca5a5").trim();
+                    const segments = expandSegments(startMinutes, endMinutes);
+                    for (const segment of segments) {
+                        const pathData = createSectorPath(segment.startDeg, segment.endDeg);
+                        if (!pathData) {
+                            continue;
+                        }
+
+                        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        path.setAttribute("d", pathData);
+                        path.setAttribute("fill", color);
+                        path.setAttribute("fill-opacity", "0.62");
+                        analogSectorSvg.appendChild(path);
+                    }
+
+                    const totalMinutes = ((endMinutes - startMinutes + 1440) % 1440) || 1440;
+                    const midpointMinutes = (startMinutes + (totalMinutes / 2)) % 1440;
+                    const midpointDeg = toDegreesFromMinutes(midpointMinutes);
+                    const labelPoint = getPolarPoint(midpointDeg, 33);
+
+                    const label = document.createElement("div");
+                    label.className = "analog-rule-label";
+                    label.style.left = `${labelPoint.x}%`;
+                    label.style.top = `${labelPoint.y}%`;
+                    label.textContent = (rule.message || "Activity").slice(0, 20);
+                    analogLabels.appendChild(label);
+                }
+            }
+
+            function updateAnalogHands(now) {
+                const hours = now.getHours() % 12;
+                const minutes = now.getMinutes();
+                const seconds = now.getSeconds();
+
+                const hourDegrees = (hours * 30) + (minutes * 0.5) + (seconds * (0.5 / 60));
+                const minuteDegrees = (minutes * 6) + (seconds * 0.1);
+                const secondDegrees = seconds * 6;
+
+                hourHand.style.transform = `translateX(-50%) rotate(${hourDegrees}deg)`;
+                minuteHand.style.transform = `translateX(-50%) rotate(${minuteDegrees}deg)`;
+                secondHand.style.transform = `translateX(-50%) rotate(${secondDegrees}deg)`;
+            }
+
+            function syncVisual(now) {
+                clockValue.textContent = formatTime(now);
+                clockDate.textContent = formatDate(now);
+
+                if (!config) {
+                    hideNextActivityCountdown();
+                    return;
+                }
+
+                applyClockMode();
+                if (resolveClockMode() === CLOCK_MODE_ANALOG) {
+                    renderAnalogNumbers();
+                    renderAnalogDecorations();
+                    updateAnalogHands(now);
+                }
+
+                const display = resolveActiveDisplay(now);
+                if (!display) {
+                    hideNextActivityCountdown();
+                    return;
+                }
+
+                activityMessage.textContent = display.message || "What is happening now?";
+                document.documentElement.style.setProperty("--dynamic-text", display.textColor || "#133447");
+                document.documentElement.style.setProperty("--dynamic-bg", display.backgroundColor || "#FFF3D6");
+                applyImage(display.imageUrl || "");
+
+                if (config.override) {
+                    const end = new Date(config.override.endsAtUtc);
+                    const remaining = end.getTime() - now.getTime();
+                    if (remaining > 0) {
+                        overrideLabel.textContent = config.override.label || "Timer";
+                        overrideCountdown.textContent = formatRemaining(remaining);
+                        updateOverrideRing(remaining);
+                        overrideCard.classList.remove("hidden");
+                        clockPanel.classList.add("override-active");
+                        clockPanel.classList.remove("time-up-flash");
+                    } else {
+                        overrideLabel.textContent = "Time is up";
+                        overrideCountdown.textContent = "00:00:00";
+                        updateOverrideRing(0);
+                        overrideCard.classList.remove("hidden");
+                        clockPanel.classList.add("override-active");
+                        clockPanel.classList.add("time-up-flash");
+                    }
+                } else {
+                    updateOverrideRing(0);
+                    overrideCard.classList.add("hidden");
+                    clockPanel.classList.remove("override-active");
+                    clockPanel.classList.remove("time-up-flash");
+                }
+
+                updateNextActivityCountdown(now, !!config.override);
+            }
+
+            function showClock() {
+                lockPanel.classList.add("hidden");
+                clockPanel.classList.remove("hidden");
+            }
+
+            function showLock(message, isError) {
+                lockPanel.classList.remove("hidden");
+                clockPanel.classList.add("hidden");
+                setLockMessage(message, isError);
+            }
+
+            function startTicker() {
+                if (tickInterval) {
+                    clearInterval(tickInterval);
+                }
+
+                syncVisual(new Date());
+                tickInterval = setInterval(() => {
+                    syncVisual(new Date());
+                }, 1000);
+            }
+
+            async function refreshConfigSilently() {
+                if (!password) {
+                    return;
+                }
+
+                if (refreshInFlight) {
+                    return;
+                }
+
+                refreshInFlight = true;
+                try {
+                    const latest = await requestConfig(password);
+                    config = latest;
+                    analogDecorSignature = "";
+                    syncVisual(new Date());
+                } catch (error) {
+                    const message = error.message || "Lost connection.";
+                    if (message.toLowerCase().includes("password")) {
+                        sessionStorage.removeItem(storageKey);
+                        password = "";
+                        config = null;
+                        stopLiveUpdates();
+                        showLock("Password changed. Enter the new one.", true);
+                        return;
+                    }
+                } finally {
+                    refreshInFlight = false;
+                }
+            }
+
+            function beginRefreshLoop() {
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                }
+
+                refreshInterval = setInterval(refreshConfigSilently, 15000);
+            }
+
+            async function startLiveUpdates() {
+                if (!window.signalR || hubConnection) {
+                    return;
+                }
+
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl("/liveupdate")
+                    .withAutomaticReconnect()
+                    .build();
+
+                connection.on("ReceiveUpdate", (key) => {
+                    if (key === "timer-config-updated") {
+                        refreshConfigSilently();
+                    }
+                });
+
+                connection.onreconnected(() => {
+                    refreshConfigSilently();
+                });
+
+                try {
+                    await connection.start();
+                    hubConnection = connection;
+                } catch {
+                    hubConnection = null;
+                }
+            }
+
+            async function stopLiveUpdates() {
+                if (!hubConnection) {
+                    return;
+                }
+
+                const existing = hubConnection;
+                hubConnection = null;
+                try {
+                    await existing.stop();
+                } catch {
+                }
+            }
+
+            async function unlock(currentPassword, announceOnly) {
+                const candidate = (currentPassword || "").trim();
+                if (!candidate) {
+                    showLock("Enter password to unlock.", true);
+                    return;
+                }
+
+                try {
+                    setLockMessage("Connecting...", false);
+                    const payload = await requestConfig(candidate);
+                    password = candidate;
+                    config = payload;
+                    analogDecorSignature = "";
+                    sessionStorage.setItem(storageKey, candidate);
+                    showClock();
+                    startTicker();
+                    beginRefreshLoop();
+                    startLiveUpdates();
+                    if (!announceOnly) {
+                        setLockMessage("", false);
+                    }
+                } catch (error) {
+                    const message = error.message || "Unlock failed.";
+                    showLock(message, true);
+                }
+            }
+
+            unlockForm.addEventListener("submit", event => {
+                event.preventDefault();
+                unlock(guestPasswordInput.value, false);
+            });
+
+            const remembered = sessionStorage.getItem(storageKey);
+            if (remembered) {
+                guestPasswordInput.value = remembered;
+                unlock(remembered, true);
+            } else {
+                showLock("Waiting for password.", false);
+            }
+        })();
+    </script>
+</body>
+</html>

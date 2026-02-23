@@ -1,7 +1,9 @@
 ﻿
 using System;
 using Ivone.dev.Data.Models;
+using Ivone.dev.Data.Models.Pyt;
 using Microsoft.EntityFrameworkCore;
+using NPOB.Data.Entities;
 
 namespace ivone.dev.Data.Contexts
 {
@@ -11,7 +13,7 @@ namespace ivone.dev.Data.Contexts
         {
         }
 
-
+        public DbSet<FinanceCategory> FinanceCategories => Set<FinanceCategory>();
         public DbSet<RegionStat> RegionStats { get; set; }
         public DbSet<MortgageScenario> MortgageScenarios { get; set; }
         public DbSet<User> Users { get; set; }
@@ -23,6 +25,12 @@ namespace ivone.dev.Data.Contexts
         public DbSet<Test> Tests { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<Answer> Answers { get; set; }
+        public DbSet<PytUser> PytUsers => Set<PytUser>();
+        public DbSet<PytVehicle> PytVehicles => Set<PytVehicle>();
+        public DbSet<PytDriver> PytDrivers => Set<PytDriver>();
+        public DbSet<PytLocation> PytLocations => Set<PytLocation>();
+        public DbSet<PytTrip> PytTrips => Set<PytTrip>();
+        public DbSet<PytUserPreference> PytUserPreferences => Set<PytUserPreference>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,6 +48,223 @@ namespace ivone.dev.Data.Contexts
                 entity.Property(p => p.LawyerFeeRate).HasColumnType("decimal(18,2)");
                 entity.Property(p => p.LawyerFeeAmount).HasColumnType("decimal(18,2)");
             });
+            modelBuilder.Entity<FinanceCategory>(entity =>
+            {
+                entity.ToTable("FinanceCategories", table => table.ExcludeFromMigrations());
+                entity.Property(c => c.Name).HasMaxLength(120).IsRequired();
+                entity.Property(c => c.IsDefault).HasDefaultValue(false);
+               
+            });
+
+            modelBuilder.Entity<PytUser>(entity =>
+            {
+                entity.ToTable("PytUsers");
+                entity.Property(x => x.Email).HasMaxLength(256).IsRequired();
+                entity.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
+                entity.HasIndex(x => x.Email).IsUnique();
+            });
+
+            modelBuilder.Entity<PytVehicle>(entity =>
+            {
+                entity.ToTable("PytVehicles");
+                entity.Property(x => x.PlateNumber).HasMaxLength(32).IsRequired();
+                entity.Property(x => x.MakeModel).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.FuelType).HasMaxLength(64).IsRequired();
+                entity.Property(x => x.AvgConsumption).HasColumnType("decimal(6,2)");
+                entity.HasIndex(x => x.PlateNumber).IsUnique();
+            });
+
+            modelBuilder.Entity<PytDriver>(entity =>
+            {
+                entity.ToTable("PytDrivers");
+                entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.LicenseNumber).HasMaxLength(64);
+            });
+
+            modelBuilder.Entity<PytLocation>(entity =>
+            {
+                entity.ToTable("PytLocations");
+                entity.Property(x => x.Name).HasMaxLength(200).IsRequired();
+                entity.Property(x => x.Address).HasMaxLength(300);
+            });
+
+            modelBuilder.Entity<PytTrip>(entity =>
+            {
+                entity.ToTable("PytTrips");
+                entity.Property(x => x.Purpose).HasMaxLength(120).IsRequired();
+                entity.Property(x => x.Notes).HasMaxLength(1000);
+                entity.HasIndex(x => new { x.VehicleId, x.EndDateTime });
+                entity.HasIndex(x => new { x.CreatedByUserId, x.CreatedAt });
+
+                entity.HasOne(x => x.Vehicle)
+                    .WithMany(x => x.Trips)
+                    .HasForeignKey(x => x.VehicleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.Driver)
+                    .WithMany(x => x.Trips)
+                    .HasForeignKey(x => x.DriverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.StartLocation)
+                    .WithMany(x => x.StartTrips)
+                    .HasForeignKey(x => x.StartLocationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.EndLocation)
+                    .WithMany(x => x.EndTrips)
+                    .HasForeignKey(x => x.EndLocationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.CreatedByUser)
+                    .WithMany(x => x.Trips)
+                    .HasForeignKey(x => x.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_PytTrips_Mileage", "[EndMileage] >= [StartMileage]");
+                    table.HasCheckConstraint("CK_PytTrips_Dates", "[EndDateTime] >= [StartDateTime]");
+                });
+            });
+
+            modelBuilder.Entity<PytUserPreference>(entity =>
+            {
+                entity.ToTable("PytUserPreferences");
+                entity.Property(x => x.LastPurpose).HasMaxLength(120);
+                entity.HasIndex(x => x.UserId).IsUnique();
+
+                entity.HasOne(x => x.User)
+                    .WithOne(x => x.Preference)
+                    .HasForeignKey<PytUserPreference>(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(x => x.LastVehicle)
+                    .WithMany(x => x.PreferredByUsers)
+                    .HasForeignKey(x => x.LastVehicleId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(x => x.LastDriver)
+                    .WithMany(x => x.PreferredByUsers)
+                    .HasForeignKey(x => x.LastDriverId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(x => x.LastStartLocation)
+                    .WithMany(x => x.PreferredAsStartByUsers)
+                    .HasForeignKey(x => x.LastStartLocationId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasOne(x => x.LastEndLocation)
+                    .WithMany(x => x.PreferredAsEndByUsers)
+                    .HasForeignKey(x => x.LastEndLocationId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<PytUser>().HasData(
+                new PytUser
+                {
+                    Id = 1,
+                    Email = "demo@pyt.local",
+                    PasswordHash = "v1$120000$AQIDBAUGBwgJCgsMDQ4PEA==$Wnhu8jmOpth30jheYWyH/50nGyI5gH8bWEe3HsxRujs=",
+                    IsActive = true,
+                    CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc)
+                });
+
+            modelBuilder.Entity<PytVehicle>().HasData(
+                new PytVehicle
+                {
+                    Id = 1,
+                    PlateNumber = "CA1234AB",
+                    MakeModel = "Skoda Octavia",
+                    FuelType = "Diesel",
+                    AvgConsumption = 6.20m,
+                    LastMileage = 124500,
+                    IsActive = true
+                },
+                new PytVehicle
+                {
+                    Id = 2,
+                    PlateNumber = "CA9876CD",
+                    MakeModel = "Renault Kangoo",
+                    FuelType = "Petrol",
+                    AvgConsumption = 7.80m,
+                    LastMileage = 87420,
+                    IsActive = true
+                });
+
+            modelBuilder.Entity<PytDriver>().HasData(
+                new PytDriver
+                {
+                    Id = 1,
+                    Name = "Иван Петров",
+                    LicenseNumber = "B1234567",
+                    IsActive = true
+                },
+                new PytDriver
+                {
+                    Id = 2,
+                    Name = "Мария Николова",
+                    LicenseNumber = "B9876543",
+                    IsActive = true
+                });
+
+            modelBuilder.Entity<PytLocation>().HasData(
+                new PytLocation
+                {
+                    Id = 1,
+                    Name = "Офис",
+                    Address = "София, бул. България 45",
+                    IsActive = true,
+                    IsFavorite = true
+                },
+                new PytLocation
+                {
+                    Id = 2,
+                    Name = "Клиент - Пловдив",
+                    Address = "Пловдив, ул. Христо Г. Данов 12",
+                    IsActive = true,
+                    IsFavorite = true
+                },
+                new PytLocation
+                {
+                    Id = 3,
+                    Name = "Сервиз",
+                    Address = "София, ул. Околовръстен път 201",
+                    IsActive = true,
+                    IsFavorite = false
+                });
+
+            modelBuilder.Entity<PytTrip>().HasData(
+                new PytTrip
+                {
+                    Id = 1,
+                    VehicleId = 1,
+                    DriverId = 1,
+                    StartDateTime = new DateTime(2026, 2, 10, 8, 30, 0, DateTimeKind.Utc),
+                    EndDateTime = new DateTime(2026, 2, 10, 18, 0, 0, DateTimeKind.Utc),
+                    StartLocationId = 1,
+                    EndLocationId = 2,
+                    StartMileage = 124380,
+                    EndMileage = 124500,
+                    Purpose = "Office -> Client",
+                    Notes = "Демо курс",
+                    CreatedAt = new DateTime(2026, 2, 10, 18, 5, 0, DateTimeKind.Utc),
+                    CreatedByUserId = 1
+                });
+
+            modelBuilder.Entity<PytUserPreference>().HasData(
+                new PytUserPreference
+                {
+                    Id = 1,
+                    UserId = 1,
+                    LastVehicleId = 1,
+                    LastDriverId = 1,
+                    LastStartLocationId = 2,
+                    LastEndLocationId = 2,
+                    LastPurpose = "Office -> Client",
+                    TypicalDistanceKm = 120,
+                    UpdatedAt = new DateTime(2026, 2, 10, 18, 5, 0, DateTimeKind.Utc)
+                });
 
             modelBuilder.Entity<MortgageScenario>().HasData(
                 new MortgageScenario

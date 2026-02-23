@@ -1,0 +1,39 @@
+{
+  "passwordHash": "YKGbM73vKQEfvm8JNiyHBRjYTCziuK7fRTjh7XNIf44=",
+  "passwordSalt": "pHmBHnEg2C125X7JRVZivA==",
+  "clockMode": "digital",
+  "showMinutesBeforeNextActivity": 15,
+  "defaultMessage": "Play time",
+  "defaultTextColor": "#133447",
+  "defaultBackgroundColor": "#cfffc2",
+  "defaultImageUrl": "https://cdn-icons-png.freepik.com/512/4574/4574337.png",
+  "rules": [
+    {
+      "start": "07:00",
+      "end": "10:00",
+      "message": "Breakfast open",
+      "textColor": "#133447",
+      "backgroundColor": "#ff0000"
+    },
+    {
+      "start": "11:30",
+      "end": "13:00",
+      "message": "Lunch open",
+      "textColor": "#133447",
+      "backgroundColor": "#0084ff"
+    },
+    {
+      "start": "18:21",
+      "end": "18:22",
+      "message": "Dinner",
+      "textColor": "#133447",
+      "backgroundColor": "#5c9900"
+    }
+  ],
+  "override": {
+    "label": "Timer",
+    "startedAtUtc": "2026-02-21T18:33:52.0065674Z",
+    "endsAtUtc": "2026-02-21T19:30:52.0065674Z"
+  },
+  "updatedAtUtc": "2026-02-21T18:33:52.0065674Z"
+}

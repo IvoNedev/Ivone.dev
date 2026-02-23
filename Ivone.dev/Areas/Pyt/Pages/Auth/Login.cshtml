@@ -1,0 +1,31 @@
+﻿@page
+@{
+    Layout = null;
+    ViewData["Title"] = "????";
+}
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>???? • ????? ????</title>
+    <link rel="stylesheet" href="~/css/pyt.css" asp-append-version="true" />
+</head>
+<body class="pyt-auth-body">
+    <section class="pyt-auth-card">
+        <h1>????</h1>
+        <p>???? ??????: <code>demo@pyt.local</code> / <code>demo123!</code></p>
+
+        <form id="login-form" class="form-stack">
+            <label>Email<input type="email" id="email" required autocomplete="username" /></label>
+            <label>Password<input type="password" id="password" required autocomplete="current-password" /></label>
+            <button type="submit" class="btn-primary">Login</button>
+            <div id="login-error" class="error-text" aria-live="polite"></div>
+        </form>
+
+        <a asp-area="Pyt" asp-page="/Auth/Register">Create account</a>
+    </section>
+
+    <script src="~/js/pyt/login.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -38,8 +38,9 @@
 
             let brushColor = colors[0];
             let brushSize = 6;
-            let drawing = false;
-            let lastPoint = null;
+            const maxPointers = 2;
+            const activePointers = new Map();
+            const lastPoints = new Map();
             let currentDpr = 1;
 
             const makePalette = () => {
@@ -112,35 +113,66 @@
                 ctx.fill();
             };
 
-            const startDrawing = (event) => {
-                event.preventDefault();
-                ensureFullscreen();
-                drawing = true;
-                canvas.setPointerCapture(event.pointerId);
-                lastPoint = getCanvasPos(event);
-                drawDot(lastPoint);
-            };
-
-            const draw = (event) => {
-                if (!drawing) return;
-                const point = getCanvasPos(event);
+            const drawLine = (from, to) => {
                 ctx.strokeStyle = brushColor;
                 ctx.lineWidth = brushSize;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
                 ctx.beginPath();
-                ctx.moveTo(lastPoint.x, lastPoint.y);
-                ctx.lineTo(point.x, point.y);
+                ctx.moveTo(from.x, from.y);
+                ctx.lineTo(to.x, to.y);
                 ctx.stroke();
-                lastPoint = point;
+            };
+
+            const drawBetweenPointers = () => {
+                const points = Array.from(activePointers.values());
+                if (points.length !== 2) return;
+                drawLine(points[0], points[1]);
+            };
+
+            const startDrawing = (event) => {
+                event.preventDefault();
+                if (event.pointerType === 'mouse' && event.button !== 0) {
+                    return;
+                }
+                if (activePointers.size >= maxPointers) {
+                    return;
+                }
+                ensureFullscreen();
+                canvas.setPointerCapture(event.pointerId);
+                const point = getCanvasPos(event);
+                activePointers.set(event.pointerId, point);
+                lastPoints.set(event.pointerId, point);
+                if (activePointers.size === 1) {
+                    drawDot(point);
+                }
+            };
+
+            const draw = (event) => {
+                if (!activePointers.has(event.pointerId)) return;
+                event.preventDefault();
+                const point = getCanvasPos(event);
+                const lastPoint = lastPoints.get(event.pointerId) || point;
+                activePointers.set(event.pointerId, point);
+                if (activePointers.size === 1) {
+                    drawLine(lastPoint, point);
+                    lastPoints.set(event.pointerId, point);
+                } else if (activePointers.size === 2) {
+                    drawBetweenPointers();
+                }
             };
 
             const stopDrawing = (event) => {
-                if (!drawing) return;
-                drawing = false;
-                lastPoint = null;
+                if (!activePointers.has(event.pointerId)) return;
+                activePointers.delete(event.pointerId);
+                lastPoints.delete(event.pointerId);
                 if (event.pointerId !== undefined) {
                     canvas.releasePointerCapture(event.pointerId);
+                }
+                if (activePointers.size === 1) {
+                    const [remainingId, remainingPoint] = activePointers.entries().next().value;
+                    lastPoints.set(remainingId, remainingPoint);
+                    drawDot(remainingPoint);
                 }
             };
 
@@ -160,11 +192,16 @@
                 }
             });
 
-            canvas.addEventListener('pointerdown', startDrawing);
-            canvas.addEventListener('pointermove', draw);
-            canvas.addEventListener('pointerup', stopDrawing);
-            canvas.addEventListener('pointercancel', stopDrawing);
-            canvas.addEventListener('pointerleave', stopDrawing);
+            canvas.addEventListener('pointerdown', startDrawing, { passive: false });
+            canvas.addEventListener('pointermove', draw, { passive: false });
+            canvas.addEventListener('pointerup', stopDrawing, { passive: false });
+            canvas.addEventListener('pointercancel', stopDrawing, { passive: false });
+            canvas.addEventListener('pointerleave', stopDrawing, { passive: false });
+            canvas.addEventListener('contextmenu', (event) => event.preventDefault());
+            canvas.addEventListener('dblclick', (event) => event.preventDefault());
+            document.addEventListener('contextmenu', (event) => event.preventDefault());
+            document.addEventListener('dblclick', (event) => event.preventDefault());
+            document.addEventListener('gesturestart', (event) => event.preventDefault());
 
             setTimeout(ensureFullscreen, 300);
         })();

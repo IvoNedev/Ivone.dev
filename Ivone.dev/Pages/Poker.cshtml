@@ -1,0 +1,368 @@
+@page "/poker"
+@model Ivone.dev.Pages.PokerModel
+@{
+    ViewData["Title"] = "Poker Helper";
+}
+
+<div class="poker-layout">
+    <details class="poker-panel" open>
+        <summary>Poker Helper Guide</summary>
+        <div class="poker-panel-body">
+            <p class="poker-note">
+                Use this as a practical decision assistant: compare equity to pot odds, then choose the lowest-risk +EV line.
+            </p>
+            <ul class="poker-tips">
+                <li>Win/Tie/Lose are simulation outcomes versus random ranges.</li>
+                <li>Equity % is what matters for call decisions.</li>
+                <li>If Equity % is below Pot Odds %, calling is usually -EV.</li>
+                <li>Player count heavily changes equity. Always set it correctly.</li>
+            </ul>
+        </div>
+    </details>
+
+    <details class="poker-panel" open>
+        <summary>Odds Simulator</summary>
+        <div class="poker-panel-body">
+            <div class="poker-grid">
+                <label>Players In Hand
+                    <input id="poker-player-count" type="number" min="2" max="10" value="6" />
+                </label>
+                <label>Pot Size
+                    <input id="poker-pot-size" type="number" min="0" step="0.01" placeholder="Optional" />
+                </label>
+                <label>To Call
+                    <input id="poker-to-call" type="number" min="0" step="0.01" placeholder="Optional" />
+                </label>
+                <label>Iterations
+                    <select id="poker-iterations">
+                        <option value="10000">10,000 (Fast)</option>
+                        <option value="50000" selected>50,000 (Default)</option>
+                        <option value="200000">200,000 (Deep)</option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="poker-card-grid">
+                <div class="poker-card-group">
+                    <h3>Hero Cards</h3>
+                    <div class="poker-card-row">
+                        <label>Card 1<select id="poker-hero-1" class="poker-card-select"></select></label>
+                        <label>Card 2<select id="poker-hero-2" class="poker-card-select"></select></label>
+                    </div>
+                </div>
+
+                <div class="poker-card-group">
+                    <h3>Board Cards</h3>
+                    <div class="poker-card-row">
+                        <label>Flop 1<select id="poker-flop-1" class="poker-card-select"></select></label>
+                        <label>Flop 2<select id="poker-flop-2" class="poker-card-select"></select></label>
+                        <label>Flop 3<select id="poker-flop-3" class="poker-card-select"></select></label>
+                        <label>Turn<select id="poker-turn" class="poker-card-select"></select></label>
+                        <label>River<select id="poker-river" class="poker-card-select"></select></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="poker-actions">
+                <button id="poker-run" class="poker-btn" type="button">Run Simulation</button>
+                <label class="poker-inline-check">
+                    <input id="poker-auto-run" type="checkbox" checked />
+                    Auto run on changes
+                </label>
+                <span id="poker-meta" class="poker-meta">-</span>
+            </div>
+            <div id="poker-error" class="poker-error" role="status" aria-live="polite"></div>
+        </div>
+    </details>
+
+    <details class="poker-panel" open>
+        <summary>Results</summary>
+        <div class="poker-panel-body">
+            <div class="poker-metrics">
+                <div><span>Win %</span><strong id="poker-win-pct">-</strong></div>
+                <div><span>Tie %</span><strong id="poker-tie-pct">-</strong></div>
+                <div><span>Lose %</span><strong id="poker-lose-pct">-</strong></div>
+                <div><span>Equity %</span><strong id="poker-equity-pct">-</strong></div>
+                <div><span>Pot Odds %</span><strong id="poker-pot-odds-pct">-</strong></div>
+                <div><span>EV (Call)</span><strong id="poker-ev-call">-</strong></div>
+            </div>
+
+            <div class="poker-bar">
+                <div id="poker-win-bar" class="poker-bar-win" style="width:0%"></div>
+                <div id="poker-tie-bar" class="poker-bar-tie" style="width:0%"></div>
+                <div id="poker-lose-bar" class="poker-bar-lose" style="width:0%"></div>
+            </div>
+
+            <div class="poker-grid poker-grid-result">
+                <div class="poker-result-box">
+                    <span>Current Made Hand</span>
+                    <strong id="poker-made-hand">-</strong>
+                </div>
+                <div class="poker-result-box">
+                    <span>Outs</span>
+                    <strong id="poker-outs">-</strong>
+                </div>
+                <div class="poker-result-box">
+                    <span>Improve By Turn %</span>
+                    <strong id="poker-improve-turn">-</strong>
+                </div>
+                <div class="poker-result-box">
+                    <span>Improve By River %</span>
+                    <strong id="poker-improve-river">-</strong>
+                </div>
+            </div>
+
+            <p id="poker-recommendation" class="poker-recommendation">Run a simulation to get a recommendation.</p>
+        </div>
+    </details>
+</div>
+
+<style>
+    :root {
+        --poker-bg: linear-gradient(165deg, #06141f, #0a1f2d 45%, #14311f 100%);
+        --poker-surface: rgba(8, 23, 34, 0.88);
+        --poker-surface-strong: rgba(10, 30, 43, 0.95);
+        --poker-border: #2e556f;
+        --poker-border-soft: #305670;
+        --poker-text: #d3ebff;
+        --poker-text-soft: #b5d5ee;
+        --poker-input: #0d2538;
+        --poker-focus: rgba(87, 178, 216, 0.22);
+    }
+
+    body { margin: 0 !important; padding: 0 !important; }
+
+    .poker-layout {
+        display: grid;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: var(--poker-bg);
+        min-height: calc(100vh - 10px);
+    }
+
+    .poker-panel {
+        border: 1px solid var(--poker-border);
+        border-radius: 0.65rem;
+        background: var(--poker-surface);
+        overflow: hidden;
+        box-shadow: 0 0 0 1px var(--poker-focus);
+    }
+
+    .poker-panel > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 0.45rem 0.55rem;
+        font-weight: 700;
+        color: var(--poker-text);
+        background: var(--poker-surface-strong);
+        border-bottom: 1px solid var(--poker-border-soft);
+        user-select: none;
+        font-size: 0.78rem;
+        letter-spacing: 0.02em;
+    }
+
+    .poker-panel > summary::-webkit-details-marker { display: none; }
+    .poker-panel > summary::marker { content: ""; }
+    .poker-panel-body { padding: 0.45rem; }
+
+    .poker-grid {
+        display: grid;
+        gap: 0.42rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .poker-grid label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.16rem;
+        font-size: 0.71rem;
+        color: var(--poker-text-soft);
+    }
+
+    .poker-card-grid {
+        margin-top: 0.5rem;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .poker-card-group {
+        border: 1px solid var(--poker-border-soft);
+        border-radius: 0.5rem;
+        padding: 0.35rem;
+        background: var(--poker-surface-strong);
+    }
+
+    .poker-card-group h3 {
+        margin: 0 0 0.25rem;
+        font-size: 0.73rem;
+        color: var(--poker-text);
+    }
+
+    .poker-card-row {
+        display: grid;
+        gap: 0.35rem;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .poker-card-select,
+    #poker-player-count,
+    #poker-pot-size,
+    #poker-to-call,
+    #poker-iterations {
+        width: 100%;
+        border-radius: 0.42rem;
+        border: 1px solid var(--poker-border-soft);
+        background: var(--poker-input);
+        color: var(--poker-text);
+        padding: 0.24rem 0.3rem;
+        font-size: 0.7rem;
+    }
+
+    .poker-actions {
+        margin-top: 0.45rem;
+        display: flex;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .poker-btn {
+        border: 1px solid #4199d0;
+        border-radius: 999px;
+        padding: 0.24rem 0.55rem;
+        font-size: 0.71rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #1d4f73, #2f865d);
+        color: #eef8ff;
+        cursor: pointer;
+    }
+
+    .poker-btn:disabled {
+        background: #294053;
+        color: #8badc8;
+        border-color: #4a657a;
+        cursor: not-allowed;
+    }
+
+    .poker-inline-check {
+        display: inline-flex;
+        gap: 0.24rem;
+        align-items: center;
+        font-size: 0.7rem;
+        color: var(--poker-text-soft);
+    }
+
+    .poker-note {
+        margin: 0 0 0.3rem;
+        color: var(--poker-text);
+        font-size: 0.7rem;
+    }
+
+    .poker-tips {
+        margin: 0;
+        padding-left: 1rem;
+        display: grid;
+        gap: 0.14rem;
+        color: var(--poker-text-soft);
+        font-size: 0.67rem;
+    }
+
+    .poker-error {
+        min-height: 1.2rem;
+        margin-top: 0.35rem;
+        color: #ffbbc7;
+        font-size: 0.69rem;
+    }
+
+    .poker-meta {
+        color: var(--poker-text-soft);
+        font-size: 0.66rem;
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    }
+
+    .poker-metrics {
+        display: grid;
+        gap: 0.3rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-bottom: 0.4rem;
+    }
+
+    .poker-metrics div {
+        border: 1px solid var(--poker-border-soft);
+        border-radius: 0.45rem;
+        padding: 0.28rem 0.32rem;
+        background: var(--poker-surface-strong);
+    }
+
+    .poker-metrics span {
+        display: block;
+        color: var(--poker-text-soft);
+        font-size: 0.61rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .poker-metrics strong {
+        color: var(--poker-text);
+        font-size: 0.76rem;
+    }
+
+    .poker-bar {
+        display: flex;
+        width: 100%;
+        height: 0.56rem;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid var(--poker-border-soft);
+        margin-bottom: 0.45rem;
+    }
+
+    .poker-bar-win { background: #36be6e; }
+    .poker-bar-tie { background: #d8a94f; }
+    .poker-bar-lose { background: #d85b67; }
+
+    .poker-grid-result {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .poker-result-box {
+        border: 1px solid var(--poker-border-soft);
+        border-radius: 0.45rem;
+        padding: 0.25rem 0.3rem;
+        background: var(--poker-surface-strong);
+    }
+
+    .poker-result-box span {
+        display: block;
+        font-size: 0.6rem;
+        color: var(--poker-text-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .poker-result-box strong {
+        color: var(--poker-text);
+        font-size: 0.73rem;
+    }
+
+    .poker-recommendation {
+        margin: 0.45rem 0 0;
+        border: 1px solid var(--poker-border-soft);
+        border-radius: 0.5rem;
+        background: rgba(12, 36, 54, 0.75);
+        padding: 0.34rem 0.42rem;
+        color: var(--poker-text);
+        font-size: 0.69rem;
+    }
+
+    @@media (max-width: 980px) {
+        .poker-grid { grid-template-columns: 1fr; }
+        .poker-card-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .poker-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .poker-grid-result { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/poker-helper.js" defer></script>
+}

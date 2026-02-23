@@ -1,0 +1,72 @@
+@page "/helperx"
+@model Ivone.dev.Pages.HelperXModel
+@{
+    ViewData["Title"] = "HelperX";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/helperx.css" asp-append-version="true" />
+}
+
+<div class="helperx" data-helperx data-manifest-url='@Url.Page("HelperX", "Manifest")' data-base-path="/HelperX/Definitive">
+    <header class="helperx__hero">
+        <div>
+            <p class="helperx__eyebrow">HelperX</p>
+            <h1 class="helperx__title">Markdown companion</h1>
+            <p class="helperx__subtitle">Pick a phase, choose a readme, and render it with one click.</p>
+        </div>
+        <label class="theme-toggle" for="themeToggle">
+            <span class="theme-toggle__label" id="themeLabel">Dark mode</span>
+            <input type="checkbox" id="themeToggle" />
+        </label>
+    </header>
+
+    <section class="helperx__options" aria-label="Layout options">
+        <div class="helperx__option">
+            <div class="helperx__option-header">
+                <div>
+                    <h2 class="helperx__option-title">Readme tabs</h2>
+                    <p class="helperx__option-meta">Pick a phase or orchestrator list, then load and mark readmes as done.</p>
+                </div>
+                <div class="helperx__option-actions">
+                    <span class="helperx__option-tag">Tabs</span>
+                    <button class="helperx__button helperx__button--ghost hx-collapse" id="tabsCollapseBtn" type="button" aria-expanded="true">Collapse</button>
+                </div>
+            </div>
+            <div class="helperx__option-body hx-tabs" id="tabsLayout">
+                <div class="hx-tabs__controls">
+                    <label class="helperx__field hx-search" for="helperxSearch">
+                        <span>Search readmes</span>
+                        <input type="search" id="helperxSearch" placeholder="Type a keyword to find matches" autocomplete="off" />
+                    </label>
+                    <button class="helperx__button" id="helperxNextBtn" type="button" disabled>Next readme</button>
+                </div>
+                <div class="hx-tabs__nav" id="tabsNav"></div>
+                <div class="hx-tabs__panel" id="tabsPanel"></div>
+                <div class="hx-search-results" id="helperxSearchResults" aria-live="polite"></div>
+            </div>
+        </div>
+    </section>
+
+    <p class="helperx__note">Completion is saved locally in this browser.</p>
+
+    <div class="helperx__status" id="helperxStatus" role="status" aria-live="polite">Loading phases...</div>
+
+    <article class="markdown-output" id="markdownOutput" aria-live="polite" aria-busy="false">
+        <div class="markdown-output__empty" id="helperxEmpty">
+            <strong>No markdown loaded yet.</strong>
+            <p>Choose a phase and readme, then hit Load to render it here.</p>
+        </div>
+        <div class="markdown-output__body" id="markdownBody"></div>
+    </article>
+
+    <noscript>
+        <p class="helperx__noscript">JavaScript is required to load the markdown reader.</p>
+    </noscript>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+    <script src="~/js/helperx.js" asp-append-version="true"></script>
+}

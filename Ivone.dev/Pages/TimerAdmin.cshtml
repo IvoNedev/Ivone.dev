@@ -1,0 +1,839 @@
+@page "/timer-admin"
+@model Ivone.dev.Pages.TimerAdminModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timer Admin - Ivone.dev</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --bg-top: #fff6d9;
+            --bg-bottom: #ffd9a0;
+            --surface: rgba(255, 255, 255, 0.78);
+            --surface-strong: rgba(255, 255, 255, 0.94);
+            --ink: #183446;
+            --ink-soft: #426174;
+            --line: #d8c7a9;
+            --accent: #ef7f43;
+            --accent-deep: #dd5f1f;
+            --ok: #0f766e;
+            --error: #b91c1c;
+            --focus: #0f766e;
+            --shadow: 0 18px 45px rgba(97, 61, 24, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            background: radial-gradient(circle at 12% 20%, rgba(255, 255, 255, 0.8), transparent 35%),
+                        radial-gradient(circle at 85% 12%, rgba(255, 255, 255, 0.65), transparent 32%),
+                        linear-gradient(165deg, var(--bg-top), var(--bg-bottom));
+            font-family: "Nunito Sans", "Segoe UI", sans-serif;
+        }
+
+        .admin-shell {
+            width: min(1100px, 100%);
+            margin: 0 auto;
+            padding: 1rem 1rem 2.5rem;
+            display: grid;
+            gap: 0.9rem;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+        }
+
+        .hero {
+            grid-column: 1 / -1;
+            background: var(--surface-strong);
+            border-radius: 26px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            padding: 1.2rem 1.3rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-family: "Baloo 2", "Nunito Sans", sans-serif;
+            font-size: clamp(1.6rem, 4vw, 2.25rem);
+            line-height: 1;
+            letter-spacing: 0.02em;
+        }
+
+        .hero p {
+            margin: 0.35rem 0 0;
+            color: var(--ink-soft);
+            max-width: 52ch;
+        }
+
+        .hero .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .link-btn {
+            text-decoration: none;
+            color: #fff;
+            background: linear-gradient(130deg, #0f766e, #155e75);
+            border-radius: 999px;
+            padding: 0.6rem 1rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            box-shadow: 0 8px 22px rgba(21, 94, 117, 0.3);
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 20px;
+            padding: 1rem;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(5px);
+            min-width: 0;
+        }
+
+        .panel h2 {
+            margin: 0 0 0.7rem;
+            font-family: "Baloo 2", "Nunito Sans", sans-serif;
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+
+        .security-panel {
+            grid-column: span 5;
+        }
+
+        .defaults-panel {
+            grid-column: span 7;
+        }
+
+        .schedule-panel {
+            grid-column: 1 / -1;
+        }
+
+        .override-panel {
+            grid-column: span 6;
+        }
+
+        .summary-panel {
+            grid-column: span 6;
+        }
+
+        .field-grid {
+            display: grid;
+            gap: 0.6rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.32rem;
+        }
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+        .field label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--ink-soft);
+        }
+
+        input[type="text"],
+        input[type="password"],
+        input[type="url"],
+        input[type="number"],
+        input[type="time"] {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 0.6rem 0.72rem;
+            font: inherit;
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 0.6rem 0.72rem;
+            font: inherit;
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        input[type="color"] {
+            width: 100%;
+            min-height: 2.55rem;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.85);
+            padding: 0.2rem;
+            cursor: pointer;
+        }
+
+        input:focus {
+            outline: 2px solid var(--focus);
+            outline-offset: 1px;
+        }
+
+        .btn-row {
+            margin-top: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 999px;
+            padding: 0.55rem 1rem;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+            color: var(--ink);
+            background: #f2ddbe;
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .btn.primary {
+            color: #fff;
+            background: linear-gradient(130deg, var(--accent), var(--accent-deep));
+            box-shadow: 0 9px 20px rgba(221, 95, 31, 0.3);
+        }
+
+        .btn.teal {
+            color: #fff;
+            background: linear-gradient(130deg, #0f766e, #0f5e57);
+            box-shadow: 0 9px 20px rgba(15, 118, 110, 0.3);
+        }
+
+        .btn.danger {
+            color: #fff;
+            background: linear-gradient(130deg, #dc2626, #b91c1c);
+            box-shadow: 0 9px 20px rgba(185, 28, 28, 0.28);
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .status-text {
+            margin: 0.6rem 0 0;
+            font-size: 0.9rem;
+            color: var(--ink-soft);
+        }
+
+        .status-text.error {
+            color: var(--error);
+            font-weight: 700;
+        }
+
+        .status-text.ok {
+            color: var(--ok);
+            font-weight: 700;
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.8rem;
+        }
+
+        .rules-list {
+            display: grid;
+            gap: 0.6rem;
+        }
+
+        .rule-card {
+            border: 1px dashed #cfb792;
+            border-radius: 16px;
+            padding: 0.7rem;
+            background: rgba(255, 255, 255, 0.55);
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .rule-top {
+            display: grid;
+            gap: 0.5rem;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: end;
+        }
+
+        .rule-times {
+            display: grid;
+            gap: 0.5rem;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-column: span 2;
+        }
+
+        .rule-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .summary-list {
+            margin: 0.1rem 0 0;
+            padding-left: 1.1rem;
+            color: var(--ink-soft);
+        }
+
+        .summary-list li {
+            margin: 0.38rem 0;
+        }
+
+        @@media (max-width: 930px) {
+            .security-panel,
+            .defaults-panel,
+            .schedule-panel,
+            .override-panel,
+            .summary-panel {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @@media (max-width: 670px) {
+            .field-grid,
+            .rule-top,
+            .rule-times {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .hero .actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="admin-shell">
+        <header class="hero">
+            <div>
+                <h1>Timer Host Control</h1>
+                <p>Set the day schedule, colors, messages, and override countdown for the guest wall clock.</p>
+            </div>
+            <div class="actions">
+                <a class="link-btn" href="/timer" target="_blank" rel="noopener noreferrer">Open Guest Screen</a>
+            </div>
+        </header>
+
+        <section class="panel security-panel">
+            <h2>Security</h2>
+            <div class="field-grid">
+                <div class="field full">
+                    <label for="adminPassword">Current admin password</label>
+                    <input id="adminPassword" type="password" autocomplete="off" />
+                </div>
+                <div class="field full">
+                    <label for="newPassword">New password (optional)</label>
+                    <input id="newPassword" type="password" autocomplete="off" />
+                </div>
+            </div>
+            <div class="btn-row">
+                <button type="button" class="btn" id="loadBtn">Load</button>
+                <button type="button" class="btn primary" id="saveBtn">Save Settings</button>
+            </div>
+            <p id="securityStatus" class="status-text">Checking timer status...</p>
+        </section>
+
+        <section class="panel defaults-panel">
+            <h2>Default Guest Display</h2>
+            <div class="field-grid">
+                <div class="field full">
+                    <label for="defaultMessage">Default message</label>
+                    <input id="defaultMessage" type="text" maxlength="160" placeholder="Breakfast closed" />
+                </div>
+                <div class="field">
+                    <label for="clockMode">Clock style</label>
+                    <select id="clockMode">
+                        <option value="digital">Digital</option>
+                        <option value="analog">Analog</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="showMinsBeforeNextActivity">Show mins prior</label>
+                    <input id="showMinsBeforeNextActivity" type="number" min="0" max="180" value="0" />
+                </div>
+                <div class="field">
+                    <label for="defaultTextColor">Text color</label>
+                    <input id="defaultTextColor" type="color" value="#133447" />
+                </div>
+                <div class="field">
+                    <label for="defaultBackgroundColor">Background color</label>
+                    <input id="defaultBackgroundColor" type="color" value="#FFF3D6" />
+                </div>
+                <div class="field full">
+                    <label for="defaultImageUrl">Default image URL</label>
+                    <input id="defaultImageUrl" type="url" placeholder="https://..." />
+                </div>
+            </div>
+        </section>
+
+        <section class="panel schedule-panel">
+            <div class="panel-head">
+                <h2>Schedule Rules</h2>
+                <button type="button" class="btn" id="addRuleBtn">Add Rule</button>
+            </div>
+            <div id="rulesList" class="rules-list"></div>
+            <p id="scheduleStatus" class="status-text">Rules are checked in order, top to bottom.</p>
+        </section>
+
+        <section class="panel override-panel">
+            <h2>Override Countdown</h2>
+            <div class="field-grid">
+                <div class="field full">
+                    <label for="overrideLabel">Override label</label>
+                    <input id="overrideLabel" type="text" maxlength="80" placeholder="Nap time" />
+                </div>
+                <div class="field">
+                    <label for="overrideMinutes">Duration (minutes)</label>
+                    <input id="overrideMinutes" type="number" min="1" max="720" value="60" />
+                </div>
+            </div>
+            <div class="btn-row">
+                <button type="button" class="btn teal" id="startOverrideBtn">Start Override</button>
+                <button type="button" class="btn danger" id="clearOverrideBtn">Clear Override</button>
+            </div>
+            <p id="overrideStatus" class="status-text">No active override.</p>
+        </section>
+
+        <section class="panel summary-panel">
+            <h2>Guest Summary</h2>
+            <ul id="summaryList" class="summary-list">
+                <li>Not loaded yet.</li>
+            </ul>
+        </section>
+    </main>
+
+    <template id="ruleTemplate">
+        <article class="rule-card">
+            <div class="rule-top">
+                <div class="rule-times">
+                    <div class="field">
+                        <label>From</label>
+                        <input type="time" class="rule-start" />
+                    </div>
+                    <div class="field">
+                        <label>To</label>
+                        <input type="time" class="rule-end" />
+                    </div>
+                </div>
+                <div class="rule-actions">
+                    <button type="button" class="btn danger remove-rule-btn">Remove</button>
+                </div>
+            </div>
+            <div class="field">
+                <label>Message</label>
+                <input type="text" class="rule-message" maxlength="160" placeholder="Breakfast open" />
+            </div>
+            <div class="field-grid">
+                <div class="field">
+                    <label>Text color</label>
+                    <input type="color" class="rule-text-color" value="#133447" />
+                </div>
+                <div class="field">
+                    <label>Background color</label>
+                    <input type="color" class="rule-bg-color" value="#FFF3D6" />
+                </div>
+                <div class="field full">
+                    <label>Image URL</label>
+                    <input type="url" class="rule-image-url" placeholder="https://..." />
+                </div>
+            </div>
+        </article>
+    </template>
+
+    <script>
+        (() => {
+            const storageKey = "ivonedev.timer.admin.password";
+            const adminPasswordInput = document.getElementById("adminPassword");
+            const newPasswordInput = document.getElementById("newPassword");
+            const defaultMessageInput = document.getElementById("defaultMessage");
+            const clockModeInput = document.getElementById("clockMode");
+            const showMinsBeforeNextActivityInput = document.getElementById("showMinsBeforeNextActivity");
+            const defaultTextColorInput = document.getElementById("defaultTextColor");
+            const defaultBackgroundColorInput = document.getElementById("defaultBackgroundColor");
+            const defaultImageUrlInput = document.getElementById("defaultImageUrl");
+            const rulesList = document.getElementById("rulesList");
+            const ruleTemplate = document.getElementById("ruleTemplate");
+            const securityStatus = document.getElementById("securityStatus");
+            const scheduleStatus = document.getElementById("scheduleStatus");
+            const overrideStatus = document.getElementById("overrideStatus");
+            const summaryList = document.getElementById("summaryList");
+            const overrideLabelInput = document.getElementById("overrideLabel");
+            const overrideMinutesInput = document.getElementById("overrideMinutes");
+
+            const loadBtn = document.getElementById("loadBtn");
+            const saveBtn = document.getElementById("saveBtn");
+            const addRuleBtn = document.getElementById("addRuleBtn");
+            const startOverrideBtn = document.getElementById("startOverrideBtn");
+            const clearOverrideBtn = document.getElementById("clearOverrideBtn");
+
+            const defaults = {
+                clockMode: "digital",
+                showMinutesBeforeNextActivity: 0,
+                defaultMessage: "What is happening now?",
+                defaultTextColor: "#133447",
+                defaultBackgroundColor: "#FFF3D6",
+                defaultImageUrl: "",
+                rules: []
+            };
+
+            let hasPassword = false;
+
+            function setStatus(element, text, tone) {
+                element.textContent = text;
+                element.classList.remove("ok", "error");
+                if (tone === "ok") {
+                    element.classList.add("ok");
+                }
+                if (tone === "error") {
+                    element.classList.add("error");
+                }
+            }
+
+            async function requestJson(url, payload) {
+                const options = {
+                    method: payload === undefined ? "GET" : "POST",
+                    headers: {}
+                };
+
+                if (payload !== undefined) {
+                    options.headers["Content-Type"] = "application/json";
+                    options.body = JSON.stringify(payload);
+                }
+
+                const response = await fetch(url, options);
+                const raw = await response.text();
+                let body = {};
+
+                if (raw) {
+                    try {
+                        body = JSON.parse(raw);
+                    } catch {
+                        body = {};
+                    }
+                }
+
+                if (!response.ok) {
+                    throw new Error(body.message || `Request failed (${response.status})`);
+                }
+
+                return body;
+            }
+
+            function createRuleCard(rule = {}) {
+                const fragment = ruleTemplate.content.cloneNode(true);
+                const card = fragment.querySelector(".rule-card");
+                const startInput = card.querySelector(".rule-start");
+                const endInput = card.querySelector(".rule-end");
+                const messageInput = card.querySelector(".rule-message");
+                const textColorInput = card.querySelector(".rule-text-color");
+                const bgColorInput = card.querySelector(".rule-bg-color");
+                const imageUrlInput = card.querySelector(".rule-image-url");
+                const removeBtn = card.querySelector(".remove-rule-btn");
+
+                startInput.value = rule.start || "07:00";
+                endInput.value = rule.end || "10:00";
+                messageInput.value = rule.message || "Breakfast open";
+                textColorInput.value = rule.textColor || "#133447";
+                bgColorInput.value = rule.backgroundColor || "#FFF3D6";
+                imageUrlInput.value = rule.imageUrl || "";
+
+                removeBtn.addEventListener("click", () => {
+                    card.remove();
+                    setStatus(scheduleStatus, "Rule removed.", "ok");
+                });
+
+                return card;
+            }
+
+            function renderRules(rules) {
+                rulesList.innerHTML = "";
+                const source = Array.isArray(rules) ? rules : [];
+                if (!source.length) {
+                    rulesList.appendChild(createRuleCard());
+                    return;
+                }
+
+                source.forEach(rule => {
+                    rulesList.appendChild(createRuleCard(rule));
+                });
+            }
+
+            function collectRules() {
+                const cards = rulesList.querySelectorAll(".rule-card");
+                const rules = [];
+
+                cards.forEach(card => {
+                    const start = card.querySelector(".rule-start").value.trim();
+                    const end = card.querySelector(".rule-end").value.trim();
+                    if (!start || !end) {
+                        return;
+                    }
+
+                    rules.push({
+                        start,
+                        end,
+                        message: card.querySelector(".rule-message").value.trim(),
+                        textColor: card.querySelector(".rule-text-color").value.trim(),
+                        backgroundColor: card.querySelector(".rule-bg-color").value.trim(),
+                        imageUrl: card.querySelector(".rule-image-url").value.trim()
+                    });
+                });
+
+                return rules;
+            }
+
+            function collectSettings() {
+                const showMinutesRaw = Number.parseInt(showMinsBeforeNextActivityInput.value, 10);
+                return {
+                    clockMode: clockModeInput.value.trim(),
+                    showMinutesBeforeNextActivity: Number.isFinite(showMinutesRaw) ? Math.min(180, Math.max(0, showMinutesRaw)) : 0,
+                    defaultMessage: defaultMessageInput.value.trim(),
+                    defaultTextColor: defaultTextColorInput.value.trim(),
+                    defaultBackgroundColor: defaultBackgroundColorInput.value.trim(),
+                    defaultImageUrl: defaultImageUrlInput.value.trim(),
+                    rules: collectRules()
+                };
+            }
+
+            function applySettings(settings) {
+                const data = settings || defaults;
+                clockModeInput.value = data.clockMode === "analog" ? "analog" : "digital";
+                showMinsBeforeNextActivityInput.value = String(Number.isFinite(data.showMinutesBeforeNextActivity) ? Math.min(180, Math.max(0, data.showMinutesBeforeNextActivity)) : 0);
+                defaultMessageInput.value = data.defaultMessage || defaults.defaultMessage;
+                defaultTextColorInput.value = data.defaultTextColor || defaults.defaultTextColor;
+                defaultBackgroundColorInput.value = data.defaultBackgroundColor || defaults.defaultBackgroundColor;
+                defaultImageUrlInput.value = data.defaultImageUrl || "";
+                renderRules(data.rules || []);
+                updateOverrideStatus(data.override || null);
+                updateSummary(data);
+            }
+
+            function formatUtc(dateText) {
+                const value = new Date(dateText);
+                if (Number.isNaN(value.getTime())) {
+                    return "n/a";
+                }
+                return value.toLocaleString();
+            }
+
+            function updateOverrideStatus(overrideInfo) {
+                if (!overrideInfo) {
+                    setStatus(overrideStatus, "No active override.", "");
+                    return;
+                }
+
+                const text = `${overrideInfo.label || "Timer"} until ${formatUtc(overrideInfo.endsAtUtc)}`;
+                setStatus(overrideStatus, text, "ok");
+            }
+
+            function updateSummary(settings) {
+                summaryList.innerHTML = "";
+                const items = [];
+                items.push(`Clock mode: ${settings.clockMode === "analog" ? "Analog" : "Digital"}`);
+                const showMinutes = Number.isFinite(settings.showMinutesBeforeNextActivity) ? settings.showMinutesBeforeNextActivity : 0;
+                items.push(showMinutes > 0 ? `Upcoming activity label: ${showMinutes} mins before start.` : "Upcoming activity label: Off.");
+                items.push(`Default message: "${settings.defaultMessage || defaults.defaultMessage}"`);
+                items.push(`Rules configured: ${Array.isArray(settings.rules) ? settings.rules.length : 0}`);
+                items.push(`Default colors: ${settings.defaultTextColor || defaults.defaultTextColor} on ${settings.defaultBackgroundColor || defaults.defaultBackgroundColor}`);
+                items.push(settings.defaultImageUrl ? "Default image URL is set." : "No default image URL.");
+                items.push(settings.override ? `Override active: ${settings.override.label || "Timer"}.` : "No active override.");
+                items.forEach(text => {
+                    const li = document.createElement("li");
+                    li.textContent = text;
+                    summaryList.appendChild(li);
+                });
+            }
+
+            function rememberPassword(password) {
+                if (!password) {
+                    return;
+                }
+                sessionStorage.setItem(storageKey, password);
+            }
+
+            function resolveAdminPassword() {
+                return adminPasswordInput.value.trim();
+            }
+
+            async function refreshStatus() {
+                try {
+                    const status = await requestJson("/api/timer/status");
+                    hasPassword = !!status.hasPassword;
+                    if (hasPassword) {
+                        setStatus(securityStatus, "Password is set. Use it to load and edit settings.", "");
+                    } else {
+                        setStatus(securityStatus, "No password yet. Set one and click Save Settings.", "");
+                    }
+                } catch (error) {
+                    setStatus(securityStatus, error.message || "Could not load timer status.", "error");
+                }
+            }
+
+            async function loadConfig() {
+                const password = resolveAdminPassword();
+                if (hasPassword && !password) {
+                    setStatus(securityStatus, "Enter current admin password to load settings.", "error");
+                    return;
+                }
+
+                try {
+                    setStatus(securityStatus, "Loading settings...", "");
+                    const response = await requestJson("/api/timer/admin/load", { password });
+                    hasPassword = !!response.hasPassword;
+                    applySettings(response.settings);
+                    rememberPassword(password);
+                    setStatus(securityStatus, "Settings loaded.", "ok");
+                } catch (error) {
+                    setStatus(securityStatus, error.message || "Load failed.", "error");
+                }
+            }
+
+            async function saveConfig() {
+                const password = resolveAdminPassword();
+                const newPassword = newPasswordInput.value.trim();
+
+                if (!hasPassword && !password && !newPassword) {
+                    setStatus(securityStatus, "Create a password before first save.", "error");
+                    return;
+                }
+
+                if (hasPassword && !password) {
+                    setStatus(securityStatus, "Current password is required to save.", "error");
+                    return;
+                }
+
+                const payload = {
+                    password,
+                    newPassword,
+                    settings: collectSettings()
+                };
+
+                try {
+                    setStatus(securityStatus, "Saving settings...", "");
+                    const response = await requestJson("/api/timer/admin/save", payload);
+                    hasPassword = !!response.hasPassword;
+                    applySettings(response.settings);
+
+                    const activePassword = newPassword || password;
+                    if (activePassword) {
+                        adminPasswordInput.value = activePassword;
+                        rememberPassword(activePassword);
+                    }
+                    newPasswordInput.value = "";
+
+                    setStatus(securityStatus, "Settings saved.", "ok");
+                    setStatus(scheduleStatus, "Guest page will update immediately on connected screens.", "ok");
+                } catch (error) {
+                    setStatus(securityStatus, error.message || "Save failed.", "error");
+                }
+            }
+
+            async function startOverride() {
+                const password = resolveAdminPassword();
+                if (!password) {
+                    setStatus(overrideStatus, "Current admin password is required.", "error");
+                    return;
+                }
+
+                const durationMinutes = Number.parseInt(overrideMinutesInput.value, 10);
+                if (!Number.isFinite(durationMinutes) || durationMinutes < 1) {
+                    setStatus(overrideStatus, "Duration must be a positive number.", "error");
+                    return;
+                }
+
+                try {
+                    setStatus(overrideStatus, "Starting override...", "");
+                    const response = await requestJson("/api/timer/admin/override/start", {
+                        password,
+                        label: overrideLabelInput.value.trim(),
+                        durationMinutes
+                    });
+
+                    applySettings(response.settings);
+                    rememberPassword(password);
+                    setStatus(overrideStatus, "Override started.", "ok");
+                } catch (error) {
+                    setStatus(overrideStatus, error.message || "Could not start override.", "error");
+                }
+            }
+
+            async function clearOverride() {
+                const password = resolveAdminPassword();
+                if (!password) {
+                    setStatus(overrideStatus, "Current admin password is required.", "error");
+                    return;
+                }
+
+                try {
+                    setStatus(overrideStatus, "Clearing override...", "");
+                    const response = await requestJson("/api/timer/admin/override/clear", { password });
+                    applySettings(response.settings);
+                    rememberPassword(password);
+                    setStatus(overrideStatus, "Override cleared.", "ok");
+                } catch (error) {
+                    setStatus(overrideStatus, error.message || "Could not clear override.", "error");
+                }
+            }
+
+            loadBtn.addEventListener("click", loadConfig);
+            saveBtn.addEventListener("click", saveConfig);
+            startOverrideBtn.addEventListener("click", startOverride);
+            clearOverrideBtn.addEventListener("click", clearOverride);
+            addRuleBtn.addEventListener("click", () => {
+                rulesList.appendChild(createRuleCard({
+                    start: "07:00",
+                    end: "10:00",
+                    message: "Breakfast open",
+                    textColor: defaultTextColorInput.value,
+                    backgroundColor: defaultBackgroundColorInput.value
+                }));
+            });
+
+            const rememberedPassword = sessionStorage.getItem(storageKey);
+            if (rememberedPassword) {
+                adminPasswordInput.value = rememberedPassword;
+            }
+
+            applySettings(defaults);
+            refreshStatus().then(() => {
+                if (!hasPassword) {
+                    setStatus(securityStatus, "No password yet. Set one and save when ready.", "");
+                } else if (adminPasswordInput.value.trim()) {
+                    loadConfig();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

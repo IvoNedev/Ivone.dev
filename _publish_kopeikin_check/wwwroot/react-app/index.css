@@ -1,0 +1,40 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@media print {
+    /* 1. Hide your “unique” element entirely */
+    #unique,
+    #budgetToggleArrow,
+    #mortgageSlider,
+    #vatToggle,
+    #languageToggle {
+        display: none !important;
+    }
+
+
+    /* 2. Hide everything by default */
+    body * {
+        visibility: hidden;
+    }
+
+    /* 3. Then make #react-root and its children visible */
+    #react-root,
+    #react-root * {
+        visibility: visible;
+    }
+
+    /* 4. Position #react-root at the top-left, so it fills the printed page */
+    #react-root {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+    }
+
+    html, body, table, th, td {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

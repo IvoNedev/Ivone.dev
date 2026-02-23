@@ -217,6 +217,356 @@ namespace Ivone.dev.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytDriver", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LicenseNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PytDrivers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            IsActive = true,
+                            LicenseNumber = "B1234567",
+                            Name = "Иван Петров"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            IsActive = true,
+                            LicenseNumber = "B9876543",
+                            Name = "Мария Николова"
+                        });
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytLocation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFavorite")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PytLocations", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Address = "София, бул. България 45",
+                            IsActive = true,
+                            IsFavorite = true,
+                            Name = "Офис"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Address = "Пловдив, ул. Христо Г. Данов 12",
+                            IsActive = true,
+                            IsFavorite = true,
+                            Name = "Клиент - Пловдив"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Address = "София, ул. Околовръстен път 201",
+                            IsActive = true,
+                            IsFavorite = false,
+                            Name = "Сервиз"
+                        });
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytTrip", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DriverId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EndDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EndLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EndMileage")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime>("StartDateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StartLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StartMileage")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VehicleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
+
+                    b.HasIndex("EndLocationId");
+
+                    b.HasIndex("StartLocationId");
+
+                    b.HasIndex("CreatedByUserId", "CreatedAt");
+
+                    b.HasIndex("VehicleId", "EndDateTime");
+
+                    b.ToTable("PytTrips", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PytTrips_Dates", "[EndDateTime] >= [StartDateTime]");
+
+                            t.HasCheckConstraint("CK_PytTrips_Mileage", "[EndMileage] >= [StartMileage]");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 2, 10, 18, 5, 0, 0, DateTimeKind.Utc),
+                            CreatedByUserId = 1,
+                            DriverId = 1,
+                            EndDateTime = new DateTime(2026, 2, 10, 18, 0, 0, 0, DateTimeKind.Utc),
+                            EndLocationId = 2,
+                            EndMileage = 124500,
+                            Notes = "Демо курс",
+                            Purpose = "Office -> Client",
+                            StartDateTime = new DateTime(2026, 2, 10, 8, 30, 0, 0, DateTimeKind.Utc),
+                            StartLocationId = 1,
+                            StartMileage = 124380,
+                            VehicleId = 1
+                        });
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytUser", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("PytUsers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "demo@pyt.local",
+                            IsActive = true,
+                            PasswordHash = "v1$120000$AQIDBAUGBwgJCgsMDQ4PEA==$Wnhu8jmOpth30jheYWyH/50nGyI5gH8bWEe3HsxRujs="
+                        });
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytUserPreference", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("LastDriverId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LastEndLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastPurpose")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int?>("LastStartLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LastVehicleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TypicalDistanceKm")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastDriverId");
+
+                    b.HasIndex("LastEndLocationId");
+
+                    b.HasIndex("LastStartLocationId");
+
+                    b.HasIndex("LastVehicleId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("PytUserPreferences", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            LastDriverId = 1,
+                            LastEndLocationId = 2,
+                            LastPurpose = "Office -> Client",
+                            LastStartLocationId = 2,
+                            LastVehicleId = 1,
+                            TypicalDistanceKm = 120,
+                            UpdatedAt = new DateTime(2026, 2, 10, 18, 5, 0, 0, DateTimeKind.Utc),
+                            UserId = 1
+                        });
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytVehicle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("AvgConsumption")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<string>("FuelType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("LastMileage")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MakeModel")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PlateNumber")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlateNumber")
+                        .IsUnique();
+
+                    b.ToTable("PytVehicles", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AvgConsumption = 6.20m,
+                            FuelType = "Diesel",
+                            IsActive = true,
+                            LastMileage = 124500,
+                            MakeModel = "Skoda Octavia",
+                            PlateNumber = "CA1234AB"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            AvgConsumption = 7.80m,
+                            FuelType = "Petrol",
+                            IsActive = true,
+                            LastMileage = 87420,
+                            MakeModel = "Renault Kangoo",
+                            PlateNumber = "CA9876CD"
+                        });
+                });
+
             modelBuilder.Entity("Ivone.dev.Data.Models.RegionStat", b =>
                 {
                     b.Property<int>("Id")
@@ -400,6 +750,33 @@ namespace Ivone.dev.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("NPOB.Data.Entities.FinanceCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDefault")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("FinanceCategories", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("Question", b =>
                 {
                     b.Property<int>("Id")
@@ -545,6 +922,12 @@ namespace Ivone.dev.Data.Migrations
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DatePrecision")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MediaUrls")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -554,6 +937,9 @@ namespace Ivone.dev.Data.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Url")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -699,6 +1085,88 @@ namespace Ivone.dev.Data.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytTrip", b =>
+                {
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytUser", "CreatedByUser")
+                        .WithMany("Trips")
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytDriver", "Driver")
+                        .WithMany("Trips")
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytLocation", "EndLocation")
+                        .WithMany("EndTrips")
+                        .HasForeignKey("EndLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytLocation", "StartLocation")
+                        .WithMany("StartTrips")
+                        .HasForeignKey("StartLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytVehicle", "Vehicle")
+                        .WithMany("Trips")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("EndLocation");
+
+                    b.Navigation("StartLocation");
+
+                    b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytUserPreference", b =>
+                {
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytDriver", "LastDriver")
+                        .WithMany("PreferredByUsers")
+                        .HasForeignKey("LastDriverId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytLocation", "LastEndLocation")
+                        .WithMany("PreferredAsEndByUsers")
+                        .HasForeignKey("LastEndLocationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytLocation", "LastStartLocation")
+                        .WithMany("PreferredAsStartByUsers")
+                        .HasForeignKey("LastStartLocationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytVehicle", "LastVehicle")
+                        .WithMany("PreferredByUsers")
+                        .HasForeignKey("LastVehicleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Ivone.dev.Data.Models.Pyt.PytUser", "User")
+                        .WithOne("Preference")
+                        .HasForeignKey("Ivone.dev.Data.Models.Pyt.PytUserPreference", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LastDriver");
+
+                    b.Navigation("LastEndLocation");
+
+                    b.Navigation("LastStartLocation");
+
+                    b.Navigation("LastVehicle");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Question", b =>
                 {
                     b.HasOne("Test", "Test")
@@ -738,6 +1206,38 @@ namespace Ivone.dev.Data.Migrations
                     b.Navigation("Timeline");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytDriver", b =>
+                {
+                    b.Navigation("PreferredByUsers");
+
+                    b.Navigation("Trips");
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytLocation", b =>
+                {
+                    b.Navigation("EndTrips");
+
+                    b.Navigation("PreferredAsEndByUsers");
+
+                    b.Navigation("PreferredAsStartByUsers");
+
+                    b.Navigation("StartTrips");
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytUser", b =>
+                {
+                    b.Navigation("Preference");
+
+                    b.Navigation("Trips");
+                });
+
+            modelBuilder.Entity("Ivone.dev.Data.Models.Pyt.PytVehicle", b =>
+                {
+                    b.Navigation("PreferredByUsers");
+
+                    b.Navigation("Trips");
                 });
 
             modelBuilder.Entity("Question", b =>

@@ -1,13 +1,118 @@
-﻿@page
-@model TimelineModel
+@page "/timeline"
+@model Ivone.dev.Pages.TimelineModel
 @{
-    ViewData["Title"] = "Home page";
+    Layout = null;
 }
 
-<!-- Timeline.cshtml -->
-<div id="timeline-root"></div>
-<script type="module" src="/react-app/dist/timeline.js"></script>
-<link rel="stylesheet" href="/react-app/dist/timeline.css">
-<script>
-    window.appData = @Html.Raw(Json.Serialize(Model.TimelineEvents));
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timeline - Ivone.dev</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vertical-timeline@2.0.0/assets/css/style.css" />
+    <link rel="stylesheet" href="~/css/timeline-page.css" asp-append-version="true" />
+    <script>document.documentElement.classList.add('js');</script>
+</head>
+<body class="timeline-body">
+    <div class="timeline-app">
+        <header class="timeline-top">
+            <div class="timeline-top__inner">
+                <div>
+                    <h1 class="timeline-title" id="timelineTitle">Timelines</h1>
+                    <p class="timeline-subtitle" id="timelineSubtitle">Create, explore, and grow your stories.</p>
+                </div>
+                <div class="timeline-top__actions">
+                    <button class="tl-btn tl-btn--ghost hidden" id="backBtn" type="button">All timelines</button>
+                    <label class="admin-toggle">
+                        <input type="checkbox" id="adminToggle" />
+                        Admin
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section id="timelineIndex" class="timeline-index">
+                <div class="timeline-create">
+                    <strong>Create a timeline</strong>
+                    <form id="createTimelineForm">
+                        <input type="text" id="timelineNameInput" placeholder="Timeline name" maxlength="120" />
+                        <button class="tl-btn tl-btn--primary" type="submit">Create &amp; open</button>
+                    </form>
+                </div>
+
+                <div class="timeline-index__grid" id="timelineList"></div>
+            </section>
+
+            <section id="timelineEditor" class="timeline-editor hidden">
+                <div class="timeline-header-row">
+                    <h2 id="timelineName">Timeline</h2>
+                    <span id="timelineMeta">Loading entries...</span>
+                </div>
+                <div id="timelineStatus"></div>
+                <section class="cd-timeline js-cd-timeline">
+                    <div class="container max-width-lg cd-timeline__container" id="timelineBlocks"></div>
+                </section>
+            </section>
+        </main>
+
+        <footer class="timeline-entry-bar hidden" id="timelineEntryBar">
+            <form id="eventForm" autocomplete="off">
+                <label>
+                    Title
+                    <input type="text" id="eventTitle" maxlength="160" required />
+                </label>
+                <label>
+                    Details
+                    <textarea id="eventDetails" maxlength="2000" placeholder="What happened?" required></textarea>
+                </label>
+                <label>
+                    URL
+                    <input type="url" id="eventUrl" placeholder="https://..." />
+                </label>
+                <label>
+                    Media URLs (one per line)
+                    <textarea id="eventMedia" placeholder="https://example.com/photo.jpg"></textarea>
+                </label>
+                <label>
+                    Date type
+                    <select id="datePrecision">
+                        <option value="year">Year only</option>
+                        <option value="month">Month &amp; year</option>
+                        <option value="date" selected>Date</option>
+                        <option value="datetime">Date &amp; time</option>
+                    </select>
+                </label>
+                <label class="date-input" data-type="year">
+                    Year
+                    <input type="number" id="eventYear" min="1" max="9999" />
+                </label>
+                <label class="date-input" data-type="month">
+                    Month
+                    <input type="month" id="eventMonth" />
+                </label>
+                <label class="date-input" data-type="date">
+                    Date
+                    <input type="date" id="eventDate" />
+                </label>
+                <label class="date-input" data-type="datetime">
+                    Date &amp; time
+                    <input type="datetime-local" id="eventDateTime" />
+                </label>
+                <div class="form-actions">
+                    <button class="tl-btn tl-btn--primary" type="submit" id="submitEventBtn">Add entry</button>
+                    <button class="tl-btn admin-only" type="button" id="deleteEventBtn">Delete</button>
+                    <button class="tl-btn tl-btn--ghost hidden" type="button" id="cancelEditBtn">Cancel</button>
+                </div>
+            </form>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vertical-timeline@2.0.0/assets/js/main.js"></script>
+    <script src="~/js/timeline-page.js" asp-append-version="true"></script>
+</body>
+</html>

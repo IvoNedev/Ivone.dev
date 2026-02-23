@@ -1,0 +1,262 @@
+﻿:root {
+    --bg: #f2f4f8;
+    --surface: #ffffff;
+    --border: #dbe1ea;
+    --text: #1c2633;
+    --muted: #607085;
+    --primary: #005fa3;
+    --primary-hover: #004b81;
+    --secondary: #eef2f7;
+    --danger: #b42318;
+    --radius: 10px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body.pyt-body,
+body.pyt-auth-body {
+    margin: 0;
+    font-family: "Segoe UI", "Noto Sans", sans-serif;
+    background: linear-gradient(160deg, #f4f7fc 0%, #e6edf7 100%);
+    color: var(--text);
+}
+
+.pyt-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    background: #0f2438;
+    color: #ffffff;
+    padding: 0.8rem 1rem;
+}
+
+.pyt-brand {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.pyt-nav {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.pyt-nav a {
+    color: #ffffff;
+    text-decoration: none;
+    opacity: 0.9;
+}
+
+.pyt-nav a:hover {
+    opacity: 1;
+}
+
+.pyt-main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 12px rgba(15, 36, 56, 0.06);
+}
+
+.panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.panel-header h1,
+.panel-header h2 {
+    margin: 0;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.trip-grid,
+.filter-grid {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-size: 0.92rem;
+}
+
+input,
+select,
+button {
+    font: inherit;
+}
+
+input,
+select {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.65rem;
+    min-height: 2.2rem;
+}
+
+input:focus,
+select:focus {
+    outline: 2px solid rgba(0, 95, 163, 0.35);
+    border-color: var(--primary);
+}
+
+.form-actions,
+.inline-controls,
+.quick-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: end;
+}
+
+.form-actions {
+    grid-column: 1 / -1;
+}
+
+.quick-buttons {
+    grid-column: 1 / -1;
+}
+
+.btn-primary,
+.btn-secondary {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-sm {
+    padding: 0.28rem 0.55rem;
+    font-size: 0.84rem;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-secondary {
+    background: var(--secondary);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+th,
+td {
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    padding: 0.5rem;
+    vertical-align: top;
+}
+
+th {
+    background: #f9fbff;
+    position: sticky;
+    top: 0;
+}
+
+.inline-hint {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.status-message {
+    grid-column: 1 / -1;
+    min-height: 1.2rem;
+    color: #0f7b32;
+}
+
+.error-text {
+    color: var(--danger) !important;
+}
+
+.warning-list {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding-left: 1.1rem;
+    color: #8a5a00;
+}
+
+.checkbox-label {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.pyt-auth-body {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+}
+
+.pyt-auth-card {
+    width: min(420px, 100%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem;
+    box-shadow: 0 2px 12px rgba(15, 36, 56, 0.1);
+}
+
+.pyt-auth-card h1 {
+    margin-top: 0;
+}
+
+.form-stack {
+    display: grid;
+    gap: 0.75rem;
+}
+
+@media (max-width: 760px) {
+    .pyt-topbar {
+        flex-wrap: wrap;
+    }
+
+    .pyt-nav {
+        width: 100%;
+    }
+
+    .pyt-main {
+        padding: 0.6rem;
+    }
+}

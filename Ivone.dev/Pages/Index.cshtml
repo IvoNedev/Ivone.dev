@@ -1,129 +1,41 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Flashback Player";
+    ViewData["Title"] = "Page Directory";
 }
 
-<div id="globalLoader" class="global-loader hidden" role="status" aria-live="polite" aria-atomic="true">
-    <div class="global-loader__content">
-        <span class="spinner large" aria-hidden="true"></span>
-        <p id="globalLoaderMessage">Loading media...</p>
-    </div>
-</div>
-
-<section class="hero">
-    <p class="eyebrow">Flashback Player</p>
-    <h1>Let your camera roll surprise you</h1>
-    <p class="lede">
-        Pick the files from your gallery, choose how many memories you want to see, set a custom delay,
-        and Flashback will randomly play through photos or videos captured between two dates.
-    </p>
+<section class="landing-hero">
+    <p class="eyebrow">Ivone.dev</p>
+    <h1>All Pages</h1>
+    <p class="lede">Open any tool, game, or widget from one place.</p>
+    <p class="count">@Model.PageLinks.Count page(s) available</p>
 </section>
 
-<section class="card config-card">
-    <div class="field">
-        <label for="mediaInput">Gallery access</label>
-        <input id="mediaInput" type="file" accept="image/*,video/*" multiple />
-        <p class="hint">The files stay on your device. We only use them in-memory for playback.</p>
-    </div>
-
-    <div class="field-grid">
-        <label class="field">
-            <span>Mode</span>
-            <div class="segmented">
-                <label>
-                    <input type="radio" name="mediaMode" value="photos" checked>
-                    <span>Photos</span>
-                </label>
-                <label>
-                    <input type="radio" name="mediaMode" value="videos">
-                    <span>Videos</span>
-                </label>
-            </div>
-        </label>
-
-        <label class="field step-control">
-            <span>How many?</span>
-            <div class="stepper">
-                <div class="stepper-group">
-                    <button type="button" class="step-btn" data-step-target="count" data-step-delta="-10">-10</button>
-                    <button type="button" class="step-btn" data-step-target="count" data-step-delta="-5">-5</button>
-                    <button type="button" class="step-btn" data-step-target="count" data-step-delta="-1">-1</button>
-                </div>
-                <input id="itemCount" type="number" min="1" max="50" value="10" />
-                <div class="stepper-group">
-                    <button type="button" class="step-btn" data-step-target="count" data-step-delta="1">+1</button>
-                    <button type="button" class="step-btn" data-step-target="count" data-step-delta="5">+5</button>
-                    <button type="button" class="step-btn" data-step-target="count" data-step-delta="10">+10</button>
-                </div>
-            </div>
-        </label>
-
-        <label class="field step-control">
-            <span>Delay (seconds)</span>
-            <div class="stepper">
-                <div class="stepper-group">
-                    <button type="button" class="step-btn" data-step-target="delay" data-step-delta="-10">-10</button>
-                    <button type="button" class="step-btn" data-step-target="delay" data-step-delta="-5">-5</button>
-                    <button type="button" class="step-btn" data-step-target="delay" data-step-delta="-1">-1</button>
-                </div>
-                <input id="delaySeconds" type="number" min="1" max="60" value="5" />
-                <div class="stepper-group">
-                    <button type="button" class="step-btn" data-step-target="delay" data-step-delta="1">+1</button>
-                    <button type="button" class="step-btn" data-step-target="delay" data-step-delta="5">+5</button>
-                    <button type="button" class="step-btn" data-step-target="delay" data-step-delta="10">+10</button>
-                </div>
-            </div>
-        </label>
-    </div>
-
-    <div class="field-grid">
-        <label class="field">
-            <span>From date</span>
-            <input id="startDate" type="date" />
-        </label>
-        <label class="field">
-            <span>To date</span>
-            <input id="endDate" type="date" />
-        </label>
-    </div>
-
-    <button id="startPlayback" class="primary">Start Flashback</button>
-    <p id="statusMessage" class="status-text">Waiting for your selection.</p>
-    <div id="fileLoader" class="inline-loader hidden">
-        <span class="spinner"></span>
-        <span class="loader-text">Loading media...</span>
-    </div>
-</section>
-
-<section class="card player-card" id="playerCard">
-    <div class="player-stage">
-        <div id="playbackLoader" class="stage-loader hidden">
-            <span class="spinner"></span>
-            <p>Preparing playback...</p>
+<section class="links-card">
+    @if (Model.PageLinks.Count == 0)
+    {
+        <p class="empty-state">No pages were discovered.</p>
+    }
+    else
+    {
+        <div class="page-grid">
+            @foreach (var link in Model.PageLinks)
+            {
+                <a class="page-btn" href="@link.Url">@link.Title</a>
+            }
         </div>
-        <video id="playbackVideo" playsinline controls class="hidden"></video>
-        <img id="playbackImage" alt="Selected memory" class="hidden" />
-        <div id="placeholder">
-            <p>Pick files, press start, and we'll play through your memories here.</p>
-        </div>
-        <div id="completionBanner" class="completion hidden">All Done :)</div>
-    </div>
-    <div class="controls">
-        <button type="button" class="control-btn" id="prevBtn" aria-label="Previous memory">⟵</button>
-        <button type="button" class="control-btn" id="playPauseBtn" aria-label="Pause playback">⏸</button>
-        <button type="button" class="control-btn" id="nextBtn" aria-label="Next memory">⟶</button>
-    </div>
+    }
 </section>
 
 @section Styles {
     <style>
-        .hero {
+        .landing-hero {
             padding: 1.5rem;
             background: rgba(15, 23, 42, 0.65);
             border-radius: 1.5rem;
             box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
             margin-bottom: 1rem;
+            text-align: center;
         }
 
         .eyebrow {
@@ -131,809 +43,82 @@
             letter-spacing: 0.35em;
             font-size: 0.7rem;
             color: rgba(248, 250, 252, 0.55);
-            margin-bottom: 0.5rem;
+            margin: 0 0 0.5rem;
         }
 
-        .hero h1 {
-            margin: 0 0 0.6rem 0;
+        .landing-hero h1 {
+            margin: 0;
             font-size: clamp(1.8rem, 5vw, 2.4rem);
         }
 
         .lede {
-            margin: 0;
+            margin: 0.6rem 0 0;
             color: rgba(248, 250, 252, 0.75);
             line-height: 1.4;
         }
 
-        .card {
+        .count {
+            margin: 0.65rem 0 0;
+            color: rgba(248, 250, 252, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .links-card {
             background: rgba(15, 23, 42, 0.85);
             border-radius: 1.5rem;
             padding: 1.5rem;
             box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
         }
 
-        .config-card .field,
-        .config-card .field-grid {
-            width: 100%;
-        }
-
-        .field {
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-            font-size: 0.9rem;
-        }
-
-        .step-control .stepper {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            flex-wrap: wrap;
-        }
-
-        .stepper-group {
-            display: inline-flex;
-            gap: 0.2rem;
-        }
-
-        .step-btn {
-            border: none;
-            border-radius: 999px;
-            padding: 0.4rem 0.7rem;
-            background: rgba(255, 255, 255, 0.08);
-            color: inherit;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: background 0.2s ease;
-        }
-
-        .step-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        input[type="file"],
-        input[type="number"],
-        input[type="date"] {
-            border: none;
-            border-radius: 1rem;
-            padding: 0.8rem 1rem;
-            background: rgba(255, 255, 255, 0.08);
-            color: inherit;
-            font-size: 1rem;
-        }
-
-        input[type="file"] {
-            padding: 0.6rem 0;
-        }
-
-        input:focus {
-            outline: 2px solid rgba(124, 58, 237, 0.6);
-        }
-
-        .hint {
-            font-size: 0.75rem;
-            color: rgba(248, 250, 252, 0.6);
-            margin: 0;
-        }
-
-        .field-grid {
+        .page-grid {
             display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 0.75rem;
         }
 
-        @@media (min-width: 480px) {
-            .field-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-            }
-
-            .field-grid:nth-of-type(2) {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-
-        .segmented {
-            display: inline-flex;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 999px;
-            padding: 0.2rem;
-            gap: 0.2rem;
-        }
-
-        .segmented label {
+        .page-btn {
             display: flex;
             align-items: center;
-            gap: 0.25rem;
-        }
-
-        .segmented input {
-            appearance: none;
-            position: absolute;
-        }
-
-        .segmented label span {
-            padding: 0.3rem 0.9rem;
-            border-radius: 999px;
-            font-size: 0.85rem;
-        }
-
-        .segmented input:checked + span {
-            background: var(--accent, #7c3aed);
-            color: #fff;
-        }
-
-        .primary {
-            border: none;
+            justify-content: center;
+            min-height: 52px;
             border-radius: 999px;
             padding: 0.9rem 1.2rem;
             font-weight: 600;
             font-size: 1rem;
-            background: linear-gradient(100deg, #8b5cf6, #ec4899);
+            text-align: center;
+            text-decoration: none;
             color: #fff;
-            cursor: pointer;
+            background: linear-gradient(100deg, #8b5cf6, #ec4899);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .primary:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        .primary:not(:disabled):hover {
+        .page-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 15px 30px rgba(236, 72, 153, 0.4);
         }
 
-        .status-text {
-            font-size: 0.85rem;
-            color: rgba(248, 250, 252, 0.75);
+        .empty-state {
             margin: 0;
-        }
-
-        .inline-loader {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.6rem;
-            font-size: 0.85rem;
+            text-align: center;
             color: rgba(248, 250, 252, 0.75);
         }
 
-        .spinner {
-            width: 1.1rem;
-            height: 1.1rem;
-            border-radius: 50%;
-            border: 2px solid rgba(248, 250, 252, 0.2);
-            border-top-color: #fff;
-            animation: spin 0.75s linear infinite;
-        }
-
-        .spinner.large {
-            width: 2rem;
-            height: 2rem;
-            border-width: 3px;
-        }
-
-        @@keyframes spin {
-            to {
-                transform: rotate(360deg);
+        @@media (max-width: 1100px) {
+            .page-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
             }
         }
 
-        .global-loader {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(2, 6, 23, 0.85);
-            backdrop-filter: blur(4px);
-            z-index: 999;
-            transition: opacity 0.2s ease;
-        }
-
-        .global-loader.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .global-loader__content {
-            background: rgba(15, 23, 42, 0.85);
-            padding: 1.5rem 2rem;
-            border-radius: 1rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.75rem;
-            text-align: center;
-            color: #f8fafc;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-        }
-
-        body.is-loading-overlay {
-            overflow: hidden;
-        }
-
-        .player-card {
-            margin-top: 1.25rem;
-            padding: 0;
-            background: transparent;
-            box-shadow: none;
-            width: 100vw;
-            max-width: 100vw;
-            position: relative;
-            left: 50%;
-            transform: translateX(-50%);
-            margin-bottom: 0;
-        }
-
-        .player-stage {
-            width: 100%;
-            min-height: calc(100vh - 2rem);
-            border-radius: 0;
-            background: rgba(0, 0, 0, 0.8);
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        @@media (min-width: 768px) {
-            .player-stage {
-                border-radius: 1.5rem;
-                margin: 0 auto;
-                width: min(900px, 100%);
+        @@media (max-width: 760px) {
+            .page-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
-        video, img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        video.hidden,
-        img.hidden {
-            display: none;
-        }
-
-        #placeholder {
-            padding: 1.5rem;
-            text-align: center;
-            font-size: 0.9rem;
-            color: rgba(248, 250, 252, 0.7);
-        }
-
-        .completion {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: clamp(1.5rem, 6vw, 2.5rem);
-            font-weight: 600;
-            background: rgba(15, 23, 42, 0.65);
-            color: #fff;
-            margin: 0;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 0.75rem;
-            padding: 1rem 0 0;
-        }
-
-        .control-btn {
-            width: 3rem;
-            height: 3rem;
-            border-radius: 999px;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            font-size: 1.1rem;
-            cursor: pointer;
-            display: grid;
-            place-items: center;
-            transition: background 0.2s, transform 0.2s;
-        }
-
-        .control-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .control-btn:not(:disabled):hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .control-btn.primary {
-            background: var(--accent, #7c3aed);
-        }
-
-        .stage-loader {
-            position: absolute;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.65);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            font-size: 0.95rem;
-            z-index: 2;
-        }
-
-        .hidden {
-            display: none !important;
+        @@media (max-width: 520px) {
+            .page-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 }
-
-@section Scripts {
-    <script>
-        (() => {
-            const mediaInput = document.getElementById('mediaInput');
-            const countInput = document.getElementById('itemCount');
-            const delayInput = document.getElementById('delaySeconds');
-            const startDateInput = document.getElementById('startDate');
-            const endDateInput = document.getElementById('endDate');
-            const startButton = document.getElementById('startPlayback');
-            const statusMessage = document.getElementById('statusMessage');
-            const videoEl = document.getElementById('playbackVideo');
-            const imageEl = document.getElementById('playbackImage');
-            const placeholder = document.getElementById('placeholder');
-            const completionBanner = document.getElementById('completionBanner');
-            const modeInputs = document.querySelectorAll('input[name="mediaMode"]');
-            const stepButtons = document.querySelectorAll('[data-step-target]');
-            const fileLoader = document.getElementById('fileLoader');
-            const playbackLoader = document.getElementById('playbackLoader');
-            const playerCard = document.getElementById('playerCard');
-            const prevBtn = document.getElementById('prevBtn');
-            const playPauseBtn = document.getElementById('playPauseBtn');
-            const nextBtn = document.getElementById('nextBtn');
-            const globalLoader = document.getElementById('globalLoader');
-            const globalLoaderMessage = document.getElementById('globalLoaderMessage');
-            const fileLoaderText = fileLoader ? fileLoader.querySelector('.loader-text') : null;
-            const defaultLoaderMessage = fileLoaderText ? fileLoaderText.textContent.trim() : 'Loading media...';
-            const startButtonDefaultLabel = startButton.textContent.trim();
-            const loadingStartLabel = 'Loading screentime';
-
-            let isPlaying = false;
-            let isPaused = false;
-            let queueRef = [];
-            let queueMode = 'photos';
-            let queueDelayMs = 1000;
-            let currentIndex = 0;
-            let jumpToIndex = null;
-            let stageReady = true;
-            let fileDialogPending = false;
-            let overlayRequestCount = 0;
-
-            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-            const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
-            const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-            const updateGlobalLoaderMessage = (message) => {
-                if (globalLoaderMessage && typeof message === 'string') {
-                    globalLoaderMessage.textContent = message;
-                }
-            };
-            const showGlobalLoader = (message) => {
-                if (!globalLoader) return;
-                overlayRequestCount += 1;
-                if (message) {
-                    updateGlobalLoaderMessage(message);
-                }
-                globalLoader.classList.remove('hidden');
-                document.body.classList.add('is-loading-overlay');
-            };
-            const hideGlobalLoader = () => {
-                if (!globalLoader) return;
-                overlayRequestCount = Math.max(overlayRequestCount - 1, 0);
-                if (overlayRequestCount === 0) {
-                    globalLoader.classList.add('hidden');
-                    document.body.classList.remove('is-loading-overlay');
-                    updateGlobalLoaderMessage(defaultLoaderMessage);
-                }
-            };
-            const waitForScrollCompletion = () => new Promise(resolve => {
-                let previousY = window.scrollY;
-                let stableFrames = 0;
-                let totalFrames = 0;
-                const check = () => {
-                    totalFrames++;
-                    const currentY = window.scrollY;
-                    if (Math.abs(currentY - previousY) < 1) {
-                        stableFrames++;
-                    } else {
-                        stableFrames = 0;
-                        previousY = currentY;
-                    }
-                    if (stableFrames >= 6 || totalFrames > 60) {
-                        resolve();
-                        return;
-                    }
-                    requestAnimationFrame(check);
-                };
-                requestAnimationFrame(check);
-            });
-
-            const setFileLoaderMessage = (message) => {
-                if (fileLoaderText && typeof message === 'string') {
-                    fileLoaderText.textContent = message;
-                }
-            };
-
-            const showFileLoader = (message) => {
-                if (message) {
-                    setFileLoaderMessage(message);
-                }
-                fileLoader.classList.remove('hidden');
-                showGlobalLoader(message || defaultLoaderMessage);
-            };
-
-            const hideFileLoader = () => {
-                fileLoader.classList.add('hidden');
-                setFileLoaderMessage(defaultLoaderMessage);
-                hideGlobalLoader();
-            };
-
-            const handleFileDialogClose = () => {
-                if (!fileDialogPending) {
-                    return;
-                }
-                fileDialogPending = false;
-                if (!mediaInput.files || !mediaInput.files.length) {
-                    hideFileLoader();
-                }
-            };
-
-            const setStartButtonLoadingState = () => {
-                startButton.textContent = loadingStartLabel;
-                startButton.disabled = true;
-                startButton.setAttribute('aria-busy', 'true');
-            };
-
-            const resetStartButtonState = (options = {}) => {
-                const { disabled = false } = options;
-                startButton.textContent = startButtonDefaultLabel;
-                startButton.disabled = !!disabled;
-                startButton.removeAttribute('aria-busy');
-            };
-
-        const showStageLoader = () => {
-            stageReady = false;
-            playbackLoader.classList.remove('hidden');
-        };
-
-        const hideStageLoaderIfNeeded = () => {
-            if (!stageReady) {
-                playbackLoader.classList.add('hidden');
-                stageReady = true;
-            }
-        };
-
-        const waitForVideoEnd = (video) => new Promise(resolve => {
-            const clean = () => {
-                video.removeEventListener('ended', onEnded);
-                video.removeEventListener('error', onEnded);
-                video.removeEventListener('pause', onPause);
-            };
-            const onEnded = () => {
-                clean();
-                resolve();
-            };
-            const onPause = () => {
-                if (video.paused && !video.ended && !isPaused) {
-                    clean();
-                    resolve();
-                }
-            };
-            video.addEventListener('ended', onEnded, { once: true });
-            video.addEventListener('error', onEnded, { once: true });
-            video.addEventListener('pause', onPause, { once: true });
-        });
-
-            const pickMode = () => {
-                const selected = document.querySelector('input[name="mediaMode"]:checked');
-                return selected ? selected.value : 'photos';
-            };
-
-            const filterByDate = (file) => {
-                const from = startDateInput.value ? new Date(startDateInput.value).setHours(0, 0, 0, 0) : -Infinity;
-                const to = endDateInput.value ? new Date(endDateInput.value).setHours(23, 59, 59, 999) : Infinity;
-                return file.lastModified >= from && file.lastModified <= to;
-            };
-
-            const sampleFiles = (files, limit) => {
-                const pool = [...files];
-                for (let i = pool.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [pool[i], pool[j]] = [pool[j], pool[i]];
-                }
-                return pool.slice(0, limit);
-            };
-
-            const resetStage = () => {
-                videoEl.pause();
-                videoEl.classList.add('hidden');
-                videoEl.removeAttribute('src');
-                imageEl.classList.add('hidden');
-                imageEl.removeAttribute('src');
-                placeholder.classList.remove('hidden');
-                completionBanner.classList.add('hidden');
-            };
-
-        const updateControlState = (indexOverride) => {
-            const hasQueue = queueRef.length > 0;
-            const index = typeof indexOverride === 'number' ? indexOverride : currentIndex;
-            prevBtn.disabled = !hasQueue || index <= 0 || !isPlaying;
-            nextBtn.disabled = !hasQueue || index >= queueRef.length - 1 || !isPlaying;
-            playPauseBtn.disabled = !hasQueue || !isPlaying;
-            playPauseBtn.textContent = isPaused ? '\u25B6' : '\u23F8';
-        };
-
-        const showFrame = async (file, mode, delayMs) => {
-            const url = URL.createObjectURL(file);
-            placeholder.classList.add('hidden');
-            statusMessage.textContent = `Playing ${currentIndex + 1} of ${queueRef.length}...`;
-
-            const cleanup = () => URL.revokeObjectURL(url);
-
-            if (mode === 'videos') {
-                imageEl.classList.add('hidden');
-                videoEl.classList.remove('hidden');
-                videoEl.src = url;
-                hideStageLoaderIfNeeded();
-                try {
-                    await videoEl.play();
-                    await waitForVideoEnd(videoEl);
-                } catch {
-                    cleanup();
-                    return;
-                }
-            } else {
-                videoEl.pause();
-                videoEl.classList.add('hidden');
-                imageEl.classList.remove('hidden');
-                imageEl.src = url;
-                hideStageLoaderIfNeeded();
-                let elapsed = 0;
-                while (elapsed < delayMs) {
-                    if (isPaused || jumpToIndex !== null) break;
-                    await wait(250);
-                    elapsed += 250;
-                }
-            }
-
-            cleanup();
-            let elapsed = 0;
-            while (elapsed < delayMs) {
-                if (isPaused || jumpToIndex !== null) break;
-                await wait(250);
-                elapsed += 250;
-            }
-        };
-
-        const playQueue = async () => {
-            while (currentIndex < queueRef.length) {
-                if (isPaused) {
-                    await wait(200);
-                    continue;
-                }
-
-                await showFrame(queueRef[currentIndex], queueMode, queueDelayMs);
-
-                if (jumpToIndex !== null) {
-                    const target = clamp(jumpToIndex, 0, queueRef.length - 1);
-                    currentIndex = target;
-                    jumpToIndex = null;
-                    updateControlState();
-                    continue;
-                }
-
-                if (!isPaused) {
-                    currentIndex++;
-                    updateControlState();
-                }
-            }
-        };
-
-            const syncDelayForMode = (mode) => {
-                delayInput.value = mode === 'videos' ? 1 : 15;
-            };
-
-            mediaInput.addEventListener('click', () => {
-                fileDialogPending = true;
-                showFileLoader('Loading media...');
-            });
-
-            window.addEventListener('focus', handleFileDialogClose);
-
-            mediaInput.addEventListener('change', async () => {
-                fileDialogPending = false;
-                const files = Array.from(mediaInput.files || []);
-                if (!files.length) {
-                    hideFileLoader();
-                    return;
-                }
-
-                showFileLoader('Loading media...');
-                await nextFrame();
-
-                try {
-                    const videoCount = files.filter(f => f.type.startsWith('video/')).length;
-                    const modeValue = videoCount >= Math.ceil(files.length / 2) ? 'videos' : 'photos';
-                    const targetRadio = document.querySelector(`input[name="mediaMode"][value="${modeValue}"]`);
-                    if (targetRadio) {
-                        targetRadio.checked = true;
-                    }
-
-                    syncDelayForMode(modeValue);
-                } finally {
-                    hideFileLoader();
-                }
-            });
-
-        modeInputs.forEach(input => {
-            input.addEventListener('change', (event) => {
-                if (event.target.checked) {
-                    syncDelayForMode(event.target.value);
-                }
-            });
-        });
-
-        syncDelayForMode(pickMode());
-
-        const stepTargetMap = {
-            count: countInput,
-            delay: delayInput
-        };
-
-        stepButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const target = button.dataset.stepTarget;
-                const delta = parseInt(button.dataset.stepDelta || '0', 10);
-                const input = stepTargetMap[target];
-                if (!input || Number.isNaN(delta)) {
-                    return;
-                }
-                const min = parseInt(input.min || '0', 10);
-                const max = parseInt(input.max || `${Number.MAX_SAFE_INTEGER}`, 10);
-                const current = parseInt(input.value || `${min}`, 10);
-                const nextValue = clamp((Number.isNaN(current) ? min : current) + delta, min, max);
-                input.value = nextValue;
-                input.dispatchEvent(new Event('change'));
-            });
-        });
-
-            startButton.addEventListener('click', async () => {
-                if (isPlaying) {
-                    return;
-                }
-
-                setStartButtonLoadingState();
-                let startOverlayActive = false;
-                const showStartOverlay = () => {
-                    if (startOverlayActive) {
-                        updateGlobalLoaderMessage(loadingStartLabel);
-                        return;
-                    }
-                    showGlobalLoader(loadingStartLabel);
-                    startOverlayActive = true;
-                };
-                const hideStartOverlay = () => {
-                    if (!startOverlayActive) {
-                        return;
-                    }
-                    hideGlobalLoader();
-                    startOverlayActive = false;
-                };
-                showStartOverlay();
-                showStageLoader();
-                await nextFrame();
-
-                const files = Array.from(mediaInput.files || []);
-                if (!files.length) {
-                    statusMessage.textContent = 'Add some files from your gallery first.';
-                    hideStageLoaderIfNeeded();
-                    hideStartOverlay();
-                    resetStartButtonState();
-                    return;
-                }
-
-                const mode = pickMode();
-                const filtered = files
-                    .filter(filterByDate)
-                    .filter(file => mode === 'photos' ? file.type.startsWith('image/') : file.type.startsWith('video/'));
-
-                if (!filtered.length) {
-                    statusMessage.textContent = 'No files matched your filters. Try adjusting the date range or mode.';
-                    hideStageLoaderIfNeeded();
-                    hideStartOverlay();
-                    resetStartButtonState();
-                    return;
-                }
-
-                const limit = Math.min(parseInt(countInput.value, 10) || 1, filtered.length);
-                const delayMs = Math.max(1, parseInt(delayInput.value, 10) || (mode === 'videos' ? 1 : 15)) * 1000;
-                const queue = sampleFiles(filtered, limit);
-
-                resetStage();
-
-                isPlaying = true;
-                queueRef = queue;
-                queueMode = mode;
-                queueDelayMs = delayMs;
-                currentIndex = 0;
-                jumpToIndex = null;
-                isPaused = false;
-                updateControlState();
-                statusMessage.textContent = 'Starting playback...';
-
-                playerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                await waitForScrollCompletion();
-                resetStartButtonState();
-                hideStartOverlay();
-
-                try {
-                    await playQueue();
-                    if (currentIndex >= queueRef.length) {
-                        completionBanner.classList.remove('hidden');
-                        statusMessage.textContent = 'All memories played. Scroll to replay anytime.';
-                    }
-                } catch {
-                    statusMessage.textContent = 'Playback interrupted. Try again.';
-                } finally {
-                    isPlaying = false;
-                    jumpToIndex = null;
-                    queueRef = [];
-                    updateControlState();
-                    hideStageLoaderIfNeeded();
-                    resetStartButtonState();
-                    hideStartOverlay();
-                }
-            });
-
-        playPauseBtn.addEventListener('click', () => {
-            if (!isPlaying) return;
-            isPaused = !isPaused;
-            if (isPaused) {
-                if (!videoEl.classList.contains('hidden')) {
-                    videoEl.pause();
-                }
-            } else if (queueMode === 'videos' && !videoEl.classList.contains('hidden')) {
-                videoEl.play().catch(() => { });
-            }
-            updateControlState();
-        });
-
-        prevBtn.addEventListener('click', () => {
-            if (!isPlaying || currentIndex <= 0) return;
-            const target = Math.max(0, currentIndex - 1);
-            jumpToIndex = target;
-            isPaused = false;
-            if (!videoEl.classList.contains('hidden')) {
-                videoEl.pause();
-            }
-            updateControlState(target);
-        });
-
-        nextBtn.addEventListener('click', () => {
-            if (!isPlaying || currentIndex >= queueRef.length - 1) return;
-            const target = Math.min(queueRef.length - 1, currentIndex + 1);
-            jumpToIndex = target;
-            isPaused = false;
-            if (!videoEl.classList.contains('hidden')) {
-                videoEl.pause();
-            }
-            updateControlState(target);
-        });
-        })();
-    </script>
-}
-

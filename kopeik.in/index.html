@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>На лов за Копейкин</title>
+  <link rel="icon" type="image/jpeg" href="kopeikin.jpg?v=20260219e">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="paper-background" aria-hidden="true"></div>
+  <header class="topbar">
+    <div class="brand">
+      <p id="appTagline" class="tagline"></p>
+      <h1 id="appTitle"></h1>
+    </div>
+    <div class="ip-tracker" aria-live="polite" aria-atomic="true">
+      <span id="ipTrackerLabel"></span>
+      <code id="ipTrackerValue"></code>
+    </div>
+    <div class="global-controls">
+      <fieldset class="lang-toggle" aria-label="Language">
+        <legend id="languageLegend"></legend>
+        <button id="langEnBtn" type="button" class="pill-btn" data-lang="en">EN</button>
+        <button id="langBgBtn" type="button" class="pill-btn" data-lang="bg">BG</button>
+      </fieldset>
+      <button id="startOverBtn" type="button" class="pill-btn"></button>
+      <button id="quickSettingsBtn" type="button" class="pill-btn"></button>
+    </div>
+  </header>
+
+  <section id="notificationPanel" class="notification-panel" aria-live="polite" aria-atomic="false" aria-labelledby="notificationTitle">
+    <div class="notification-head">
+      <h2 id="notificationTitle"></h2>
+      <button id="clearNotificationsBtn" type="button" class="pill-btn"></button>
+    </div>
+    <ul id="notificationList" class="notification-list"></ul>
+  </section>
+
+  <main id="app" tabindex="-1"></main>
+  <div id="liveRegion" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="fallback-strings.js?v=20260219e"></script>
+  <script src="app.js"></script>
+</body>
+</html>

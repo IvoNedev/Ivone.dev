@@ -1,0 +1,867 @@
+﻿@page "/games/chess-rogue"
+@model Ivone.dev.Pages.Games.ChessRogueModel
+@{
+    ViewData["Title"] = "Chess Rogue";
+}
+
+<section class="game-hero">
+    <div>
+        <p class="eyebrow">Roguelike Chess Crawl</p>
+        <h1>Chess Rogue</h1>
+        <p>Guide a lone chess piece through a clockwork dungeon. Each floor reshapes the rooms, enemies follow chess-like rules with roguelike twists, and upgrades evolve your piece into deadlier forms.</p>
+        <p class="hint">Click a highlighted tile to move or capture. Use abilities to bend movement rules, gather relics, and survive ten floors.</p>
+    </div>
+</section>
+
+<div class="game-stage chess-rogue-stage">
+    <div id="chess-rogue-root" class="chess-rogue">
+        <div id="cr-main-menu" class="cr-overlay">
+            <div class="cr-modal">
+                <div class="cr-modal-header">
+                    <p class="cr-eyebrow">Clockwork Citadel</p>
+                    <h2>Chess Rogue</h2>
+                    <p class="cr-subtitle">Choose your starting piece and begin a ten-floor run.</p>
+                </div>
+                <div class="cr-menu-grid">
+                    <div>
+                        <div class="cr-card">
+                            <h3>Run Options</h3>
+                            <p>Standard runs generate new layouts each time. Daily runs share a seed for competitive scores.</p>
+                            <div class="cr-button-row">
+                                <button id="cr-start-run" class="cr-btn primary">New Run</button>
+                                <button id="cr-daily-run" class="cr-btn ghost">Daily Run</button>
+                            </div>
+                        </div>
+                        <div class="cr-card">
+                            <h3>Account Progress</h3>
+                            <div class="cr-stat-row">
+                                <span>Account Level</span>
+                                <strong id="cr-account-level">1</strong>
+                            </div>
+                            <div class="cr-progress">
+                                <div id="cr-account-xp" class="cr-progress-bar" style="width: 0%"></div>
+                            </div>
+                            <p id="cr-account-xp-text" class="cr-muted">0 / 100 XP</p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="cr-card">
+                            <h3>Starting Piece</h3>
+                            <div id="cr-piece-select" class="cr-piece-grid"></div>
+                        </div>
+                        <div class="cr-card">
+                            <h3>Run Modifiers</h3>
+                            <ul class="cr-list">
+                                <li>Chess rules apply, but abilities can bend them.</li>
+                                <li>Traps, relics, and upgrades change every room.</li>
+                                <li>Boss rooms guard each floor exit.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="cr-pause-overlay" class="cr-overlay hidden">
+            <div class="cr-modal small">
+                <h2>Run Paused</h2>
+                <p class="cr-muted">Take a breath. The clockwork waits.</p>
+                <div class="cr-button-row">
+                    <button id="cr-resume" class="cr-btn primary">Resume</button>
+                    <button id="cr-exit" class="cr-btn ghost">Exit Run</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="cr-upgrade-overlay" class="cr-overlay hidden">
+            <div class="cr-modal">
+                <div class="cr-modal-header">
+                    <p class="cr-eyebrow">Clockwork Cache</p>
+                    <h2>Choose an Upgrade</h2>
+                    <p class="cr-subtitle">Select one reward before the next room.</p>
+                </div>
+                <div id="cr-upgrade-choices" class="cr-upgrade-grid"></div>
+            </div>
+        </div>
+
+        <div id="cr-game-over" class="cr-overlay hidden">
+            <div class="cr-modal">
+                <div class="cr-modal-header">
+                    <p class="cr-eyebrow">Run Ended</p>
+                    <h2 id="cr-game-over-title">Captured</h2>
+                    <p id="cr-game-over-reason" class="cr-subtitle">Your piece fell on Floor 3.</p>
+                </div>
+                <div class="cr-summary">
+                    <div>
+                        <span>Total Score</span>
+                        <strong id="cr-summary-score">0</strong>
+                    </div>
+                    <div>
+                        <span>Floors Cleared</span>
+                        <strong id="cr-summary-floors">0</strong>
+                    </div>
+                    <div>
+                        <span>Enemies Defeated</span>
+                        <strong id="cr-summary-enemies">0</strong>
+                    </div>
+                    <div>
+                        <span>Items Collected</span>
+                        <strong id="cr-summary-items">0</strong>
+                    </div>
+                    <div>
+                        <span>Time Played</span>
+                        <strong id="cr-summary-time">0:00</strong>
+                    </div>
+                    <div>
+                        <span>Account XP</span>
+                        <strong id="cr-summary-xp">0</strong>
+                    </div>
+                </div>
+                <div class="cr-card">
+                    <h3>Unlocked</h3>
+                    <div id="cr-summary-unlocks" class="cr-unlocks">No new unlocks.</div>
+                </div>
+                <div class="cr-button-row">
+                    <button id="cr-main-menu-btn" class="cr-btn ghost">Main Menu</button>
+                    <button id="cr-new-run" class="cr-btn primary">New Run</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="cr-topbar">
+            <div>
+                <h2>Chess Rogue</h2>
+                <p id="cr-run-tag" class="cr-muted">Run Inactive</p>
+            </div>
+            <div class="cr-top-stats">
+                <div>
+                    <span>Floor</span>
+                    <strong id="cr-floor">0</strong>
+                </div>
+                <div>
+                    <span>Score</span>
+                    <strong id="cr-score">0</strong>
+                </div>
+                <div>
+                    <span>Time</span>
+                    <strong id="cr-time">0:00</strong>
+                </div>
+            </div>
+            <div class="cr-button-row">
+                <button id="cr-pause" class="cr-btn ghost">Pause</button>
+                <button id="cr-exit-inline" class="cr-btn danger">Exit</button>
+            </div>
+        </div>
+
+        <div class="cr-layout">
+            <aside class="cr-panel">
+                <div class="cr-section">
+                    <h3>Current Piece</h3>
+                    <div class="cr-piece-card">
+                        <div id="cr-piece-icon" class="cr-piece-icon">P</div>
+                        <div>
+                            <div id="cr-piece-name" class="cr-piece-name">Pawn</div>
+                            <div class="cr-health">
+                                <div class="cr-health-track">
+                                    <div id="cr-health-bar" class="cr-health-bar" style="width: 100%"></div>
+                                </div>
+                                <span id="cr-health-text" class="cr-muted">12 / 12</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cr-section">
+                    <h3>Movement Rules</h3>
+                    <p id="cr-move-rules" class="cr-muted">Forward one, capture diagonally.</p>
+                </div>
+
+                <div class="cr-section">
+                    <h3>Inventory</h3>
+                    <div id="cr-inventory" class="cr-inventory"></div>
+                </div>
+
+                <div class="cr-section">
+                    <h3>Active Abilities</h3>
+                    <div id="cr-abilities" class="cr-abilities"></div>
+                </div>
+
+                <div class="cr-section">
+                    <h3>Floor Progress</h3>
+                    <div class="cr-progress">
+                        <div id="cr-floor-progress" class="cr-progress-bar" style="width: 0%"></div>
+                    </div>
+                    <p id="cr-floor-progress-text" class="cr-muted">Explore: 0%</p>
+                </div>
+            </aside>
+
+            <main class="cr-board-area">
+                <div class="cr-board-header">
+                    <div>
+                        <h3>Citadel Room</h3>
+                        <p id="cr-room-status" class="cr-muted">Awaiting entry.</p>
+                    </div>
+                    <div class="cr-mini-legend">
+                        <span class="cr-dot player"></span> You
+                        <span class="cr-dot enemy"></span> Enemy
+                        <span class="cr-dot exit"></span> Exit
+                    </div>
+                </div>
+                <div id="cr-board" class="cr-board"></div>
+                <div class="cr-board-footer">
+                    <div>
+                        <h4>Mini Map</h4>
+                        <div id="cr-minimap" class="cr-minimap"></div>
+                    </div>
+                    <div class="cr-log">
+                        <div class="cr-log-header">
+                            <h4>Game Log</h4>
+                            <button id="cr-clear-log" class="cr-btn ghost">Clear</button>
+                        </div>
+                        <div id="cr-log" class="cr-log-body"></div>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="cr-panel">
+                <div class="cr-section">
+                    <h3>Current Run</h3>
+                    <div class="cr-stat-card">
+                        <div class="cr-stat-row">
+                            <span>Time</span>
+                            <strong id="cr-run-time">0:00</strong>
+                        </div>
+                        <div class="cr-stat-row">
+                            <span>Floors</span>
+                            <strong id="cr-run-floors">0/10</strong>
+                        </div>
+                        <div class="cr-stat-row">
+                            <span>Enemies</span>
+                            <strong id="cr-run-enemies">0</strong>
+                        </div>
+                        <div class="cr-stat-row">
+                            <span>Score</span>
+                            <strong id="cr-run-score">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cr-section">
+                    <h3>Nearby Enemies</h3>
+                    <div id="cr-nearby-enemies" class="cr-enemy-list"></div>
+                </div>
+
+                <div class="cr-section">
+                    <h3>Available Upgrades</h3>
+                    <div id="cr-upgrades" class="cr-upgrades"></div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Space+Grotesk:wght@400;500;600&display=swap');
+
+    :root {
+        --cr-bg: #0b0f14;
+        --cr-surface: #111821;
+        --cr-surface-alt: #18212c;
+        --cr-panel: #141c26;
+        --cr-panel-border: #243140;
+        --cr-accent: #e0b55a;
+        --cr-accent-2: #4ad4c8;
+        --cr-danger: #d95555;
+        --cr-text: #edf2f7;
+        --cr-muted: rgba(237, 242, 247, 0.7);
+        --cr-grid-dark: #1a2430;
+        --cr-grid-light: #1f2b38;
+        --cr-glow: rgba(224, 181, 90, 0.35);
+    }
+
+    .chess-rogue-stage {
+        position: relative;
+        border-radius: 1.5rem;
+        padding: 1.5rem;
+        background: radial-gradient(circle at top, rgba(224, 181, 90, 0.15), transparent 45%),
+            radial-gradient(circle at bottom, rgba(74, 212, 200, 0.1), transparent 55%),
+            linear-gradient(140deg, #0b0f14, #101827 45%, #0c1118 100%);
+        border: 1px solid #1b2836;
+        overflow: hidden;
+        min-height: 880px;
+    }
+
+    .chess-rogue {
+        font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+        color: var(--cr-text);
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        min-height: 820px;
+    }
+
+    .chess-rogue h1,
+    .chess-rogue h2,
+    .chess-rogue h3,
+    .chess-rogue h4 {
+        font-family: 'Cinzel', 'Times New Roman', serif;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .cr-muted {
+        color: var(--cr-muted);
+        margin: 0;
+    }
+
+    .cr-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        background: rgba(15, 21, 29, 0.9);
+        border: 1px solid #1b2836;
+        border-radius: 1rem;
+        box-shadow: 0 10px 30px rgba(4, 6, 10, 0.4);
+    }
+
+    .cr-top-stats {
+        display: flex;
+        gap: 1.5rem;
+        text-align: center;
+    }
+
+    .cr-top-stats div {
+        min-width: 80px;
+    }
+
+    .cr-top-stats span {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--cr-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .cr-top-stats strong {
+        font-size: 1.1rem;
+    }
+
+    .cr-layout {
+        display: grid;
+        grid-template-columns: 260px 1fr 260px;
+        gap: 1.5rem;
+        flex: 1;
+    }
+
+    .cr-panel {
+        background: var(--cr-panel);
+        border: 1px solid var(--cr-panel-border);
+        border-radius: 1rem;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        min-height: 640px;
+    }
+
+    .cr-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .cr-piece-card {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        background: var(--cr-surface);
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        border: 1px solid #263445;
+    }
+
+    .cr-piece-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 0.5rem;
+        background: rgba(224, 181, 90, 0.15);
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--cr-accent);
+        border: 1px solid rgba(224, 181, 90, 0.4);
+    }
+
+    .cr-health {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .cr-health-track {
+        width: 140px;
+        height: 6px;
+        background: #0c1219;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .cr-health-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #d95555, #f27d7d);
+        transition: width 0.2s ease;
+    }
+
+    .cr-inventory {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+
+    .cr-slot {
+        border: 1px dashed #2a3a4c;
+        border-radius: 0.6rem;
+        min-height: 52px;
+        display: grid;
+        place-items: center;
+        font-size: 0.85rem;
+        color: var(--cr-muted);
+        background: rgba(12, 17, 24, 0.6);
+    }
+
+    .cr-slot.filled {
+        border-style: solid;
+        color: var(--cr-text);
+        background: rgba(74, 212, 200, 0.12);
+        cursor: pointer;
+    }
+
+    .cr-abilities,
+    .cr-upgrades,
+    .cr-enemy-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .cr-ability,
+    .cr-upgrade-item,
+    .cr-enemy-item {
+        background: var(--cr-surface-alt);
+        border: 1px solid #263445;
+        border-radius: 0.75rem;
+        padding: 0.6rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .cr-ability button,
+    .cr-upgrade-item button {
+        margin-left: auto;
+    }
+
+    .cr-ability-name {
+        font-weight: 600;
+    }
+
+    .cr-badge {
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        background: rgba(224, 181, 90, 0.2);
+        color: var(--cr-accent);
+        border: 1px solid rgba(224, 181, 90, 0.4);
+    }
+
+    .cr-board-area {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background: rgba(10, 14, 20, 0.7);
+        border: 1px solid #1b2836;
+        border-radius: 1rem;
+        padding: 1rem;
+    }
+
+    .cr-board-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .cr-mini-legend {
+        display: flex;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        color: var(--cr-muted);
+    }
+
+    .cr-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.25rem;
+    }
+
+    .cr-dot.player {
+        background: var(--cr-accent);
+    }
+
+    .cr-dot.enemy {
+        background: var(--cr-danger);
+    }
+
+    .cr-dot.exit {
+        background: var(--cr-accent-2);
+    }
+
+    .cr-board {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        grid-template-rows: repeat(8, minmax(0, 1fr));
+        gap: 0.4rem;
+        aspect-ratio: 1;
+        max-width: 640px;
+        margin: 0 auto;
+    }
+
+    .cr-cell {
+        border-radius: 0.4rem;
+        background: var(--cr-grid-dark);
+        display: grid;
+        place-items: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        position: relative;
+        cursor: pointer;
+        border: 1px solid rgba(0, 0, 0, 0.4);
+        transition: transform 0.1s ease, box-shadow 0.2s ease;
+    }
+
+    .cr-cell.light {
+        background: var(--cr-grid-light);
+    }
+
+    .cr-cell.is-wall {
+        background: #0b1117;
+        border-color: #1c2836;
+        cursor: not-allowed;
+    }
+
+    .cr-cell.is-trap {
+        box-shadow: inset 0 0 0 1px rgba(217, 85, 85, 0.7);
+    }
+
+    .cr-cell.is-door {
+        box-shadow: inset 0 0 0 1px rgba(74, 212, 200, 0.6);
+    }
+
+    .cr-cell.is-exit {
+        box-shadow: inset 0 0 0 2px rgba(74, 212, 200, 0.8);
+    }
+
+    .cr-cell.has-player {
+        box-shadow: 0 0 0 2px rgba(224, 181, 90, 0.8);
+    }
+
+    .cr-cell.has-enemy {
+        color: #f3d3d3;
+    }
+
+    .cr-cell.is-move {
+        box-shadow: inset 0 0 0 2px rgba(74, 212, 200, 0.5);
+    }
+
+    .cr-cell.is-capture {
+        box-shadow: inset 0 0 0 2px rgba(217, 85, 85, 0.8);
+    }
+
+    .cr-cell:hover {
+        transform: translateY(-2px);
+    }
+
+    .cr-board-footer {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .cr-minimap {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.2rem;
+        min-height: 140px;
+    }
+
+    .cr-mini-room {
+        width: 100%;
+        padding-top: 100%;
+        background: #101822;
+        border-radius: 0.2rem;
+        position: relative;
+        border: 1px solid #1e2a39;
+    }
+
+    .cr-mini-room.visited {
+        background: #1a2533;
+    }
+
+    .cr-mini-room.current {
+        box-shadow: 0 0 0 2px var(--cr-accent);
+    }
+
+    .cr-mini-room.exit::after {
+        content: '';
+        position: absolute;
+        inset: 35%;
+        background: var(--cr-accent-2);
+        border-radius: 50%;
+    }
+
+    .cr-log {
+        background: var(--cr-surface);
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        border: 1px solid #263445;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-height: 140px;
+    }
+
+    .cr-log-body {
+        font-size: 0.8rem;
+        max-height: 140px;
+        overflow-y: auto;
+    }
+
+    .cr-log-entry {
+        margin-bottom: 0.3rem;
+        color: var(--cr-muted);
+    }
+
+    .cr-btn {
+        border: 1px solid transparent;
+        border-radius: 999px;
+        padding: 0.4rem 0.9rem;
+        font-size: 0.85rem;
+        cursor: pointer;
+        background: #1d2a38;
+        color: var(--cr-text);
+    }
+
+    .cr-btn.primary {
+        background: linear-gradient(120deg, #e0b55a, #f2d28b);
+        color: #1b1410;
+        border: none;
+    }
+
+    .cr-btn.ghost {
+        background: transparent;
+        border: 1px solid #33465b;
+        color: var(--cr-text);
+    }
+
+    .cr-btn.danger {
+        background: rgba(217, 85, 85, 0.15);
+        border-color: rgba(217, 85, 85, 0.5);
+    }
+
+    .cr-button-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .cr-stat-card {
+        background: var(--cr-surface-alt);
+        border-radius: 0.75rem;
+        padding: 0.75rem;
+        border: 1px solid #263445;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    .cr-stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .cr-progress {
+        width: 100%;
+        height: 6px;
+        background: #0c1219;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .cr-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--cr-accent-2), var(--cr-accent));
+        transition: width 0.2s ease;
+    }
+
+    .cr-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(8, 10, 14, 0.88);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        z-index: 20;
+    }
+
+    .cr-overlay.hidden {
+        display: none;
+    }
+
+    .cr-modal {
+        background: #0f1620;
+        border: 1px solid #243140;
+        border-radius: 1rem;
+        padding: 2rem;
+        max-width: 900px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .cr-modal.small {
+        max-width: 420px;
+    }
+
+    .cr-modal-header {
+        text-align: center;
+    }
+
+    .cr-eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.3em;
+        font-size: 0.7rem;
+        color: var(--cr-accent);
+        margin-bottom: 0.4rem;
+    }
+
+    .cr-menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+    }
+
+    .cr-card {
+        background: rgba(16, 23, 33, 0.7);
+        border: 1px solid #243140;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .cr-piece-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 0.6rem;
+    }
+
+    .cr-piece-option {
+        border: 1px solid #263445;
+        border-radius: 0.75rem;
+        padding: 0.6rem;
+        text-align: center;
+        font-size: 0.8rem;
+        cursor: pointer;
+        background: rgba(15, 21, 29, 0.8);
+    }
+
+    .cr-piece-option.locked {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .cr-piece-option.active {
+        border-color: var(--cr-accent);
+        box-shadow: 0 0 0 2px rgba(224, 181, 90, 0.3);
+    }
+
+    .cr-piece-letter {
+        font-size: 1.4rem;
+        color: var(--cr-accent);
+    }
+
+    .cr-list {
+        margin: 0;
+        padding-left: 1.2rem;
+        color: var(--cr-muted);
+        font-size: 0.85rem;
+    }
+
+    .cr-upgrade-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+
+    .cr-upgrade-card {
+        background: rgba(16, 23, 33, 0.9);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        border: 1px solid #263445;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .cr-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .cr-summary div {
+        background: rgba(16, 23, 33, 0.7);
+        padding: 0.8rem;
+        border-radius: 0.6rem;
+        border: 1px solid #243140;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .cr-unlocks {
+        color: var(--cr-muted);
+        font-size: 0.85rem;
+    }
+
+    @@media (max-width: 1100px) {
+        .cr-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .cr-board {
+            max-width: 100%;
+        }
+
+        .cr-board-footer {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/games/chess-rogue.bundle.js" defer></script>
+}

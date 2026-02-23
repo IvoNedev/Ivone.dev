@@ -1,0 +1,45 @@
+﻿@page
+@model Ivone.dev.Areas.Pyt.Pages.Locations.IndexModel
+@{
+    ViewData["Title"] = "Locations";
+}
+
+<section class="panel" id="master-data-page" data-kind="locations" data-endpoint="/api/pyt/locations">
+    <div class="panel-header">
+        <h1>Locations</h1>
+    </div>
+
+    <form id="entity-form" class="trip-grid" autocomplete="off">
+        <input type="hidden" id="entity-id" />
+        <label>Name<input id="name" required maxlength="200" /></label>
+        <label>Address<input id="address" maxlength="300" /></label>
+        <label class="checkbox-label"><input type="checkbox" id="is-favorite" /> Favorite</label>
+        <label class="checkbox-label"><input type="checkbox" id="is-active" checked /> Active</label>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-primary" id="entity-save-btn">Save</button>
+            <button type="button" class="btn-secondary" id="entity-reset-btn">Reset</button>
+        </div>
+        <div id="entity-message" class="status-message" aria-live="polite"></div>
+    </form>
+
+    <div class="table-wrap">
+        <table id="entity-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Favorite</th>
+                    <th>Active</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/pyt/locations.js" asp-append-version="true"></script>
+}

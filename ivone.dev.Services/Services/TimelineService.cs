@@ -21,11 +21,19 @@ namespace ivone.dev.Services
         public async Task<List<Timeline>> GetTimelinesForUserAsync(int userId)
         {
             // Retrieve timelines where the user is the owner or it has been shared with them.
-            var timelines = await _context.Set<Timeline>()
-                .Include(t => t.TimelineEvents)
-                .Include(t => t.UserTimelines)
-                .Where(t => t.OwnerId == userId || t.UserTimelines.Any(ut => ut.UserId == userId))
-                .ToListAsync();
+            List<Timeline> timelines = null;
+            try
+            {
+                timelines = await _context.Set<Timeline>()
+                    .Include(t => t.TimelineEvents)
+                    .Include(t => t.UserTimelines)
+                    .Where(t => t.OwnerId == userId || t.UserTimelines.Any(ut => ut.UserId == userId))
+                    .ToListAsync();
+            }
+            catch(Exception ex)
+            {
+                string exx = ex.Message;
+            }
 
             // If no timelines exist for the user, create a default timeline.
             if (timelines == null || timelines.Count == 0)
@@ -48,9 +56,11 @@ namespace ivone.dev.Services
 
         public async Task<Timeline> GetTimelineByIdAsync(int timelineId)
         {
-            return await _context.Set<Timeline>()
+            var tml = await _context.Set<Timeline>()
                 .Include(t => t.TimelineEvents)
                 .FirstOrDefaultAsync(t => t.Id == timelineId);
+
+            return tml;
         }
 
         public async Task AddTimelineAsync(Timeline timeline)
