@@ -1,0 +1,421 @@
+@page "/effects/three"
+@model Ivone.dev.Pages.Effects.ThreeModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js — Effects</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; width: 100vw; height: 100vh; background: #030712; font-family: 'Space Grotesk', system-ui, sans-serif; }
+        #threeCanvas { position: fixed; inset: 0; display: block; }
+        .panel { position: fixed; top: 16px; right: 16px; width: 270px; max-height: calc(100vh - 32px); overflow-y: auto; background: rgba(8,12,28,0.84); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.09); border-radius: 16px; padding: 14px; color: #f8fafc; z-index: 10; scrollbar-width: thin; scrollbar-color: rgba(124,58,237,0.4) transparent; }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; cursor: pointer; user-select: none; }
+        .panel-header h3 { margin: 0; font-size: 14px; font-weight: 600; }
+        .toggle-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 18px; line-height: 1; }
+        .panel.collapsed .panel-content { display: none; }
+        .ctrl { margin-bottom: 10px; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #64748b; margin-bottom: 4px; }
+        .ctrl-label span { color: #a78bfa; font-weight: 600; }
+        input[type="range"] { width: 100%; height: 3px; appearance: none; background: rgba(255,255,255,0.12); border-radius: 2px; outline: none; cursor: pointer; accent-color: #7c3aed; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 13px; height: 13px; border-radius: 50%; background: #7c3aed; cursor: pointer; border: 2px solid #c4b5fd; }
+        select { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #f8fafc; padding: 7px 10px; font-family: inherit; font-size: 13px; cursor: pointer; outline: none; }
+        select option { background: #0f172a; }
+        .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 10px 0; }
+        .sketch-ctrl { display: none; }
+        .sketch-ctrl.visible { display: block; }
+        .back-btn { position: fixed; top: 16px; left: 16px; background: rgba(8,12,28,0.84); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; padding: 9px 16px; color: #f8fafc; text-decoration: none; font-size: 13px; font-weight: 500; z-index: 10; transition: border-color 0.15s, background 0.15s; }
+        .back-btn:hover { border-color: rgba(124,58,237,0.5); background: rgba(124,58,237,0.2); }
+        .label-tag { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(8,12,28,0.84); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.09); border-radius: 999px; padding: 8px 22px; color: #c4b5fd; font-size: 15px; font-weight: 600; z-index: 10; white-space: nowrap; }
+        .hide-btn { position: fixed; bottom: 20px; right: 16px; background: rgba(8,12,28,0.84); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; padding: 8px 14px; color: #64748b; font-family: inherit; font-size: 11px; cursor: pointer; z-index: 10; transition: color 0.15s; }
+        .hide-btn:hover { color: #f8fafc; }
+    </style>
+</head>
+<body>
+<canvas id="threeCanvas"></canvas>
+<a href="/effects" class="back-btn">← Effects</a>
+<div class="label-tag" id="label">Particle Galaxy</div>
+<button class="hide-btn" id="hideBtn" onclick="toggleUI()">Hide UI</button>
+
+<div class="panel" id="panel">
+    <div class="panel-header" onclick="togglePanel()">
+        <h3>Three.js Controls</h3>
+        <button class="toggle-btn" id="panelToggle">−</button>
+    </div>
+    <div class="panel-content">
+        <div class="ctrl">
+            <div class="ctrl-label">Scene</div>
+            <select id="sceneSel" onchange="switchScene(this.value)">
+                <option value="galaxy">Particle Galaxy</option>
+                <option value="wavegrid">Wave Grid</option>
+                <option value="geometry">Floating Geometry</option>
+                <option value="neural">Neural Web</option>
+                <option value="dna">DNA Helix</option>
+            </select>
+        </div>
+        <hr class="divider">
+        <div class="ctrl">
+            <div class="ctrl-label">Speed <span id="spdVal">1.0</span></div>
+            <input type="range" id="spd" min="0.1" max="5" step="0.1" value="1.0" oninput="sv('spd','spdVal',1)">
+        </div>
+
+        <!-- Galaxy -->
+        <div class="sketch-ctrl visible" id="sc-galaxy">
+            <div class="ctrl">
+                <div class="ctrl-label">Particles <span id="gpVal">60000</span></div>
+                <input type="range" id="gp" min="5000" max="150000" step="5000" value="60000" oninput="sv('gp','gpVal',0); rebuildScene()">
+            </div>
+            <div class="ctrl">
+                <div class="ctrl-label">Branches <span id="gbVal">4</span></div>
+                <input type="range" id="gb" min="2" max="8" step="1" value="4" oninput="sv('gb','gbVal',0); rebuildScene()">
+            </div>
+            <div class="ctrl">
+                <div class="ctrl-label">Spin <span id="gsVal">1.0</span></div>
+                <input type="range" id="gs" min="0.1" max="5" step="0.1" value="1.0" oninput="sv('gs','gsVal',1); rebuildScene()">
+            </div>
+            <div class="ctrl">
+                <div class="ctrl-label">Star Size <span id="gszVal">0.010</span></div>
+                <input type="range" id="gsz" min="0.005" max="0.05" step="0.001" value="0.010" oninput="sv('gsz','gszVal',3); rebuildScene()">
+            </div>
+        </div>
+
+        <!-- Wave Grid -->
+        <div class="sketch-ctrl" id="sc-wavegrid">
+            <div class="ctrl">
+                <div class="ctrl-label">Grid Size <span id="wgsVal">40</span></div>
+                <input type="range" id="wgs" min="10" max="80" step="5" value="40" oninput="sv('wgs','wgsVal',0); rebuildScene()">
+            </div>
+            <div class="ctrl">
+                <div class="ctrl-label">Amplitude <span id="wampVal">1.5</span></div>
+                <input type="range" id="wamp" min="0.2" max="5" step="0.1" value="1.5" oninput="sv('wamp','wampVal',1)">
+            </div>
+            <div class="ctrl">
+                <div class="ctrl-label">Frequency <span id="wfreqVal">1.0</span></div>
+                <input type="range" id="wfreq" min="0.2" max="4" step="0.1" value="1.0" oninput="sv('wfreq','wfreqVal',1)">
+            </div>
+        </div>
+
+        <!-- Floating Geometry -->
+        <div class="sketch-ctrl" id="sc-geometry">
+            <div class="ctrl">
+                <div class="ctrl-label">Count <span id="gcntVal">80</span></div>
+                <input type="range" id="gcnt" min="10" max="200" step="10" value="80" oninput="sv('gcnt','gcntVal',0); rebuildScene()">
+            </div>
+            <div class="ctrl">
+                <div class="ctrl-label">Spread <span id="gspVal">20</span></div>
+                <input type="range" id="gsp" min="5" max="40" step="1" value="20" oninput="sv('gsp','gspVal',0); rebuildScene()">
+            </div>
+        </div>
+
+        <!-- Neural Web -->
+        <div class="sketch-ctrl" id="sc-neural">
+            <div class="ctrl">
+                <div class="ctrl-label">Nodes <span id="nnVal">120</span></div>
+                <input type="range" id="nn" min="30" max="250" step="10" value="120" oninput="sv('nn','nnVal',0); rebuildScene()">
+            </div>
+            <div class="ctrl">
+                <div class="ctrl-label">Link Distance <span id="nldVal">4.0</span></div>
+                <input type="range" id="nld" min="1" max="8" step="0.5" value="4.0" oninput="sv('nld','nldVal',1)">
+            </div>
+        </div>
+
+        <!-- DNA -->
+        <div class="sketch-ctrl" id="sc-dna">
+            <div class="ctrl">
+                <div class="ctrl-label">Turns <span id="dtVal">5</span></div>
+                <input type="range" id="dt" min="2" max="12" step="1" value="5" oninput="sv('dt','dtVal',0); rebuildScene()">
+            </div>
+            <div class="ctrl">
+                <div class="ctrl-label">Radius <span id="drVal">2.0</span></div>
+                <input type="range" id="dr" min="0.5" max="4" step="0.1" value="2.0" oninput="sv('dr','drVal',1); rebuildScene()">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+<script>
+const canvas = document.getElementById('threeCanvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 500);
+camera.position.set(0, 0, 15);
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+let currentScene = 'galaxy';
+let sceneObj = null;
+let updateFn = null;
+let uiVisible = true;
+const clock = new THREE.Clock();
+
+function P(id) { return parseFloat(document.getElementById(id).value); }
+function PI(id) { return parseInt(document.getElementById(id).value); }
+function sv(id, lid, d) { document.getElementById(lid).textContent = P(id).toFixed(d); }
+function rebuildScene() { switchScene(currentScene); }
+
+// ---- SCENE BUILDERS ----
+
+function buildGalaxy() {
+    const count = PI('gp'), branches = PI('gb'), spin = P('gs'), size = P('gsz');
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3), col = new Float32Array(count * 3);
+    const c1 = new THREE.Color('#f97316'), c2 = new THREE.Color('#7c3aed');
+
+    for (let i = 0; i < count; i++) {
+        const i3 = i * 3;
+        const r = Math.random() * 8;
+        const spinA = r * spin;
+        const branchA = (i % branches) / branches * Math.PI * 2;
+        const rp = Math.pow(Math.random(), 3);
+        const rx = rp * 0.5 * r * (Math.random() < 0.5 ? 1 : -1);
+        const ry = rp * 0.2 * r * (Math.random() < 0.5 ? 1 : -1);
+        const rz = rp * 0.5 * r * (Math.random() < 0.5 ? 1 : -1);
+        pos[i3]   = Math.cos(branchA + spinA) * r + rx;
+        pos[i3+1] = ry;
+        pos[i3+2] = Math.sin(branchA + spinA) * r + rz;
+        const mc = c1.clone().lerp(c2, r / 8);
+        col[i3] = mc.r; col[i3+1] = mc.g; col[i3+2] = mc.b;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const mat = new THREE.PointsMaterial({ size, sizeAttenuation: true, depthWrite: false, blending: THREE.AdditiveBlending, vertexColors: true });
+    const pts = new THREE.Points(geo, mat);
+    scene.add(pts);
+    camera.position.set(0, 4, 16);
+    camera.lookAt(0, 0, 0);
+    let t = 0;
+    return { mesh: pts, update: (dt) => { pts.rotation.y += 0.05 * P('spd') * dt; } };
+}
+
+function buildWaveGrid() {
+    const N = PI('wgs');
+    const SIZE = 20;
+    const verts = new Float32Array((N+1) * (N+1) * 3);
+    const idxArr = [];
+    for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
+        const idx = (i*(N+1)+j)*3;
+        verts[idx]   = (i/N - 0.5) * SIZE;
+        verts[idx+1] = 0;
+        verts[idx+2] = (j/N - 0.5) * SIZE;
+    }
+    for (let i = 0; i <= N; i++) for (let j = 0; j < N; j++) idxArr.push(i*(N+1)+j, i*(N+1)+j+1);
+    for (let j = 0; j <= N; j++) for (let i = 0; i < N; i++) idxArr.push(i*(N+1)+j, (i+1)*(N+1)+j);
+    const geo = new THREE.BufferGeometry();
+    const posAttr = new THREE.BufferAttribute(verts, 3);
+    posAttr.setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('position', posAttr);
+    geo.setIndex(idxArr);
+    const mat = new THREE.LineBasicMaterial({ color: 0x7c3aed, opacity: 0.7, transparent: true });
+    const mesh = new THREE.LineSegments(geo, mat);
+    scene.add(mesh);
+    camera.position.set(0, 8, 16);
+    camera.lookAt(0, 0, 0);
+    return {
+        mesh,
+        update: (dt) => {
+            const t = clock.elapsedTime, amp = P('wamp'), freq = P('wfreq'), spd = P('spd');
+            const pos = geo.attributes.position;
+            for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
+                const idx = i*(N+1)+j;
+                const x = pos.getX(idx), z = pos.getZ(idx);
+                const y = Math.sin(x * freq * 0.3 + t * spd) * Math.cos(z * freq * 0.3 + t * spd * 0.7) * amp;
+                const h = (y / amp + 1) * 0.5;
+                pos.setY(idx, y);
+            }
+            pos.needsUpdate = true;
+            mesh.rotation.y += 0.004 * P('spd');
+        }
+    };
+}
+
+function buildGeometry() {
+    const count = PI('gcnt'), spread = P('gsp');
+    const geos = [new THREE.TetrahedronGeometry(0.4,0), new THREE.OctahedronGeometry(0.4,0), new THREE.IcosahedronGeometry(0.4,0), new THREE.BoxGeometry(0.5,0.5,0.5), new THREE.TorusGeometry(0.3,0.12,8,12)];
+    const group = new THREE.Group();
+    const meshes = [];
+    const colPalette = [0x7c3aed, 0xec4899, 0x06b6d4, 0xf97316, 0xa855f7, 0x22c55e];
+    for (let i = 0; i < count; i++) {
+        const g = geos[i % geos.length].clone();
+        const mat = new THREE.MeshBasicMaterial({ color: colPalette[i % colPalette.length], wireframe: true, transparent: true, opacity: 0.7 });
+        const m = new THREE.Mesh(g, mat);
+        m.position.set((Math.random()-0.5)*spread, (Math.random()-0.5)*spread*0.5, (Math.random()-0.5)*spread);
+        m.userData.rotAxis = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
+        m.userData.rotSpeed = (Math.random() * 0.5 + 0.1) * (Math.random()<0.5?1:-1);
+        group.add(m);
+        meshes.push(m);
+    }
+    scene.add(group);
+    camera.position.set(0, 5, 25);
+    camera.lookAt(0, 0, 0);
+    return {
+        mesh: group,
+        update: (dt) => {
+            const spd = P('spd');
+            for (const m of meshes) m.rotateOnAxis(m.userData.rotAxis, m.userData.rotSpeed * spd * dt);
+            group.rotation.y += 0.02 * spd * dt;
+        }
+    };
+}
+
+function buildNeural() {
+    const N = PI('nn'), spread = 12;
+    const pts = [];
+    const velocities = [];
+    for (let i = 0; i < N; i++) {
+        pts.push(new THREE.Vector3((Math.random()-0.5)*spread, (Math.random()-0.5)*spread*0.5, (Math.random()-0.5)*spread));
+        velocities.push(new THREE.Vector3((Math.random()-0.5)*0.02, (Math.random()-0.5)*0.01, (Math.random()-0.5)*0.02));
+    }
+    // Dot sprites
+    const pGeo = new THREE.BufferGeometry();
+    const pPos = new Float32Array(N*3);
+    pts.forEach((p,i) => { pPos[i*3]=p.x; pPos[i*3+1]=p.y; pPos[i*3+2]=p.z; });
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos,3));
+    const pMat = new THREE.PointsMaterial({ color:0xc4b5fd, size:0.15, depthWrite:false, blending:THREE.AdditiveBlending });
+    const pointsMesh = new THREE.Points(pGeo, pMat);
+    scene.add(pointsMesh);
+
+    // Lines geometry (pre-allocated for max connections)
+    const MAX_LINES = N * 4;
+    const linePos = new Float32Array(MAX_LINES * 6);
+    const lineGeo = new THREE.BufferGeometry();
+    const linePosAttr = new THREE.BufferAttribute(linePos, 3);
+    linePosAttr.setUsage(THREE.DynamicDrawUsage);
+    lineGeo.setAttribute('position', linePosAttr);
+    const lineMat = new THREE.LineBasicMaterial({ color:0x7c3aed, transparent:true, opacity:0.35 });
+    const linesMesh = new THREE.LineSegments(lineGeo, lineMat);
+    scene.add(linesMesh);
+
+    camera.position.set(0, 3, 20);
+    camera.lookAt(0, 0, 0);
+
+    return {
+        mesh: new THREE.Group(),
+        update: (dt) => {
+            const spd = P('spd'), dist = P('nld');
+            // Move nodes
+            for (let i = 0; i < N; i++) {
+                pts[i].addScaledVector(velocities[i], spd * 30 * dt);
+                if (Math.abs(pts[i].x) > spread/2) velocities[i].x *= -1;
+                if (Math.abs(pts[i].y) > spread/4) velocities[i].y *= -1;
+                if (Math.abs(pts[i].z) > spread/2) velocities[i].z *= -1;
+                pPos[i*3]=pts[i].x; pPos[i*3+1]=pts[i].y; pPos[i*3+2]=pts[i].z;
+            }
+            pGeo.attributes.position.needsUpdate = true;
+
+            // Update lines
+            let lineIdx = 0;
+            for (let i = 0; i < N && lineIdx < MAX_LINES; i++) {
+                for (let j = i+1; j < N && lineIdx < MAX_LINES; j++) {
+                    if (pts[i].distanceTo(pts[j]) < dist) {
+                        const b = lineIdx * 6;
+                        linePos[b]=pts[i].x; linePos[b+1]=pts[i].y; linePos[b+2]=pts[i].z;
+                        linePos[b+3]=pts[j].x; linePos[b+4]=pts[j].y; linePos[b+5]=pts[j].z;
+                        lineIdx++;
+                    }
+                }
+            }
+            // Zero out unused
+            for (let k = lineIdx*6; k < MAX_LINES*6; k++) linePos[k] = 0;
+            lineGeo.attributes.position.needsUpdate = true;
+            lineGeo.setDrawRange(0, lineIdx * 2);
+        },
+        extraMesh: [pointsMesh, linesMesh]
+    };
+}
+
+function buildDNA() {
+    const TURNS = PI('dt'), RADIUS = P('dr');
+    const SEGS = 20 * TURNS;
+    const HEIGHT = TURNS * 1.6;
+    const group = new THREE.Group();
+    const mat1 = new THREE.MeshBasicMaterial({ color: 0x7c3aed });
+    const mat2 = new THREE.MeshBasicMaterial({ color: 0xec4899 });
+    const matLine = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 });
+    const sGeo = new THREE.SphereGeometry(0.08, 6, 6);
+    for (let i = 0; i <= SEGS; i++) {
+        const t = i / SEGS;
+        const angle = t * Math.PI * 2 * TURNS;
+        const y = (t - 0.5) * HEIGHT;
+        const s1 = new THREE.Mesh(sGeo, mat1);
+        s1.position.set(Math.cos(angle) * RADIUS, y, Math.sin(angle) * RADIUS);
+        group.add(s1);
+        const s2 = new THREE.Mesh(sGeo, mat2);
+        s2.position.set(Math.cos(angle + Math.PI) * RADIUS, y, Math.sin(angle + Math.PI) * RADIUS);
+        group.add(s2);
+        if (i % 3 === 0) {
+            const lg = new THREE.BufferGeometry().setFromPoints([s1.position.clone(), s2.position.clone()]);
+            group.add(new THREE.Line(lg, matLine));
+        }
+    }
+    scene.add(group);
+    camera.position.set(0, 0, RADIUS * 5 + 5);
+    camera.lookAt(0, 0, 0);
+    return {
+        mesh: group,
+        update: (dt) => {
+            group.rotation.y += 0.3 * P('spd') * dt;
+        }
+    };
+}
+
+const BUILDERS = { galaxy: buildGalaxy, wavegrid: buildWaveGrid, geometry: buildGeometry, neural: buildNeural, dna: buildDNA };
+const LABELS = { galaxy: 'Particle Galaxy', wavegrid: 'Wave Grid', geometry: 'Floating Geometry', neural: 'Neural Web', dna: 'DNA Helix' };
+
+function switchScene(name) {
+    currentScene = name;
+    document.getElementById('label').textContent = LABELS[name];
+    document.querySelectorAll('.sketch-ctrl').forEach(e => e.classList.remove('visible'));
+    const sc = document.getElementById('sc-' + name);
+    if (sc) sc.classList.add('visible');
+
+    // Clear scene (keep lights)
+    while (scene.children.length > 0) {
+        const obj = scene.children[0];
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) { if (Array.isArray(obj.material)) obj.material.forEach(m=>m.dispose()); else obj.material.dispose(); }
+        scene.remove(obj);
+    }
+
+    sceneObj = BUILDERS[name]();
+    updateFn = sceneObj.update;
+}
+
+// Render loop
+renderer.setAnimationLoop(() => {
+    const dt = clock.getDelta();
+    if (updateFn) updateFn(dt);
+    renderer.render(scene, camera);
+});
+
+function togglePanel() {
+    const p = document.getElementById('panel');
+    p.classList.toggle('collapsed');
+    document.getElementById('panelToggle').textContent = p.classList.contains('collapsed') ? '+' : '−';
+}
+
+function toggleUI() {
+    uiVisible = !uiVisible;
+    ['panel','label'].forEach(id => document.getElementById(id).style.display = uiVisible ? '' : 'none');
+    document.querySelector('.back-btn').style.display = uiVisible ? '' : 'none';
+    const btn = document.getElementById('hideBtn');
+    btn.style.display = '';
+    btn.textContent = uiVisible ? 'Hide UI' : 'Show UI';
+}
+
+switchScene('galaxy');
+</script>
+</body>
+</html>

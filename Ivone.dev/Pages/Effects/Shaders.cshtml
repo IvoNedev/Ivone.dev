@@ -1,0 +1,405 @@
+@page "/effects/shaders"
+@model Ivone.dev.Pages.Effects.ShadersModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLSL Shaders — Effects</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; width: 100vw; height: 100vh; background: #030712; font-family: 'Space Grotesk', system-ui, sans-serif; }
+        #glcanvas { position: fixed; inset: 0; display: block; width: 100%; height: 100%; }
+        .panel { position: fixed; top: 16px; right: 16px; width: 270px; max-height: calc(100vh - 32px); overflow-y: auto; background: rgba(8,12,28,0.84); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.09); border-radius: 16px; padding: 14px; color: #f8fafc; z-index: 10; scrollbar-width: thin; scrollbar-color: rgba(124,58,237,0.4) transparent; }
+        .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; cursor: pointer; user-select: none; }
+        .panel-header h3 { margin: 0; font-size: 14px; font-weight: 600; }
+        .toggle-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 18px; line-height: 1; }
+        .panel.collapsed .panel-content { display: none; }
+        .ctrl { margin-bottom: 10px; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #64748b; margin-bottom: 4px; }
+        .ctrl-label span { color: #a78bfa; font-weight: 600; }
+        input[type="range"] { width: 100%; height: 3px; appearance: none; background: rgba(255,255,255,0.12); border-radius: 2px; outline: none; cursor: pointer; accent-color: #7c3aed; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 13px; height: 13px; border-radius: 50%; background: #7c3aed; cursor: pointer; border: 2px solid #c4b5fd; }
+        select { width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; color: #f8fafc; padding: 7px 10px; font-family: inherit; font-size: 13px; cursor: pointer; outline: none; }
+        select option { background: #0f172a; }
+        .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 10px 0; }
+        .err-box { background: rgba(220,38,38,0.2); border: 1px solid rgba(220,38,38,0.4); border-radius: 8px; padding: 8px; font-size: 11px; color: #fca5a5; margin-top: 8px; display: none; white-space: pre-wrap; word-break: break-all; }
+        .color-row { display: flex; gap: 5px; flex-wrap: wrap; }
+        .color-chip { width: 22px; height: 22px; border-radius: 5px; cursor: pointer; border: 1px solid rgba(255,255,255,0.15); transition: transform 0.1s; flex-shrink: 0; }
+        .color-chip:hover { transform: scale(1.25); }
+        .color-chip.active { outline: 2px solid #c4b5fd; outline-offset: 2px; }
+        .back-btn { position: fixed; top: 16px; left: 16px; background: rgba(8,12,28,0.84); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; padding: 9px 16px; color: #f8fafc; text-decoration: none; font-size: 13px; font-weight: 500; z-index: 10; transition: border-color 0.15s, background 0.15s; }
+        .back-btn:hover { border-color: rgba(124,58,237,0.5); background: rgba(124,58,237,0.2); }
+        .label-tag { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(8,12,28,0.84); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.09); border-radius: 999px; padding: 8px 22px; color: #c4b5fd; font-size: 15px; font-weight: 600; z-index: 10; white-space: nowrap; }
+        .hide-btn { position: fixed; bottom: 20px; right: 16px; background: rgba(8,12,28,0.84); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,0.09); border-radius: 10px; padding: 8px 14px; color: #64748b; font-family: inherit; font-size: 11px; cursor: pointer; z-index: 10; transition: color 0.15s; }
+        .hide-btn:hover { color: #f8fafc; }
+    </style>
+</head>
+<body>
+<canvas id="glcanvas"></canvas>
+<a href="/effects" class="back-btn">← Effects</a>
+<div class="label-tag" id="label">Plasma</div>
+<button class="hide-btn" id="hideBtn" onclick="toggleUI()">Hide UI</button>
+
+<div class="panel" id="panel">
+    <div class="panel-header" onclick="togglePanel()">
+        <h3>GLSL Shader Controls</h3>
+        <button class="toggle-btn" id="panelToggle">−</button>
+    </div>
+    <div class="panel-content">
+        <div class="ctrl">
+            <div class="ctrl-label">Shader</div>
+            <select id="shaderSel" onchange="switchShader(this.value)">
+                <option value="plasma">Plasma</option>
+                <option value="lava">Lava Lamp</option>
+                <option value="aurora">Aurora Borealis</option>
+                <option value="holo">Holographic Grid</option>
+                <option value="tunnel">Tunnel</option>
+                <option value="voronoi">Voronoi</option>
+                <option value="marble">Marble</option>
+                <option value="fire">Fire</option>
+                <option value="julia">Julia Set Fractal</option>
+            </select>
+        </div>
+        <hr class="divider">
+        <div class="ctrl">
+            <div class="ctrl-label">Speed <span id="spdVal">1.0</span></div>
+            <input type="range" id="spd" min="0.1" max="5" step="0.1" value="1.0" oninput="setV('spd','spdVal',1)">
+        </div>
+        <div class="ctrl">
+            <div class="ctrl-label">Zoom <span id="zoomVal">1.0</span></div>
+            <input type="range" id="zoom" min="0.2" max="4" step="0.1" value="1.0" oninput="setV('zoom','zoomVal',1)">
+        </div>
+        <div class="ctrl">
+            <div class="ctrl-label">Color Shift <span id="csVal">0.0</span></div>
+            <input type="range" id="cs" min="0" max="6.28" step="0.01" value="0.0" oninput="setV('cs','csVal',2)">
+        </div>
+        <div class="ctrl">
+            <div class="ctrl-label">Complexity <span id="cxVal">1.0</span></div>
+            <input type="range" id="cx" min="0.3" max="3" step="0.1" value="1.0" oninput="setV('cx','cxVal',1)">
+        </div>
+        <hr class="divider">
+
+        <div class="ctrl">
+            <div class="ctrl-label">Quick Palette</div>
+            <div class="color-row" id="palRow">
+                <div class="color-chip active" style="background:#7c3aed" onclick="setPalette(0,this)" title="Violet"></div>
+                <div class="color-chip" style="background:#ec4899" onclick="setPalette(1.05,this)" title="Pink"></div>
+                <div class="color-chip" style="background:#06b6d4" onclick="setPalette(3.14,this)" title="Cyan"></div>
+                <div class="color-chip" style="background:#f97316" onclick="setPalette(0.52,this)" title="Orange"></div>
+                <div class="color-chip" style="background:#22c55e" onclick="setPalette(2.09,this)" title="Green"></div>
+                <div class="color-chip" style="background:#facc15" onclick="setPalette(0.9,this)" title="Gold"></div>
+                <div class="color-chip" style="background:#f8fafc" onclick="setPalette(5.8,this)" title="White"></div>
+            </div>
+        </div>
+
+        <div id="errBox" class="err-box"></div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('glcanvas');
+const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+let prog = null, rafId = null, startTime = Date.now();
+let uiVisible = true;
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+}
+resize();
+window.addEventListener('resize', resize);
+
+const VS = `attribute vec2 pos;void main(){gl_Position=vec4(pos,0.0,1.0);}`;
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+
+function compileShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        throw new Error(gl.getShaderInfoLog(s));
+    }
+    return s;
+}
+
+function buildProg(fs) {
+    const vert = compileShader(gl.VERTEX_SHADER, VS);
+    const frag = compileShader(gl.FRAGMENT_SHADER, fs);
+    const p = gl.createProgram();
+    gl.attachShader(p, vert); gl.attachShader(p, frag);
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+    return p;
+}
+
+function uni1f(name, val) { const loc = gl.getUniformLocation(prog, name); if(loc) gl.uniform1f(loc, val); }
+function uni2f(name, x, y) { const loc = gl.getUniformLocation(prog, name); if(loc) gl.uniform2f(loc, x, y); }
+
+function render() {
+    if (!prog) { rafId = requestAnimationFrame(render); return; }
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(prog);
+    const posLoc = gl.getAttribLocation(prog, 'pos');
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    uni2f('uRes', canvas.width, canvas.height);
+    uni1f('uTime', (Date.now() - startTime) / 1000);
+    uni1f('uSpeed', parseFloat(document.getElementById('spd').value));
+    uni1f('uZoom', parseFloat(document.getElementById('zoom').value));
+    uni1f('uCS', parseFloat(document.getElementById('cs').value));
+    uni1f('uCX', parseFloat(document.getElementById('cx').value));
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    rafId = requestAnimationFrame(render);
+}
+
+const H = `
+float hash2(vec2 p){p=fract(p*vec2(234.34,435.345));p+=dot(p,p+34.23);return fract(p.x*p.y);}
+float n2(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash2(i),hash2(i+vec2(1,0)),f.x),mix(hash2(i+vec2(0,1)),hash2(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<6;i++){v+=n2(p)*a;p*=2.0;a*=0.5;}return v;}
+`;
+
+const UNI = `precision mediump float;
+uniform vec2 uRes; uniform float uTime,uSpeed,uZoom,uCS,uCX;`;
+
+const SHADERS = {
+plasma: UNI + `
+void main(){
+  vec2 uv=(gl_FragCoord.xy-uRes*0.5)/uRes.y*uZoom*2.0;
+  float t=uTime*uSpeed*0.5;
+  float v1=sin(uv.x*8.0*uCX+t);
+  float v2=sin(8.0*uCX*(uv.x*sin(t*0.5)+uv.y*cos(t*0.33))+t);
+  float cx=uv.x+0.5*sin(t*0.3);float cy=uv.y+0.5*cos(t*0.27);
+  float v3=sin(sqrt(cx*cx+cy*cy+0.001)*9.0*uCX+t);
+  float v=(v1+v2+v3)/3.0;
+  vec3 col=0.5+0.5*cos(uCS+t*0.3+v*3.14159+vec3(0.0,2.094,4.189));
+  gl_FragColor=vec4(col,1.0);
+}`,
+
+lava: UNI + `
+float blob(vec2 p,vec2 c,float r){float d=length(p-c);return r*r/(d*d+0.001);}
+void main(){
+  vec2 uv=(gl_FragCoord.xy/uRes.xy)*2.0-1.0;
+  uv.x*=uRes.x/uRes.y; uv*=uZoom;
+  float t=uTime*uSpeed*0.25;
+  float f=0.0;
+  f+=blob(uv,vec2(sin(t*0.7)*0.6,cos(t*0.5)*0.7),0.18*uCX);
+  f+=blob(uv,vec2(cos(t*0.4)*0.7,sin(t*0.8)*0.6),0.15*uCX);
+  f+=blob(uv,vec2(sin(t*0.9)*0.5,cos(t*0.3)*0.8),0.22*uCX);
+  f+=blob(uv,vec2(cos(t*0.6)*0.8,sin(t*0.4)*0.5),0.12*uCX);
+  f+=blob(uv,vec2(sin(t*0.3)*0.4,cos(t*0.9)*0.6),0.16*uCX);
+  f+=blob(uv,vec2(cos(t*1.1)*0.3,sin(t*0.7)*0.9),0.14*uCX);
+  float s=smoothstep(0.8,1.2,f);
+  vec3 lava=mix(vec3(0.8,0.1,0.4),vec3(1.0,0.5,0.0),clamp(f*0.3,0.0,1.0));
+  lava=mix(lava,vec3(cos(uCS),sin(uCS+1.0),0.5),0.3);
+  vec3 bg=vec3(0.04,0.02,0.08);
+  vec3 col=mix(bg,lava,s)+lava*clamp(f*0.15,0.0,1.0)*0.3;
+  gl_FragColor=vec4(col,1.0);
+}`,
+
+aurora: UNI + H + `
+void main(){
+  vec2 uv=gl_FragCoord.xy/uRes.xy;
+  float t=uTime*uSpeed*0.12;
+  float bands=0.0;
+  for(float i=0.0;i<5.0;i++){
+    float n=fbm(vec2(uv.x*2.0*uCX+t+i*0.5,t*0.5+i*0.3));
+    float y=0.25+i*0.13+n*0.18;
+    bands+=exp(-abs(uv.y-y)*22.0);
+  }
+  float nn=fbm(uv*3.0*uCX+t);
+  vec3 c1=0.5+0.5*cos(uCS+vec3(1.3,2.5,0.0));
+  vec3 c2=0.5+0.5*cos(uCS+vec3(0.0,1.0,2.5));
+  vec3 c3=0.5+0.5*cos(uCS+vec3(3.0,0.5,1.5));
+  vec3 col=mix(c1,c2,nn);
+  col=mix(col,c3,fbm(uv*2.0+t*1.3));
+  vec3 bg=vec3(0.01,0.02,0.06);
+  vec3 final=mix(bg,col,clamp(bands*0.8,0.0,1.0));
+  float star=pow(hash2(floor(uv*500.0)),22.0)*0.9;
+  final+=vec3(star)*clamp(1.0-bands,0.0,1.0);
+  gl_FragColor=vec4(final,1.0);
+}`,
+
+holo: UNI + `
+float hash1(float n){return fract(sin(n)*43758.5453123);}
+void main(){
+  vec2 uv=gl_FragCoord.xy/uRes.xy;
+  float t=uTime*uSpeed;
+  vec2 guv=uv*uZoom;
+  vec2 grid=fract(guv*28.0*uCX)-0.5;
+  float gridLine=step(0.44,abs(grid.x))+step(0.44,abs(grid.y));
+  float scan1=mod(uv.y*45.0-t*2.5,1.0);
+  float scan2=mod(uv.x*22.0+t*0.6,1.0);
+  float sg=exp(-abs(scan1-0.5)*18.0)*0.6+exp(-abs(scan2-0.5)*25.0)*0.35;
+  float flicker=0.94+0.06*sin(t*43.0);
+  float glitch=step(0.97,hash1(floor(uv.y*60.0)+floor(t*6.0)));
+  vec3 hc=0.5+0.5*cos(uCS+vec3(1.57,0.0,1.0));
+  vec3 gc=0.5+0.5*cos(uCS+vec3(3.14,1.57,0.5));
+  float intens=gridLine*0.9+sg;
+  vec3 col=mix(hc,gc,glitch)*intens*flicker;
+  col+=hc*0.04*intens;
+  gl_FragColor=vec4(col,1.0);
+}`,
+
+tunnel: UNI + `
+void main(){
+  vec2 uv=(gl_FragCoord.xy/uRes.xy)*2.0-1.0;
+  uv.x*=uRes.x/uRes.y;
+  float t=uTime*uSpeed*0.3;
+  float r=length(uv)+0.001;
+  float a=atan(uv.y,uv.x);
+  float tunnel=0.3/(r*uZoom);
+  float u=a/3.14159+t*0.08;
+  float v=tunnel-t;
+  float checker=mod(floor(u*5.0*uCX)+floor(v*5.0*uCX),2.0);
+  /* uCS = base hue (0-2pi covers the full wheel)
+     uCX = spread: low=monochromatic, high=wider two-tone */
+  float baseHue = uCS / 6.28318;
+  float spread  = uCX * 0.09;
+  float depthShift = tunnel * 0.012;
+  vec3 bright = 0.5 + 0.5 * cos(6.28318 * (baseHue + depthShift + vec3(0.0, spread, spread * 2.1)));
+  vec3 dark   = bright * 0.10;
+  vec3 col = mix(dark, bright, checker);
+  float glow = clamp(1.0 / (r * 2.2 + 0.35), 0.0, 2.0);
+  col *= glow;
+  gl_FragColor=vec4(col,1.0);
+}`,
+
+voronoi: UNI + `
+vec2 hash22(vec2 p){p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));return fract(sin(p)*43758.5453);}
+float voronoi(vec2 x){
+  vec2 n=floor(x),f=fract(x);float d=8.0;
+  for(int j=-1;j<=1;j++)for(int i=-1;i<=1;i++){
+    vec2 g=vec2(float(i),float(j));
+    vec2 o=hash22(n+g);
+    o=0.5+0.5*sin(uTime*uSpeed*0.3+6.2831*o);
+    float dist=length(g+o-f);
+    d=min(d,dist);
+  }
+  return d;
+}
+void main(){
+  vec2 uv=gl_FragCoord.xy/uRes.y*uZoom*3.0*uCX;
+  float d=voronoi(uv);
+  float edge=1.0-smoothstep(0.0,0.06,d);
+  float hue=voronoi(uv*0.5+0.1)*0.8+uTime*uSpeed*0.03+uCS/6.28;
+  vec3 col=0.5+0.5*cos(6.28318*(hue+vec3(0.0,0.333,0.667)));
+  vec3 bg=col*0.12;
+  gl_FragColor=vec4(mix(bg,col*1.6,edge),1.0);
+}`,
+
+marble: UNI + H + `
+void main(){
+  vec2 uv=gl_FragCoord.xy/uRes.xy*uZoom*3.0*uCX;
+  float t=uTime*uSpeed*0.04;
+  float n=fbm(uv+fbm(uv+fbm(uv+t)));
+  float m=sin(uv.x*5.0+n*8.0+t*2.0)*0.5+0.5;
+  vec3 c1=0.5+0.5*cos(uCS+vec3(0.0,0.5,1.0));
+  vec3 c2=0.5+0.5*cos(uCS+vec3(2.0,1.5,3.0));
+  vec3 c3=0.5+0.5*cos(uCS+vec3(4.0,2.0,0.5));
+  vec3 c4=vec3(0.04,0.03,0.07);
+  vec3 col=mix(c1,c2,m);
+  col=mix(col,c3,fbm(uv*2.0+t));
+  col=mix(col,c4,clamp((fbm(uv*4.0+t)-0.5)*2.0,0.0,1.0));
+  gl_FragColor=vec4(col,1.0);
+}`,
+
+fire: UNI + H + `
+void main(){
+  vec2 uv=gl_FragCoord.xy/uRes.xy;
+  uv.x=(uv.x-0.5)*(uRes.x/uRes.y)+0.5;
+  float t=uTime*uSpeed*0.35;
+  vec2 d=uv;
+  d.y+=fbm(vec2(uv.x*2.0*uCX,uv.y*0.5-t*0.5))*0.25;
+  float n=fbm(vec2(d.x*2.0*uCX,d.y*2.0-t));
+  n+=fbm(vec2(d.x*4.0*uCX+0.5,d.y*3.0-t*1.5))*0.5;
+  float fireH=(1.0-uv.y)*1.3;
+  float intens=clamp(n*fireH*1.6,0.0,1.0);
+  float ef=smoothstep(0.0,0.12,uv.x)*smoothstep(0.0,0.12,1.0-uv.x);
+  intens*=ef;
+  vec3 black=vec3(0.0),red=vec3(0.9,0.05,0.0),orange=vec3(1.0,0.45,0.0),yellow=vec3(1.0,0.92,0.15),white=vec3(1.0,1.0,0.9);
+  vec3 col=black;
+  col=mix(col,red,smoothstep(0.0,0.25,intens));
+  col=mix(col,orange,smoothstep(0.2,0.55,intens));
+  col=mix(col,yellow,smoothstep(0.5,0.85,intens));
+  col=mix(col,white,smoothstep(0.85,1.0,intens));
+  col=mix(col,col*vec3(cos(uCS)*0.5+0.5,0.5,sin(uCS)*0.5+0.5),0.15);
+  gl_FragColor=vec4(col,1.0);
+}`,
+
+julia: UNI + `
+void main(){
+  vec2 uv=(gl_FragCoord.xy-uRes*0.5)/min(uRes.x,uRes.y)*3.2/uZoom;
+  float t=uTime*uSpeed*0.08;
+  float cx=cos(t*0.37+uCS)*0.25+0.355;
+  float cy=sin(t*0.29)*0.25+0.355*(uCX*0.5+0.5);
+  vec2 z=uv;
+  float escape=-1.0;
+  for(int n=0;n<96;n++){
+    z=vec2(z.x*z.x-z.y*z.y+cx,2.0*z.x*z.y+cy);
+    if(dot(z,z)>4.0&&escape<0.0) escape=float(n);
+  }
+  if(escape<0.0){gl_FragColor=vec4(0.01,0.01,0.03,1.0);return;}
+  float t2=escape/96.0;
+  vec3 col=0.5+0.5*cos(uCS+t*0.4+t2*12.0+vec3(0.0,0.7,1.0));
+  col*=mix(0.7,1.0,t2);
+  gl_FragColor=vec4(col,1.0);
+}`
+};
+
+const NAMES = {plasma:'Plasma',lava:'Lava Lamp',aurora:'Aurora Borealis',holo:'Holographic Grid',tunnel:'Tunnel',voronoi:'Voronoi',marble:'Marble',fire:'Fire',julia:'Julia Set Fractal'};
+
+function switchShader(name) {
+    const errBox = document.getElementById('errBox');
+    errBox.style.display = 'none';
+    try {
+        const np = buildProg(SHADERS[name]);
+        if (prog) gl.deleteProgram(prog);
+        prog = np;
+        document.getElementById('label').textContent = NAMES[name];
+    } catch(e) {
+        errBox.textContent = e.message;
+        errBox.style.display = 'block';
+    }
+}
+
+function setV(id, labelId, dec) {
+    document.getElementById(labelId).textContent = parseFloat(document.getElementById(id).value).toFixed(dec);
+}
+
+function setPalette(csVal, el) {
+    document.getElementById('cs').value = csVal;
+    document.getElementById('csVal').textContent = csVal.toFixed(2);
+    document.querySelectorAll('#palRow .color-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+}
+
+function togglePanel() {
+    const p = document.getElementById('panel');
+    p.classList.toggle('collapsed');
+    document.getElementById('panelToggle').textContent = p.classList.contains('collapsed') ? '+' : '−';
+}
+
+function toggleUI() {
+    uiVisible = !uiVisible;
+    ['panel','label'].forEach(id => document.getElementById(id).style.display = uiVisible ? '' : 'none');
+    document.querySelector('.back-btn').style.display = uiVisible ? '' : 'none';
+    const btn = document.getElementById('hideBtn');
+    btn.style.display = '';
+    btn.textContent = uiVisible ? 'Hide UI' : 'Show UI';
+}
+
+switchShader('plasma');
+render();
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-Find the file `$ARGUMENTS.md` inside any subfolder of `Reddit/` (e.g. `Reddit/prorevenge/$ARGUMENTS.md`). Use Glob to search `Reddit/*/$ARGUMENTS.md`. Take note of which subfolder it lives in — that is the category name.
+Find the file `$ARGUMENTS.md` inside any subfolder of `Ivone.dev/wwwroot/Reddit/` (e.g. `Ivone.dev/wwwroot/Reddit/prorevenge/$ARGUMENTS.md`). Use Glob to search `Ivone.dev/wwwroot/Reddit/*/$ARGUMENTS.md`. Take note of which subfolder it lives in — that is the category name.
 
 **Step 1 — Format the English text**
 
@@ -23,7 +23,7 @@ Append the Bulgarian translation to the end of the same file, separated by:
 
 **Step 3 — Update the log**
 
-Create or update `Reddit/log.md`. Each line is one story in this format:
+Create or update `Ivone.dev/wwwroot/Reddit/log.md`. Each line is one story in this format:
 
 `{number}.md - {Category} - {one short punchy summary in English} - Translated`
 

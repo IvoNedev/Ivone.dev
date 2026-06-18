@@ -1,0 +1,291 @@
+@page "/effects/vanta"
+@model Ivone.dev.Pages.Effects.VantaModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vanta.js — Effects</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; width: 100vw; height: 100vh; background: #0f172a; font-family: 'Space Grotesk', system-ui, sans-serif; }
+        #bg { position: fixed; inset: 0; z-index: 0; }
+
+        /* glass panel */
+        .panel {
+            position: fixed; top: 16px; right: 16px;
+            width: 270px; max-height: calc(100vh - 32px); overflow-y: auto;
+            background: rgba(8,12,28,0.84);
+            backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.09);
+            border-radius: 16px; padding: 14px;
+            color: #f8fafc; z-index: 10;
+            scrollbar-width: thin; scrollbar-color: rgba(124,58,237,0.4) transparent;
+        }
+        .panel-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 12px; cursor: pointer; user-select: none;
+        }
+        .panel-header h3 { margin: 0; font-size: 14px; font-weight: 600; color: #fff; }
+        .toggle-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 18px; line-height: 1; padding: 0 2px; }
+        .panel.collapsed .panel-content { display: none; }
+        .panel.collapsed { padding-bottom: 14px; }
+
+        .ctrl { margin-bottom: 10px; }
+        .ctrl-label {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em;
+            color: #64748b; margin-bottom: 4px;
+        }
+        .ctrl-label span { color: #a78bfa; font-weight: 600; }
+
+        input[type="range"] {
+            width: 100%; height: 3px; appearance: none;
+            background: rgba(255,255,255,0.12); border-radius: 2px;
+            outline: none; cursor: pointer; accent-color: #7c3aed;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none; width: 13px; height: 13px; border-radius: 50%;
+            background: #7c3aed; cursor: pointer; border: 2px solid #c4b5fd;
+        }
+
+        select {
+            width: 100%; background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+            color: #f8fafc; padding: 7px 10px;
+            font-family: inherit; font-size: 13px; cursor: pointer; outline: none;
+        }
+        select option { background: #0f172a; }
+
+        .color-row { display: flex; gap: 8px; align-items: center; }
+        .swatch { width: 36px; height: 28px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; flex-shrink: 0; }
+        input[type="color"] { width: 150%; height: 150%; margin: -25% 0 0 -25%; cursor: pointer; border: none; background: none; padding: 0; }
+
+        .back-btn {
+            position: fixed; top: 16px; left: 16px;
+            background: rgba(8,12,28,0.84); backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.09); border-radius: 10px;
+            padding: 9px 16px; color: #f8fafc; text-decoration: none;
+            font-size: 13px; font-weight: 500; z-index: 10;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .back-btn:hover { border-color: rgba(124,58,237,0.5); background: rgba(124,58,237,0.2); }
+
+        .label-tag {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(8,12,28,0.84); backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.09); border-radius: 999px;
+            padding: 8px 22px; color: #c4b5fd; font-size: 15px; font-weight: 600;
+            z-index: 10; letter-spacing: 0.03em; white-space: nowrap;
+        }
+
+        .hide-btn {
+            position: fixed; bottom: 20px; right: 16px;
+            background: rgba(8,12,28,0.84); backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.09); border-radius: 10px;
+            padding: 8px 14px; color: #64748b;
+            font-family: inherit; font-size: 11px; cursor: pointer; z-index: 10;
+            transition: color 0.15s;
+        }
+        .hide-btn:hover { color: #f8fafc; }
+
+        .loading {
+            position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+            background: rgba(124,58,237,0.3); border: 1px solid rgba(124,58,237,0.5);
+            border-radius: 8px; padding: 6px 14px; color: #c4b5fd;
+            font-size: 12px; z-index: 10; display: none;
+        }
+
+        .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 10px 0; }
+
+        .toggle-row {
+            display: flex; align-items: center; gap: 8px; cursor: pointer;
+            font-size: 12px; color: #94a3b8; user-select: none;
+        }
+        .toggle-row input[type="checkbox"] {
+            width: 14px; height: 14px; accent-color: #7c3aed; cursor: pointer; flex-shrink: 0;
+        }
+        .toggle-row span { color: #94a3b8; }
+    </style>
+</head>
+<body>
+<div id="bg"></div>
+<a href="/effects" class="back-btn">← Effects</a>
+<div class="label-tag" id="effectLabel">Birds</div>
+<button class="hide-btn" id="hideBtn" onclick="toggleUI()">Hide UI</button>
+<div class="loading" id="loading">Loading…</div>
+
+<div class="panel" id="panel">
+    <div class="panel-header" onclick="togglePanel()">
+        <h3>Vanta.js Controls</h3>
+        <button class="toggle-btn" id="panelToggle">−</button>
+    </div>
+    <div class="panel-content">
+        <div class="ctrl">
+            <div class="ctrl-label">Effect</div>
+            <select id="effectSel" onchange="switchEffect(this.value)">
+                <optgroup label="three.js">
+                    <option value="birds">Birds</option>
+                    <option value="waves">Waves</option>
+                    <option value="fog">Fog</option>
+                    <option value="net">Net</option>
+                    <option value="topology">Topology</option>
+                    <option value="rings">Rings</option>
+                    <option value="dots">Dots</option>
+                    <option value="halo">Halo</option>
+                    <option value="globe">Globe</option>
+                    <option value="ripple">Ripple</option>
+                    <option value="clouds2">Clouds 2</option>
+                </optgroup>
+                <optgroup label="p5.js">
+                    <option value="cells">Cells</option>
+                    <option value="clouds">Clouds</option>
+                    <option value="trunk">Trunk</option>
+                </optgroup>
+            </select>
+        </div>
+
+        <hr class="divider">
+
+        <div class="ctrl">
+            <div class="ctrl-label">Speed <span id="speedVal">1.0</span></div>
+            <input type="range" id="speed" min="0.1" max="5" step="0.1" value="1.0" oninput="onSlider('speed',this.value,'speedVal')">
+        </div>
+        <div class="ctrl">
+            <div class="ctrl-label">Scale <span id="scaleVal">1.0</span></div>
+            <input type="range" id="scale" min="0.5" max="3" step="0.1" value="1.0" oninput="onSlider('scale',this.value,'scaleVal')">
+        </div>
+        <div class="ctrl">
+            <div class="ctrl-label">Zoom <span id="zoomVal">1.0</span></div>
+            <input type="range" id="zoom" min="0.5" max="4" step="0.1" value="1.0" oninput="onSlider('zoom',this.value,'zoomVal')">
+        </div>
+
+        <hr class="divider">
+
+        <div class="ctrl">
+            <div class="ctrl-label">Quantity <span id="quantVal">3</span></div>
+            <input type="range" id="quant" min="1" max="10" step="1" value="3" oninput="onSlider('quant',this.value,'quantVal')">
+        </div>
+
+        <div class="ctrl">
+            <div class="ctrl-label">Colors</div>
+            <div class="color-row">
+                <div class="swatch"><input type="color" id="col1" value="#6366f1" oninput="queueRebuild()"></div>
+                <div class="swatch"><input type="color" id="col2" value="#0f172a" oninput="queueRebuild()"></div>
+                <div class="swatch"><input type="color" id="col3" value="#312e81" oninput="queueRebuild()"></div>
+            </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="ctrl">
+            <label class="toggle-row">
+                <input type="checkbox" id="mouseCtrl" onchange="queueRebuild()">
+                <span>Mouse interaction</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script>
+const P5_EFFECTS = new Set(['cells', 'clouds', 'trunk']);
+const CDN = 'https://cdn.jsdelivr.net/npm/vanta@latest/dist/';
+const P5_CDN = 'https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js';
+
+let vantaEffect = null;
+let currentName = 'birds';
+const loaded = {};
+let uiVisible = true;
+let rebuildTimer = null;
+
+function hexToInt(hex) { return parseInt(hex.replace('#',''), 16); }
+
+function getConfig() {
+    const mouse = document.getElementById('mouseCtrl').checked;
+    const spd = parseFloat(document.getElementById('speed').value);
+    return {
+        el: '#bg',
+        THREE: window.THREE,
+        p5: window.p5,
+        mouseControls: mouse,
+        touchControls: mouse,
+        gyroControls: false,
+        speed: spd,
+        scale: parseFloat(document.getElementById('scale').value),
+        zoom: parseFloat(document.getElementById('zoom').value),
+        quantity: parseInt(document.getElementById('quant').value),
+        color: hexToInt(document.getElementById('col1').value),
+        color2: hexToInt(document.getElementById('col2').value),
+        backgroundColor: hexToInt(document.getElementById('col3').value),
+        highlightColor: hexToInt(document.getElementById('col1').value),
+        midtoneColor: hexToInt(document.getElementById('col2').value),
+        lowlightColor: hexToInt(document.getElementById('col3').value),
+        waveHeight: 20,
+        birdSpeed: spd,
+        separation: 30, alignment: 25, cohesion: 20,
+        points: 9, maxDistance: 21,
+    };
+}
+
+function loadScript(src) {
+    if (loaded[src]) return Promise.resolve();
+    return new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = src; s.onload = () => { loaded[src] = true; res(); }; s.onerror = rej;
+        document.head.appendChild(s);
+    });
+}
+
+async function switchEffect(name) {
+    currentName = name;
+    document.getElementById('effectLabel').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+    document.getElementById('loading').style.display = 'block';
+
+    if (vantaEffect) { try { vantaEffect.destroy(); } catch(e) {} vantaEffect = null; }
+    document.getElementById('bg').innerHTML = '';
+
+    try {
+        if (P5_EFFECTS.has(name) && !window.p5) await loadScript(P5_CDN);
+        await loadScript(`${CDN}vanta.${name}.min.js`);
+        const fn = VANTA[name.toUpperCase()];
+        if (fn) vantaEffect = fn(getConfig());
+    } catch(e) { console.error('Vanta load error:', e); }
+    document.getElementById('loading').style.display = 'none';
+}
+
+// Debounced rebuild — slider drags update label instantly, rebuild fires 200ms after last change
+function queueRebuild() {
+    clearTimeout(rebuildTimer);
+    rebuildTimer = setTimeout(() => switchEffect(currentName), 200);
+}
+
+function onSlider(id, val, labelId) {
+    document.getElementById(labelId).textContent = parseFloat(val).toFixed(1);
+    queueRebuild();
+}
+
+function togglePanel() {
+    const p = document.getElementById('panel');
+    p.classList.toggle('collapsed');
+    document.getElementById('panelToggle').textContent = p.classList.contains('collapsed') ? '+' : '−';
+}
+
+function toggleUI() {
+    uiVisible = !uiVisible;
+    ['panel','effectLabel','hideBtn'].forEach(id => document.getElementById(id).style.display = uiVisible ? '' : 'none');
+    document.querySelector('.back-btn').style.display = uiVisible ? '' : 'none';
+    document.getElementById('hideBtn').style.display = '';
+    document.getElementById('hideBtn').textContent = uiVisible ? 'Hide UI' : 'Show UI';
+}
+
+window.addEventListener('resize', () => { if (vantaEffect) try { vantaEffect.resize(); } catch(e) {} });
+
+switchEffect('birds');
+</script>
+</body>
+</html>
