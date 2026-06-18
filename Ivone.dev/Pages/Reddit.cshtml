@@ -1,0 +1,88 @@
+@page "/reddit"
+@model Ivone.dev.Pages.RedditModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+    <title>Teleprompter | Ivone.dev</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/reddit.css" asp-append-version="true" />
+</head>
+<body class="rp-body">
+    <div class="rp-app" id="rpApp" data-reddit-root>
+
+        <header class="rp-top">
+            <div class="rp-brand">
+                <span class="rp-brand__mark" aria-hidden="true"></span>
+                <span class="rp-brand__name">TELEPROMPTER</span>
+            </div>
+            <div class="rp-top__actions">
+                <button class="rp-btn rp-btn--ghost" id="sampleBtn" type="button">Load sample</button>
+                <button class="rp-btn rp-btn--ghost" id="parseBtn" type="button">Parse</button>
+                <button class="rp-btn rp-btn--primary" id="startBtn" type="button" disabled>Start &#9654;</button>
+            </div>
+        </header>
+
+        <!-- ============ SETUP ============ -->
+        <section class="rp-setup" id="setup">
+            <div class="rp-inputs" id="inputs">
+                <div class="rp-pane">
+                    <label class="rp-label" for="enText">English</label>
+                    <textarea id="enText" class="rp-textarea" spellcheck="false" placeholder="Paste the English text. Separate sections with a blank line."></textarea>
+                </div>
+                <div class="rp-pane">
+                    <label class="rp-label" for="bgText">Bulgarian</label>
+                    <textarea id="bgText" class="rp-textarea" spellcheck="false" placeholder="Постави българския текст. Раздели частите с празен ред."></textarea>
+                </div>
+            </div>
+
+            <div class="rp-align" id="align" hidden>
+                <p class="rp-hint">
+                    Click matching words on each side to pin them together &mdash; e.g. <b>ask</b> &harr; <b>попитам</b>, or <b>still</b> &harr; <b>неподвижна</b>.
+                    Put the <b>same number</b> of pins on both sides; pin <span class="rp-pill">1</span> on the left syncs with <span class="rp-pill">1</span> on the right.
+                    Click a pinned word again to remove it. Works on a single wall of text.
+                </p>
+                <div class="rp-status" id="alignStatus"></div>
+                <div class="rp-cols">
+                    <div class="rp-wordbox" id="enWords" aria-label="English words"></div>
+                    <div class="rp-wordbox" id="bgWords" aria-label="Bulgarian words"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============ STAGE ============ -->
+        <section class="rp-stage" id="stage" hidden>
+            <div class="rp-cols rp-stage__cols">
+                <div class="rp-scroll" id="enScroll"><div class="rp-scroll__inner" id="enInner"></div></div>
+                <div class="rp-scroll" id="bgScroll"><div class="rp-scroll__inner" id="bgInner"></div></div>
+            </div>
+
+            <div class="rp-count" id="countdown" hidden><span id="countNum">3</span></div>
+
+            <div class="rp-controls" id="controls">
+                <button class="rp-btn rp-btn--primary" id="playPauseBtn" type="button">Pause</button>
+                <button class="rp-btn rp-btn--ghost" id="restartBtn" type="button">Restart</button>
+                <label class="rp-ctl">Speed
+                    <input type="range" id="wpm" min="60" max="240" value="140" />
+                    <span id="wpmVal">140</span> wpm
+                </label>
+                <label class="rp-ctl">Font
+                    <input type="range" id="fontSize" min="22" max="70" value="36" />
+                </label>
+                <button class="rp-btn rp-btn--ghost" id="fsBtn" type="button">Fullscreen</button>
+                <button class="rp-btn rp-btn--ghost" id="editBtn" type="button">Edit</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="~/js/reddit.js" asp-append-version="true"></script>
+</body>
+</html>

@@ -5,116 +5,53 @@
 }
 
 <div class="bj-layout">
-    <section class="bj-table">
-        <details id="bj-panel-counts" class="bj-collapsible" open>
-            <summary>Counts & Shoe Panel</summary>
-            <div class="bj-collapsible-body">
-                <div class="bj-strip">
-                    <div class="bj-pill"><span>Bankroll</span><strong id="bj-bankroll-now">&euro;0</strong></div>
-                    <div class="bj-pill"><span>Running</span><strong id="bj-running-count">-</strong></div>
-                    <div class="bj-pill"><span>True</span><strong id="bj-true-count">-</strong></div>
-                    <div class="bj-pill"><span>Shoe</span><strong id="bj-shoe-depth">-</strong></div>
-                </div>
-                <label class="bj-inline-check">
-                    <input id="bj-mask-counts" type="checkbox" />
-                    Hide live running/true counts while I play
-                </label>
-            </div>
-        </details>
-
-        <div class="bj-game-focus">
-            <h2 id="bj-lobby-label" class="bj-lobby-neutral">Lobby</h2>
-
-            <div class="bj-dealer">
-                <h3>Dealer <small id="bj-dealer-total">-</small></h3>
-                <div id="bj-dealer-cards" class="bj-cards"></div>
-            </div>
-
+    <header class="bj-topbar" aria-label="Blackjack trainer status">
+        <div class="bj-brand">
+            <span class="bj-brand-mark" aria-hidden="true"></span>
             <div>
-                <h3>Player Hands</h3>
-                <div id="bj-player-hands" class="bj-hand-stack"></div>
+                <span class="bj-kicker">Ivone.dev Casino Lab</span>
+                <h1>Blackjack Command</h1>
             </div>
         </div>
 
-        <details id="bj-panel-controls" class="bj-collapsible" open>
-            <summary>Game Controls Panel</summary>
-            <div class="bj-collapsible-body">
-                <div class="bj-bet-row">
-                    <label class="bj-bet-compact">
-                        <span id="bj-bet-label">Bet (&euro; | Bank &euro;0)</span>
-                        <input id="bj-bet-units" type="number" min="1" value="1" />
-                    </label>
-                    <button id="bj-deal" class="bj-btn">Deal Hand</button>
-                    <label class="bj-inline-check bj-nowrap">
-                        <input id="bj-auto-deal" type="checkbox" checked />
-                        Auto next hand
-                    </label>
-                </div>
-
-                <div class="bj-action-row" id="bj-actions">
-                    <button type="button" class="bj-btn bj-action-btn" data-action="Hit">Hit</button>
-                    <button type="button" class="bj-btn bj-action-btn" data-action="Stand">Hold</button>
-                    <button type="button" class="bj-btn bj-action-btn" data-action="Double">Double</button>
-                    <button type="button" class="bj-btn bj-action-btn" data-action="Split">Split</button>
-                    <button type="button" class="bj-btn bj-action-btn" data-action="InsuranceTake">Take Insurance</button>
-                    <button type="button" class="bj-btn bj-action-btn" data-action="InsuranceSkip">Skip Insurance</button>
-                </div>
-
-                <details id="bj-panel-strategy" class="bj-collapsible nested" open>
-                    <summary>Strategy Panel</summary>
-                    <div class="bj-collapsible-body bj-hint">
-                        <div class="bj-hint-grid">
-                            <section class="bj-hint-card">
-                                <h4>Your Action</h4>
-                                <strong id="bj-hint-player-action">-</strong>
-                                <span id="bj-hint-status" class="bj-hint-status bj-hint-status-neutral">Waiting</span>
-                            </section>
-                            <section class="bj-hint-card">
-                                <h4>Optimal Action</h4>
-                                <strong id="bj-hint-optimal-action">-</strong>
-                                <p id="bj-hint-text">-</p>
-                            </section>
-                        </div>
-                    </div>
-                </details>
+        <div class="bj-topbar-center">
+            <div class="bj-mode-chip">
+                <span>Mode</span>
+                <strong>Basic Strategy Drill</strong>
             </div>
-        </details>
-
-        <details id="bj-panel-log" class="bj-collapsible" open>
-            <summary>Activity Log Panel</summary>
-            <div class="bj-collapsible-body">
-                <div id="bj-log-list"></div>
+            <div class="bj-mode-chip bj-mode-chip-rules">
+                <span>Ruleset</span>
+                <strong>6 Decks / H17 / DAS / 3:2</strong>
             </div>
-        </details>
+        </div>
 
-        <details id="bj-panel-stats" class="bj-collapsible" open>
-            <summary>Session Stats Panel</summary>
-            <div class="bj-collapsible-body bj-stats">
-                <div class="bj-stats-grid">
-                    <div><span>Rounds</span><strong id="bj-stat-rounds">0</strong></div>
-                    <div><span>Hands</span><strong id="bj-stat-hands">0</strong></div>
-                    <div><span>Basic %</span><strong id="bj-stat-basic">0</strong></div>
-                    <div><span>Deviation %</span><strong id="bj-stat-deviation">0</strong></div>
-                    <div><span>Bet %</span><strong id="bj-stat-bet">0</strong></div>
-                    <div><span>RC %</span><strong id="bj-stat-rc">0</strong></div>
-                    <div><span>TC %</span><strong id="bj-stat-tc">0</strong></div>
-                    <div><span>EV Leak</span><strong id="bj-stat-ev">&euro;0</strong></div>
-                </div>
-                <ul id="bj-mistakes" class="bj-mistakes"></ul>
-            </div>
-        </details>
+        <div class="bj-topbar-metrics">
+            <div class="bj-top-metric"><span>Bankroll</span><strong id="bj-bankroll-now">&euro;0</strong></div>
+            <div class="bj-top-metric"><span>Running</span><strong id="bj-running-count">-</strong></div>
+            <div class="bj-top-metric"><span>True</span><strong id="bj-true-count">-</strong></div>
+            <div class="bj-top-metric"><span>Shoe</span><strong id="bj-shoe-depth">-</strong></div>
+        </div>
+    </header>
 
-        <details id="bj-panel-history" class="bj-collapsible" open>
-            <summary>Recent Hands / History Panel</summary>
-            <div class="bj-collapsible-body bj-history">
-                <div id="bj-history-list"></div>
-            </div>
-        </details>
-    </section>
+    <aside class="bj-sidebar" aria-label="Training navigation">
+        <div class="bj-sidebar-head">
+            <span class="bj-kicker">Training Lobby</span>
+            <strong>Drill Select</strong>
+        </div>
 
-    <aside class="bj-panel">
-        <details id="bj-panel-settings" class="bj-collapsible" open>
-            <summary>Settings Panel (Aids + Theme)</summary>
+        <nav class="bj-nav-list" aria-label="Blackjack drills">
+            <a class="bj-nav-item active" href="#bj-panel-controls"><span class="bj-nav-icon cards"></span><span>Table Drill</span><em>Live</em></a>
+            <a class="bj-nav-item" href="#bj-panel-basic"><span class="bj-nav-icon chart"></span><span>Basic Strategy</span><em>82%</em></a>
+            <a class="bj-nav-item" href="#bj-panel-count-quiz"><span class="bj-nav-icon target"></span><span>Running Count</span><em>L3</em></a>
+            <a class="bj-nav-item" href="#bj-panel-speed-count"><span class="bj-nav-icon speed"></span><span>True Count</span><em>Fast</em></a>
+            <a class="bj-nav-item" href="#bj-panel-perfect"><span class="bj-nav-icon deviation"></span><span>Deviations</span><em>Index</em></a>
+            <a class="bj-nav-item" href="#bj-panel-history"><span class="bj-nav-icon replay"></span><span>Mistake Bank</span><em>Review</em></a>
+            <a class="bj-nav-item" href="#bj-panel-rules"><span class="bj-nav-icon rules"></span><span>Rulesets</span><em>6D</em></a>
+            <a class="bj-nav-item" href="#bj-panel-settings"><span class="bj-nav-icon settings"></span><span>Settings</span><em>HUD</em></a>
+        </nav>
+
+        <details id="bj-panel-settings" class="bj-collapsible bj-settings-panel" open>
+            <summary>Table Settings</summary>
             <div class="bj-collapsible-body">
                 <h3 class="bj-subheading">Training Aids</h3>
                 <div class="bj-checks">
@@ -128,7 +65,7 @@
                     <label><input id="bj-show-hints" type="checkbox" checked /> Allow strategy hints</label>
                 </div>
 
-                <h3 class="bj-subheading">Theme</h3>
+                <h3 class="bj-subheading">Display</h3>
                 <div class="bj-grid">
                     <label>Color Theme
                         <select id="bj-theme">
@@ -138,690 +75,2285 @@
                     </label>
                 </div>
 
-                <h3 class="bj-subheading">Count Sign Drill Targets (seconds)</h3>
-                <div class="bj-grid">
-                    <label>L1 acceptable (10 cards)
-                        <input id="bj-count-quiz-target-l1" type="number" min="0.1" step="0.1" value="4.0" />
-                    </label>
-                    <label>L2 acceptable (20 cards)
-                        <input id="bj-count-quiz-target-l2" type="number" min="0.1" step="0.1" value="7.0" />
-                    </label>
-                    <label>L3 acceptable (52 cards)
-                        <input id="bj-count-quiz-target-l3" type="number" min="0.1" step="0.1" value="16.0" />
-                    </label>
-                    <label>L3 strong (52 cards)
-                        <input id="bj-count-quiz-strong-l3" type="number" min="0.1" step="0.1" value="15.0" />
-                    </label>
-                    <label>L4 acceptable (52 cards)
-                        <input id="bj-count-quiz-target-l4" type="number" min="0.1" step="0.1" value="13.0" />
-                    </label>
-                    <label>L4 strong (52 cards)
-                        <input id="bj-count-quiz-strong-l4" type="number" min="0.1" step="0.1" value="12.0" />
-                    </label>
-                    <label>L5 acceptable (52 cards)
-                        <input id="bj-count-quiz-target-l5" type="number" min="0.1" step="0.1" value="20.0" />
-                    </label>
-                    <label>L5 strong (52 cards)
-                        <input id="bj-count-quiz-strong-l5" type="number" min="0.1" step="0.1" value="15.0" />
-                    </label>
-                </div>
-
-                <h3 class="bj-subheading">Speed Count Targets (seconds)</h3>
-                <div class="bj-grid">
-                    <label>L1 acceptable (10 cards)
-                        <input id="bj-speed-target-l1" type="number" min="0.1" step="0.1" value="4.0" />
-                    </label>
-                    <label>L2 acceptable (20 cards)
-                        <input id="bj-speed-target-l2" type="number" min="0.1" step="0.1" value="7.0" />
-                    </label>
-                    <label>L3 acceptable (52 cards)
-                        <input id="bj-speed-target-l3" type="number" min="0.1" step="0.1" value="30.0" />
-                    </label>
-                    <label>L3 strong (52 cards)
-                        <input id="bj-speed-strong-l3" type="number" min="0.1" step="0.1" value="22.0" />
-                    </label>
-                    <label>L4 acceptable (52 cards)
-                        <input id="bj-speed-target-l4" type="number" min="0.1" step="0.1" value="22.0" />
-                    </label>
-                    <label>L4 strong (52 cards)
-                        <input id="bj-speed-strong-l4" type="number" min="0.1" step="0.1" value="20.0" />
-                    </label>
-                    <label>L5 acceptable (52 cards)
-                        <input id="bj-speed-target-l5" type="number" min="0.1" step="0.1" value="18.0" />
-                    </label>
-                    <label>L5 strong (52 cards)
-                        <input id="bj-speed-strong-l5" type="number" min="0.1" step="0.1" value="15.0" />
-                    </label>
-                </div>
-                <p class="bj-mono">Readiness rule: 5 perfect runs in a row (0 mistakes, under target), repeated on 2 separate days.</p>
-
-                <button id="bj-start-session" class="bj-btn primary">Start New Session</button>
+                <button id="bj-start-session" class="bj-btn primary" type="button">Start New Session</button>
                 <p id="bj-session-label" class="bj-mono">Session: -</p>
             </div>
         </details>
     </aside>
 
-    <details id="bj-panel-rules" class="bj-collapsible bj-rules-bottom" open>
-        <summary>Rules Panel</summary>
-        <div class="bj-collapsible-body">
-            <div class="bj-grid">
-                <label>Mode
-                    <select id="bj-mode">
-                        <option value="Guided">Guided</option>
-                        <option value="FreePlay">Free Play</option>
-                        <option value="CountingOnly">Counting Only</option>
-                        <option value="DeviationsOnly">Deviations Only</option>
-                        <option value="BetSizingOnly">Bet Sizing Only</option>
-                        <option value="Exam">Exam</option>
-                    </select>
-                </label>
-                <label>Decks
-                    <select id="bj-decks">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="4">4</option>
-                        <option value="6" selected>6</option>
-                        <option value="8">8</option>
-                    </select>
-                </label>
-                <label>Penetration %
-                    <input id="bj-penetration" type="number" min="55" max="90" value="75" />
-                </label>
-                <label>Burn Cards
-                    <input id="bj-burn" type="number" min="0" max="16" value="1" />
-                </label>
-                <label>Spread Max
-                    <input id="bj-spread" type="number" min="2" max="20" value="8" />
-                </label>
-                <label>Bankroll (&euro;)
-                    <input id="bj-bankroll" type="number" min="10" value="200" />
-                </label>
-                <label>Max Splits
-                    <input id="bj-max-splits" type="number" min="1" max="4" value="3" />
-                </label>
-                <label>Double Rule
-                    <select id="bj-double-rule">
-                        <option value="AnyTwo">Any Two</option>
-                        <option value="NineToEleven">9-11</option>
-                        <option value="TenToEleven">10-11</option>
-                    </select>
-                </label>
-                <label>Blackjack Payout
-                    <select id="bj-payout">
-                        <option value="ThreeToTwo">3:2</option>
-                        <option value="SixToFive">6:5</option>
-                    </select>
-                </label>
-            </div>
-        </div>
-    </details>
-
-    <details id="bj-panel-guide" class="bj-collapsible bj-guide-bottom" open>
-        <summary>Quick Guide Panel (Expanded Basics)</summary>
-        <div class="bj-collapsible-body">
-            <div class="bj-guide">
-                <p>Fast practical rules for live play and count training.</p>
-                <h4>Basic Strategy (practical)</h4>
-                <ul>
-                    <li>Hard totals: stand on 17+, hit 8 or less.</li>
-                    <li>Hard 13-16: stand vs dealer 2-6, hit vs 7-A.</li>
-                    <li>Hard 12: stand vs 4-6, hit vs 2-3 or 7-A.</li>
-                    <li>Double 11 vs most upcards; 10 vs 2-9; 9 vs 3-6.</li>
-                    <li>Soft hands: A,8 usually stands; A,7 doubles vs 3-6 if allowed.</li>
-                    <li>Pairs: split A,A and 8,8; never split 10,10 or 5,5.</li>
-                    <li>Insurance is generally a bad base-strategy play unless the count is strong.</li>
-                    <li>No surrender: 15 and 16 high-pressure spots are played as hit/stand only.</li>
-                </ul>
-                <h4>Hi-Lo Counting (practical)</h4>
-                <ul>
-                    <li>2-6 = +1, 7-9 = 0, 10-A = -1.</li>
-                    <li>Running Count (RC): update on every exposed card.</li>
-                    <li>True Count (TC): RC divided by decks remaining.</li>
-                    <li>Higher TC supports larger bets; TC <= 0 stays near base bet.</li>
-                    <li>Classic index example: 16 vs 10 tends to stand around TC 0+.</li>
-                    <li>When deck count is low, each single card swings TC more than early in the shoe.</li>
-                    <li>Stay consistent in rounding TC so betting and deviation decisions match your plan.</li>
-                </ul>
-            </div>
-        </div>
-    </details>
-
-    <details id="bj-panel-basic" class="bj-collapsible bj-basic-bottom" open>
-        <summary>Basic Strategy Chart Panel</summary>
-        <div class="bj-collapsible-body">
-            <p class="bj-chart-note">
-                Baseline chart for trainer defaults: multi-deck, H17, DAS on, no surrender, double any two.
-            </p>
-
-            <div class="bj-legend">
-                <span class="bj-act bj-act-hit">H</span><span>Hit</span>
-                <span class="bj-act bj-act-stand">HOLD</span><span>Stand / Hold</span>
-                <span class="bj-act bj-act-double">D</span><span>Double</span>
-                <span class="bj-act bj-act-dh">D/H</span><span>Double else Hit</span>
-                <span class="bj-act bj-act-ds">D/S</span><span>Double else Stand</span>
-                <span class="bj-act bj-act-split">1/2</span><span>Split</span>
-            </div>
-
-            <div class="bj-chart-grid">
-                <div class="bj-chart-wrap">
-                    <h4>Hard Totals</h4>
-                    <table class="bj-chart">
-                        <thead>
-                            <tr>
-                                <th>Player</th>
-                                <th>Dealer Upcard</th>
-                                <th>Play</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>8 or less</td><td>Any</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>9</td><td>3-6</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
-                            <tr><td>9</td><td>2, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>10</td><td>2-9</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
-                            <tr><td>10</td><td>10, A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>11</td><td>2-A</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
-                            <tr><td>12</td><td>4-6</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>12</td><td>2-3, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>13-16</td><td>2-6</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>13-16</td><td>7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>17+</td><td>Any</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="bj-chart-wrap">
-                    <h4>Soft Totals</h4>
-                    <table class="bj-chart">
-                        <thead>
-                            <tr>
-                                <th>Player</th>
-                                <th>Dealer Upcard</th>
-                                <th>Play</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>A,2 / A,3</td><td>5-6</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
-                            <tr><td>A,2 / A,3</td><td>2-4, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>A,4 / A,5</td><td>4-6</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
-                            <tr><td>A,4 / A,5</td><td>2-3, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>A,6</td><td>3-6</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
-                            <tr><td>A,6</td><td>2, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>A,7</td><td>3-6</td><td><span class="bj-act bj-act-ds">D/S</span></td></tr>
-                            <tr><td>A,7</td><td>2, 7, 8</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>A,7</td><td>9, 10, A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>A,8</td><td>6 (H17)</td><td><span class="bj-act bj-act-ds">D/S</span></td></tr>
-                            <tr><td>A,8</td><td>Other upcards</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>A,9</td><td>Any</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="bj-chart-wrap">
-                    <h4>Pairs</h4>
-                    <table class="bj-chart">
-                        <thead>
-                            <tr>
-                                <th>Pair</th>
-                                <th>Dealer Upcard</th>
-                                <th>Play</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>A,A</td><td>Any</td><td><span class="bj-act bj-act-split">1/2</span></td></tr>
-                            <tr><td>10,10</td><td>Any</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>9,9</td><td>2-6, 8-9</td><td><span class="bj-act bj-act-split">1/2</span></td></tr>
-                            <tr><td>9,9</td><td>7, 10, A</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>8,8</td><td>Any</td><td><span class="bj-act bj-act-split">1/2</span></td></tr>
-                            <tr><td>7,7</td><td>2-7</td><td><span class="bj-act bj-act-split">1/2</span></td></tr>
-                            <tr><td>7,7</td><td>8-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>6,6</td><td>3-6</td><td><span class="bj-act bj-act-split">1/2</span></td></tr>
-                            <tr><td>6,6</td><td>2, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>5,5</td><td>2-9</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
-                            <tr><td>5,5</td><td>10, A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>4,4 (DAS)</td><td>5-6</td><td><span class="bj-act bj-act-split">1/2</span></td></tr>
-                            <tr><td>4,4 (DAS)</td><td>Other upcards</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                            <tr><td>3,3 / 2,2 (DAS)</td><td>2-7</td><td><span class="bj-act bj-act-split">1/2</span></td></tr>
-                            <tr><td>3,3 / 2,2 (DAS)</td><td>8-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <ul class="bj-chart-tips">
-                <li>No surrender table: play hit/stand fallback decisions only.</li>
-                <li>No DAS: 2,2 and 3,3 split range tightens to 4-7.</li>
-                <li>Single deck tweak in this trainer: 9 vs 2 can double; 12 vs 2 stands.</li>
-            </ul>
-        </div>
-    </details>
-
-    <details id="bj-panel-perfect" class="bj-collapsible bj-perfect-bottom" open>
-        <summary>Perfect Strategy Panel (Basic + Count + Bets)</summary>
-        <div class="bj-collapsible-body">
-            <p class="bj-chart-note">
-                Use this as your execution layer: basic chart first, then TC deviations, then bet ramp.
-            </p>
-
-            <div class="bj-chart-grid">
-                <div class="bj-chart-wrap">
-                    <h4>Bet Sizing Ramp (Trainer Logic)</h4>
-                    <table class="bj-chart">
-                        <thead>
-                            <tr>
-                                <th>True Count (floor)</th>
-                                <th>Bet Size</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>TC &lt;= 0</td><td><span class="bj-act bj-act-stand">1x base</span></td></tr>
-                            <tr><td>TC = +1</td><td><span class="bj-act bj-act-double">2x base</span></td></tr>
-                            <tr><td>TC = +2</td><td><span class="bj-act bj-act-double">4x base</span></td></tr>
-                            <tr><td>TC = +3</td><td><span class="bj-act bj-act-double">6x base</span></td></tr>
-                            <tr><td>TC &gt;= +4</td><td><span class="bj-act bj-act-split">Max spread</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="bj-chart-wrap">
-                    <h4>Hi-Lo Deviations In Trainer</h4>
-                    <table class="bj-chart">
-                        <thead>
-                            <tr>
-                                <th>Situation</th>
-                                <th>At / Above TC</th>
-                                <th>Deviation Play</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>Insurance vs A</td><td>+3</td><td><span class="bj-act bj-act-split">Take insurance</span></td></tr>
-                            <tr><td>16 vs 10</td><td>0</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>15 vs 10</td><td>+4</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>12 vs 3</td><td>+2</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>12 vs 2</td><td>+3</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
-                            <tr><td>10 vs 10</td><td>+4</td><td><span class="bj-act bj-act-double">D</span></td></tr>
-                            <tr><td>10 vs A</td><td>+4</td><td><span class="bj-act bj-act-double">D</span></td></tr>
-                            <tr><td>9 vs 2</td><td>+1</td><td><span class="bj-act bj-act-double">D</span></td></tr>
-                            <tr><td>9 vs 7</td><td>+3</td><td><span class="bj-act bj-act-double">D</span></td></tr>
-                            <tr><td>11 vs A</td><td>+1</td><td><span class="bj-act bj-act-double">D</span></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <ul class="bj-chart-tips">
-                <li>Apply one order every hand: base chart -> deviation check -> execute bet sizing.</li>
-                <li>Trainer uses floor-style TC thresholds for decisions and bet sizing.</li>
-                <li>If counts are hidden while practicing, lock your guess before revealing RC/TC.</li>
-            </ul>
-        </div>
-    </details>
-
-    <details id="bj-panel-count-quiz" class="bj-collapsible bj-quiz-bottom" open>
-        <summary>Count Sign Drill Panel</summary>
-        <div class="bj-collapsible-body">
-            <div class="bj-speed-row">
-                <div class="bj-speed-controls">
-                    <label class="bj-speed-control">
-                        Decks
-                        <select id="bj-count-quiz-decks-select" disabled>
-                            <option value="1" selected>1 (fixed)</option>
-                        </select>
+    <main class="bj-stage" aria-label="Blackjack training table">
+        <section class="bj-table">
+            <details id="bj-panel-counts" class="bj-collapsible bj-counts-panel" open>
+                <summary>Live Count Shield</summary>
+                <div class="bj-collapsible-body">
+                    <label class="bj-inline-check">
+                        <input id="bj-mask-counts" type="checkbox" />
+                        Hide live running and true counts while I play
                     </label>
-                    <label class="bj-speed-control">
-                        Level
-                        <select id="bj-count-quiz-level">
-                            <option value="1">Level 1 (1 card out of 10)</option>
-                            <option value="2">Level 2 (1 card out of 20)</option>
-                            <option value="3">Level 3 (1 card out of 52)</option>
-                            <option value="4">Level 4 (pairs out of 52)</option>
-                            <option value="5">Level 5 (5 cards out of 52)</option>
-                        </select>
-                    </label>
-                    <span id="bj-count-quiz-timer" class="bj-speed-timer">00:00.0</span>
                 </div>
-                <div class="bj-count-quiz-actions">
-                    <button id="bj-count-quiz-new-shoe" class="bj-btn ghost" type="button">New Shoe</button>
-                    <div class="bj-count-quiz-answer-row">
-                        <button id="bj-count-quiz-plus" class="bj-btn" type="button">+</button>
-                        <button id="bj-count-quiz-zero" class="bj-btn" type="button">0</button>
-                        <button id="bj-count-quiz-minus" class="bj-btn" type="button">-</button>
+            </details>
+
+            <div class="bj-game-focus">
+                <div class="bj-table-rail" aria-hidden="true"></div>
+                <div class="bj-table-felt">
+                    <div class="bj-felt-noise" aria-hidden="true"></div>
+                    <span class="bj-table-rule bj-table-rule-top">Blackjack pays 3 to 2</span>
+                    <span class="bj-table-rule bj-table-rule-left">Insurance pays 2 to 1</span>
+                    <span class="bj-table-rule bj-table-rule-bottom">Dealer stands on soft 17</span>
+
+                    <div class="bj-dealer-zone">
+                        <div class="bj-dealer-plate">
+                            <span>Dealer</span>
+                            <strong id="bj-dealer-total">-</strong>
+                        </div>
+                        <div id="bj-dealer-cards" class="bj-cards" aria-label="Dealer cards"></div>
+                    </div>
+
+                    <div class="bj-tray bj-shoe-tray" aria-hidden="true">
+                        <span>Shoe</span>
+                        <i></i><i></i><i></i>
+                    </div>
+                    <div class="bj-tray bj-discard-tray" aria-hidden="true">
+                        <span>Discard</span>
+                        <i></i><i></i>
+                    </div>
+
+                    <div class="bj-center-mark" aria-hidden="true">
+                        <span>Decision Window</span>
+                    </div>
+
+                    <div class="bj-bet-circle" aria-hidden="true">
+                        <div class="bj-chip-stack">
+                            <span class="bj-chip chip-red">25</span>
+                            <span class="bj-chip chip-gold">100</span>
+                            <span class="bj-chip chip-black">500</span>
+                        </div>
+                    </div>
+
+                    <div class="bj-player-zone">
+                        <div class="bj-player-heading">
+                            <span>Player Hands</span>
+                            <strong id="bj-lobby-label" class="bj-lobby-neutral">Lobby</strong>
+                        </div>
+                        <div id="bj-player-hands" class="bj-hand-stack" aria-label="Player hands"></div>
                     </div>
                 </div>
             </div>
-            <div class="bj-speed-current">
-                <span class="bj-speed-current-label">Current Draw</span>
-                <span id="bj-count-quiz-current" class="bj-speed-last-card">-</span>
-            </div>
-            <div class="bj-count-quiz-feedback-row">
-                <span id="bj-count-quiz-feedback" class="bj-count-quiz-feedback bj-count-quiz-feedback-neutral">Choose + / 0 / -</span>
-            </div>
-            <div class="bj-count-quiz-stats">
-                <div><span>RC</span><strong id="bj-count-quiz-rc">0</strong></div>
-                <div><span>Remaining</span><strong id="bj-count-quiz-remaining">-</strong></div>
-                <div><span>Correct</span><strong id="bj-count-quiz-correct">0</strong></div>
-                <div><span>Wrong</span><strong id="bj-count-quiz-wrong">0</strong></div>
-                <div><span>Accuracy</span><strong id="bj-count-quiz-accuracy">0%</strong></div>
-                <div><span>Last Run</span><strong id="bj-count-quiz-last-run-time">-</strong></div>
-                <div><span>Best</span><strong id="bj-count-quiz-best-time">-</strong></div>
-                <div><span>Last10 Perfect</span><strong id="bj-count-quiz-last10-acc">-</strong></div>
-                <div><span>Goal Delta</span><strong id="bj-count-quiz-goal-delta">-</strong></div>
-                <div><span>Streak</span><strong id="bj-count-quiz-ready-streak">0/5</strong></div>
-                <div><span>Status</span><strong id="bj-count-quiz-ready-status" class="bj-ready-status bj-ready-status-notpassed">❌ Not passed</strong></div>
-            </div>
-            <div id="bj-count-quiz-stream" class="bj-speed-stream"></div>
-        </div>
-    </details>
 
-    <details id="bj-panel-speed-count" class="bj-collapsible bj-speed-bottom" open>
-        <summary>Speed Count Shoe Panel</summary>
-        <div class="bj-collapsible-body">
-            <div class="bj-speed-row">
-                <div class="bj-speed-controls">
-                    <label class="bj-speed-control">
-                        Decks
-                        <select id="bj-count-decks-select" disabled>
-                            <option value="1" selected>1 (fixed)</option>
-                        </select>
-                    </label>
-                    <label class="bj-speed-control">
-                        Level
-                        <select id="bj-count-level">
-                            <option value="1">Level 1 (1 card out of 10)</option>
-                            <option value="2">Level 2 (1 card out of 20)</option>
-                            <option value="3">Level 3 (1 card out of 52)</option>
-                            <option value="4">Level 4 (pairs out of 52)</option>
-                            <option value="5">Level 5 (5 cards out of 52)</option>
-                        </select>
-                    </label>
-                    <span id="bj-count-timer" class="bj-speed-timer">00:00.0</span>
+            <details id="bj-panel-controls" class="bj-collapsible bj-control-panel" open>
+                <summary>Action Console</summary>
+                <div class="bj-collapsible-body">
+                    <div class="bj-bet-row">
+                        <label class="bj-bet-compact">
+                            <span id="bj-bet-label">Bet (&euro; | Bank &euro;0)</span>
+                            <input id="bj-bet-units" type="number" min="1" value="1" />
+                        </label>
+                        <button id="bj-deal" class="bj-btn bj-deal-btn" type="button">Deal Hand</button>
+                        <label class="bj-inline-check bj-nowrap">
+                            <input id="bj-auto-deal" type="checkbox" checked />
+                            Auto next hand
+                        </label>
+                    </div>
+
+                    <div class="bj-action-row" id="bj-actions" aria-label="Blackjack actions">
+                        <button type="button" class="bj-btn bj-action-btn bj-action-hit" data-action="Hit">Hit</button>
+                        <button type="button" class="bj-btn bj-action-btn bj-action-stand" data-action="Stand">Stand</button>
+                        <button type="button" class="bj-btn bj-action-btn bj-action-double" data-action="Double">Double</button>
+                        <button type="button" class="bj-btn bj-action-btn bj-action-split" data-action="Split">Split</button>
+                        <button type="button" class="bj-btn bj-action-btn bj-action-surrender" data-action="Surrender">Surrender</button>
+                        <button type="button" class="bj-btn bj-action-btn bj-action-insurance" data-action="InsuranceTake">Insurance</button>
+                        <button type="button" class="bj-btn bj-action-btn bj-action-skip" data-action="InsuranceSkip">No Insurance</button>
+                    </div>
                 </div>
-                <div class="bj-speed-actions">
-                    <button id="bj-count-new-shoe" class="bj-btn ghost" type="button">New Shoe</button>
-                    <button id="bj-count-hit" class="bj-btn" type="button">Hit</button>
+            </details>
+        </section>
+    </main>
+
+    <aside class="bj-hud" aria-label="Training intelligence">
+        <details id="bj-panel-strategy" class="bj-collapsible bj-hud-panel" open>
+            <summary>Current Hand</summary>
+            <div class="bj-collapsible-body bj-hint">
+                <div class="bj-hint-grid">
+                    <section class="bj-hint-card">
+                        <h4>Your Action</h4>
+                        <strong id="bj-hint-player-action">-</strong>
+                        <span id="bj-hint-status" class="bj-hint-status bj-hint-status-neutral">Waiting</span>
+                    </section>
+                    <section class="bj-hint-card">
+                        <h4>Optimal Action</h4>
+                        <strong id="bj-hint-optimal-action">-</strong>
+                        <p id="bj-hint-text">-</p>
+                    </section>
                 </div>
             </div>
-            <div class="bj-speed-current">
-                <span class="bj-speed-current-label">Current Draw</span>
-                <span id="bj-count-last-card" class="bj-speed-last-card">-</span>
+        </details>
+
+        <details id="bj-panel-stats" class="bj-collapsible bj-hud-panel" open>
+            <summary>Session HUD</summary>
+            <div class="bj-collapsible-body bj-stats">
+                <div class="bj-stats-grid">
+                    <div><span>Rounds</span><strong id="bj-stat-rounds">0</strong></div>
+                    <div><span>Hands</span><strong id="bj-stat-hands">0</strong></div>
+                    <div><span>Basic</span><strong id="bj-stat-basic">0</strong></div>
+                    <div><span>Deviation</span><strong id="bj-stat-deviation">0</strong></div>
+                    <div><span>Bet</span><strong id="bj-stat-bet">0</strong></div>
+                    <div><span>RC</span><strong id="bj-stat-rc">0</strong></div>
+                    <div><span>TC</span><strong id="bj-stat-tc">0</strong></div>
+                    <div><span>EV Leak</span><strong id="bj-stat-ev">&euro;0</strong></div>
+                </div>
+                <h3 class="bj-subheading">Mistake Breakdown</h3>
+                <ul id="bj-mistakes" class="bj-mistakes"></ul>
             </div>
-            <label class="bj-inline-check">
-                <input id="bj-count-show-counts" type="checkbox" />
-                Show RC and TC
-            </label>
-            <div class="bj-speed-stats">
-                <div><span>RC</span><strong id="bj-count-rc">0</strong></div>
-                <div><span>TC</span><strong id="bj-count-tc">0</strong></div>
-                <div><span>Remaining</span><strong id="bj-count-remaining">-</strong></div>
-                <div><span>Last Run</span><strong id="bj-count-one-deck-time">-</strong></div>
-                <div><span>Best</span><strong id="bj-count-best-time">-</strong></div>
-                <div><span>Last10 Perfect</span><strong id="bj-count-last10-acc">-</strong></div>
-                <div><span>Shoe Delta</span><strong id="bj-count-shoe-delta">-</strong></div>
-                <div><span>Goal Delta</span><strong id="bj-count-goal-delta">-</strong></div>
-                <div><span>Streak</span><strong id="bj-count-ready-streak">0/5</strong></div>
-                <div><span>Status</span><strong id="bj-count-ready-status" class="bj-ready-status bj-ready-status-notpassed">❌ Not passed</strong></div>
+        </details>
+
+        <details id="bj-panel-history" class="bj-collapsible bj-hud-panel" open>
+            <summary>Recent Hands</summary>
+            <div class="bj-collapsible-body bj-history">
+                <div id="bj-history-list"></div>
             </div>
-            <div id="bj-count-stream" class="bj-speed-stream"></div>
+        </details>
+    </aside>
+
+    <section class="bj-bottom-strip" aria-label="Keyboard shortcuts and activity">
+        <div class="bj-shortcuts">
+            <span><kbd>H</kbd> Hit</span>
+            <span><kbd>S</kbd> Stand</span>
+            <span><kbd>D</kbd> Double</span>
+            <span><kbd>P</kbd> Split</span>
+            <span><kbd>Space</kbd> Next</span>
         </div>
-    </details>
+        <details id="bj-panel-log" class="bj-collapsible bj-log-panel" open>
+            <summary>Table Feed</summary>
+            <div class="bj-collapsible-body">
+                <div id="bj-log-list"></div>
+            </div>
+        </details>
+    </section>
+
+    <section class="bj-study-panels" aria-label="Study panels">
+        <details id="bj-panel-rules" class="bj-collapsible bj-rules-bottom" open>
+            <summary>Ruleset Setup</summary>
+            <div class="bj-collapsible-body">
+                <div class="bj-grid bj-rules-grid">
+                    <label>Mode
+                        <select id="bj-mode">
+                            <option value="Guided">Guided</option>
+                            <option value="FreePlay">Free Play</option>
+                            <option value="CountingOnly">Counting Only</option>
+                            <option value="DeviationsOnly">Deviations Only</option>
+                            <option value="BetSizingOnly">Bet Sizing Only</option>
+                            <option value="Exam">Exam</option>
+                        </select>
+                    </label>
+                    <label>Decks
+                        <select id="bj-decks">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="4">4</option>
+                            <option value="6" selected>6</option>
+                            <option value="8">8</option>
+                        </select>
+                    </label>
+                    <label>Penetration %
+                        <input id="bj-penetration" type="number" min="55" max="90" value="75" />
+                    </label>
+                    <label>Burn Cards
+                        <input id="bj-burn" type="number" min="0" max="16" value="1" />
+                    </label>
+                    <label>Spread Max
+                        <input id="bj-spread" type="number" min="2" max="20" value="8" />
+                    </label>
+                    <label>Bankroll (&euro;)
+                        <input id="bj-bankroll" type="number" min="10" value="200" />
+                    </label>
+                    <label>Max Splits
+                        <input id="bj-max-splits" type="number" min="1" max="4" value="3" />
+                    </label>
+                    <label>Double Rule
+                        <select id="bj-double-rule">
+                            <option value="AnyTwo">Any Two</option>
+                            <option value="NineToEleven">9-11</option>
+                            <option value="TenToEleven">10-11</option>
+                        </select>
+                    </label>
+                    <label>Blackjack Payout
+                        <select id="bj-payout">
+                            <option value="ThreeToTwo">3:2</option>
+                            <option value="SixToFive">6:5</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </details>
+
+        <details id="bj-panel-guide" class="bj-collapsible bj-guide-bottom" open>
+            <summary>Quick Guide</summary>
+            <div class="bj-collapsible-body">
+                <div class="bj-guide">
+                    <p>Fast practical rules for live play and count training.</p>
+                    <h4>Basic Strategy</h4>
+                    <ul>
+                        <li>Hard totals: stand on 17+, hit 8 or less.</li>
+                        <li>Hard 13-16: stand vs dealer 2-6, hit vs 7-A.</li>
+                        <li>Hard 12: stand vs 4-6, hit vs 2-3 or 7-A.</li>
+                        <li>Double 11 vs most upcards; 10 vs 2-9; 9 vs 3-6.</li>
+                        <li>Soft hands: A,8 usually stands; A,7 doubles vs 3-6 if allowed.</li>
+                        <li>Pairs: split A,A and 8,8; never split 10,10 or 5,5.</li>
+                        <li>Insurance is generally a bad base-strategy play unless the count is strong.</li>
+                    </ul>
+                    <h4>Hi-Lo Counting</h4>
+                    <ul>
+                        <li>2-6 = +1, 7-9 = 0, 10-A = -1.</li>
+                        <li>Running Count: update on every exposed card.</li>
+                        <li>True Count: running count divided by decks remaining.</li>
+                        <li>Higher true counts support larger bets and selected index deviations.</li>
+                    </ul>
+                </div>
+            </div>
+        </details>
+
+        <details id="bj-panel-basic" class="bj-collapsible bj-basic-bottom" open>
+            <summary>Basic Strategy Chart</summary>
+            <div class="bj-collapsible-body">
+                <p class="bj-chart-note">Baseline chart for trainer defaults: multi-deck, H17, DAS on, no surrender, double any two.</p>
+
+                <div class="bj-legend">
+                    <span class="bj-act bj-act-hit">H</span><span>Hit</span>
+                    <span class="bj-act bj-act-stand">S</span><span>Stand</span>
+                    <span class="bj-act bj-act-double">D</span><span>Double</span>
+                    <span class="bj-act bj-act-dh">D/H</span><span>Double else hit</span>
+                    <span class="bj-act bj-act-ds">D/S</span><span>Double else stand</span>
+                    <span class="bj-act bj-act-split">SP</span><span>Split</span>
+                </div>
+
+                <div class="bj-chart-grid">
+                    <div class="bj-chart-wrap">
+                        <h4>Hard Totals</h4>
+                        <table class="bj-chart">
+                            <thead><tr><th>Player</th><th>Dealer Upcard</th><th>Play</th></tr></thead>
+                            <tbody>
+                                <tr><td>8 or less</td><td>Any</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>9</td><td>3-6</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
+                                <tr><td>9</td><td>2, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>10</td><td>2-9</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
+                                <tr><td>10</td><td>10, A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>11</td><td>2-A</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
+                                <tr><td>12</td><td>4-6</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>12</td><td>2-3, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>13-16</td><td>2-6</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>13-16</td><td>7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>17+</td><td>Any</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bj-chart-wrap">
+                        <h4>Soft Totals</h4>
+                        <table class="bj-chart">
+                            <thead><tr><th>Player</th><th>Dealer Upcard</th><th>Play</th></tr></thead>
+                            <tbody>
+                                <tr><td>A,2 / A,3</td><td>5-6</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
+                                <tr><td>A,2 / A,3</td><td>2-4, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>A,4 / A,5</td><td>4-6</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
+                                <tr><td>A,4 / A,5</td><td>2-3, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>A,6</td><td>3-6</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
+                                <tr><td>A,6</td><td>2, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>A,7</td><td>3-6</td><td><span class="bj-act bj-act-ds">D/S</span></td></tr>
+                                <tr><td>A,7</td><td>2, 7, 8</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>A,7</td><td>9, 10, A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>A,8</td><td>6 (H17)</td><td><span class="bj-act bj-act-ds">D/S</span></td></tr>
+                                <tr><td>A,8</td><td>Other upcards</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>A,9</td><td>Any</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bj-chart-wrap">
+                        <h4>Pairs</h4>
+                        <table class="bj-chart">
+                            <thead><tr><th>Pair</th><th>Dealer Upcard</th><th>Play</th></tr></thead>
+                            <tbody>
+                                <tr><td>A,A</td><td>Any</td><td><span class="bj-act bj-act-split">SP</span></td></tr>
+                                <tr><td>10,10</td><td>Any</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>9,9</td><td>2-6, 8-9</td><td><span class="bj-act bj-act-split">SP</span></td></tr>
+                                <tr><td>9,9</td><td>7, 10, A</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>8,8</td><td>Any</td><td><span class="bj-act bj-act-split">SP</span></td></tr>
+                                <tr><td>7,7</td><td>2-7</td><td><span class="bj-act bj-act-split">SP</span></td></tr>
+                                <tr><td>7,7</td><td>8-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>6,6</td><td>3-6</td><td><span class="bj-act bj-act-split">SP</span></td></tr>
+                                <tr><td>6,6</td><td>2, 7-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>5,5</td><td>2-9</td><td><span class="bj-act bj-act-dh">D/H</span></td></tr>
+                                <tr><td>5,5</td><td>10, A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>4,4 (DAS)</td><td>5-6</td><td><span class="bj-act bj-act-split">SP</span></td></tr>
+                                <tr><td>4,4 (DAS)</td><td>Other upcards</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                                <tr><td>3,3 / 2,2 (DAS)</td><td>2-7</td><td><span class="bj-act bj-act-split">SP</span></td></tr>
+                                <tr><td>3,3 / 2,2 (DAS)</td><td>8-A</td><td><span class="bj-act bj-act-hit">H</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <details id="bj-panel-perfect" class="bj-collapsible bj-perfect-bottom" open>
+            <summary>Perfect Strategy Layer</summary>
+            <div class="bj-collapsible-body">
+                <p class="bj-chart-note">Execution order: basic chart first, then true-count deviations, then bet ramp.</p>
+                <div class="bj-chart-grid">
+                    <div class="bj-chart-wrap">
+                        <h4>Bet Sizing Ramp</h4>
+                        <table class="bj-chart">
+                            <thead><tr><th>True Count Floor</th><th>Bet Size</th></tr></thead>
+                            <tbody>
+                                <tr><td>TC &lt;= 0</td><td><span class="bj-act bj-act-stand">1x base</span></td></tr>
+                                <tr><td>TC = +1</td><td><span class="bj-act bj-act-double">2x base</span></td></tr>
+                                <tr><td>TC = +2</td><td><span class="bj-act bj-act-double">4x base</span></td></tr>
+                                <tr><td>TC = +3</td><td><span class="bj-act bj-act-double">6x base</span></td></tr>
+                                <tr><td>TC &gt;= +4</td><td><span class="bj-act bj-act-split">Max spread</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="bj-chart-wrap">
+                        <h4>Hi-Lo Deviations</h4>
+                        <table class="bj-chart">
+                            <thead><tr><th>Situation</th><th>At / Above TC</th><th>Deviation</th></tr></thead>
+                            <tbody>
+                                <tr><td>Insurance vs A</td><td>+3</td><td><span class="bj-act bj-act-split">Take</span></td></tr>
+                                <tr><td>16 vs 10</td><td>0</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>15 vs 10</td><td>+4</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>12 vs 3</td><td>+2</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>12 vs 2</td><td>+3</td><td><span class="bj-act bj-act-stand">S</span></td></tr>
+                                <tr><td>10 vs 10</td><td>+4</td><td><span class="bj-act bj-act-double">D</span></td></tr>
+                                <tr><td>10 vs A</td><td>+4</td><td><span class="bj-act bj-act-double">D</span></td></tr>
+                                <tr><td>9 vs 2</td><td>+1</td><td><span class="bj-act bj-act-double">D</span></td></tr>
+                                <tr><td>9 vs 7</td><td>+3</td><td><span class="bj-act bj-act-double">D</span></td></tr>
+                                <tr><td>11 vs A</td><td>+1</td><td><span class="bj-act bj-act-double">D</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <details id="bj-panel-count-quiz" class="bj-collapsible bj-quiz-bottom" open>
+            <summary>Count Sign Drill</summary>
+            <div class="bj-collapsible-body">
+                <div class="bj-speed-row">
+                    <div class="bj-speed-controls">
+                        <label class="bj-speed-control">Decks
+                            <select id="bj-count-quiz-decks-select" disabled>
+                                <option value="1" selected>1 (fixed)</option>
+                            </select>
+                        </label>
+                        <label class="bj-speed-control">Level
+                            <select id="bj-count-quiz-level">
+                                <option value="1">Level 1 (1 card out of 10)</option>
+                                <option value="2">Level 2 (1 card out of 20)</option>
+                                <option value="3">Level 3 (1 card out of 52)</option>
+                                <option value="4">Level 4 (pairs out of 52)</option>
+                                <option value="5">Level 5 (5 cards out of 52)</option>
+                            </select>
+                        </label>
+                        <span id="bj-count-quiz-timer" class="bj-speed-timer">00:00.0</span>
+                    </div>
+                    <div class="bj-count-quiz-actions">
+                        <button id="bj-count-quiz-new-shoe" class="bj-btn ghost" type="button">New Shoe</button>
+                        <div class="bj-count-quiz-answer-row">
+                            <button id="bj-count-quiz-plus" class="bj-btn" type="button">+</button>
+                            <button id="bj-count-quiz-zero" class="bj-btn" type="button">0</button>
+                            <button id="bj-count-quiz-minus" class="bj-btn" type="button">-</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="bj-speed-current">
+                    <span class="bj-speed-current-label">Current Draw</span>
+                    <span id="bj-count-quiz-current" class="bj-speed-last-card">-</span>
+                </div>
+                <div class="bj-count-quiz-feedback-row">
+                    <span id="bj-count-quiz-feedback" class="bj-count-quiz-feedback bj-count-quiz-feedback-neutral">Choose + / 0 / -</span>
+                </div>
+                <div class="bj-count-quiz-stats">
+                    <div><span>RC</span><strong id="bj-count-quiz-rc">0</strong></div>
+                    <div><span>Remaining</span><strong id="bj-count-quiz-remaining">-</strong></div>
+                    <div><span>Correct</span><strong id="bj-count-quiz-correct">0</strong></div>
+                    <div><span>Wrong</span><strong id="bj-count-quiz-wrong">0</strong></div>
+                    <div><span>Accuracy</span><strong id="bj-count-quiz-accuracy">0%</strong></div>
+                    <div><span>Last Run</span><strong id="bj-count-quiz-last-run-time">-</strong></div>
+                    <div><span>Best</span><strong id="bj-count-quiz-best-time">-</strong></div>
+                    <div><span>Last10 Perfect</span><strong id="bj-count-quiz-last10-acc">-</strong></div>
+                    <div><span>Goal Delta</span><strong id="bj-count-quiz-goal-delta">-</strong></div>
+                    <div><span>Streak</span><strong id="bj-count-quiz-ready-streak">0/5</strong></div>
+                    <div><span>Status</span><strong id="bj-count-quiz-ready-status" class="bj-ready-status bj-ready-status-notpassed">Not passed</strong></div>
+                </div>
+                <div id="bj-count-quiz-stream" class="bj-speed-stream"></div>
+            </div>
+        </details>
+
+        <details id="bj-panel-speed-count" class="bj-collapsible bj-speed-bottom" open>
+            <summary>Speed Count Shoe</summary>
+            <div class="bj-collapsible-body">
+                <div class="bj-speed-row">
+                    <div class="bj-speed-controls">
+                        <label class="bj-speed-control">Decks
+                            <select id="bj-count-decks-select" disabled>
+                                <option value="1" selected>1 (fixed)</option>
+                            </select>
+                        </label>
+                        <label class="bj-speed-control">Level
+                            <select id="bj-count-level">
+                                <option value="1">Level 1 (1 card out of 10)</option>
+                                <option value="2">Level 2 (1 card out of 20)</option>
+                                <option value="3">Level 3 (1 card out of 52)</option>
+                                <option value="4">Level 4 (pairs out of 52)</option>
+                                <option value="5">Level 5 (5 cards out of 52)</option>
+                            </select>
+                        </label>
+                        <span id="bj-count-timer" class="bj-speed-timer">00:00.0</span>
+                    </div>
+                    <div class="bj-speed-actions">
+                        <button id="bj-count-new-shoe" class="bj-btn ghost" type="button">New Shoe</button>
+                        <button id="bj-count-hit" class="bj-btn" type="button">Hit</button>
+                    </div>
+                </div>
+                <div class="bj-speed-current">
+                    <span class="bj-speed-current-label">Current Draw</span>
+                    <span id="bj-count-last-card" class="bj-speed-last-card">-</span>
+                </div>
+                <label class="bj-inline-check">
+                    <input id="bj-count-show-counts" type="checkbox" />
+                    Show RC and TC
+                </label>
+                <div class="bj-speed-stats">
+                    <div><span>RC</span><strong id="bj-count-rc">0</strong></div>
+                    <div><span>TC</span><strong id="bj-count-tc">0</strong></div>
+                    <div><span>Remaining</span><strong id="bj-count-remaining">-</strong></div>
+                    <div><span>Last Run</span><strong id="bj-count-one-deck-time">-</strong></div>
+                    <div><span>Best</span><strong id="bj-count-best-time">-</strong></div>
+                    <div><span>Last10 Perfect</span><strong id="bj-count-last10-acc">-</strong></div>
+                    <div><span>Shoe Delta</span><strong id="bj-count-shoe-delta">-</strong></div>
+                    <div><span>Goal Delta</span><strong id="bj-count-goal-delta">-</strong></div>
+                    <div><span>Streak</span><strong id="bj-count-ready-streak">0/5</strong></div>
+                    <div><span>Status</span><strong id="bj-count-ready-status" class="bj-ready-status bj-ready-status-notpassed">Not passed</strong></div>
+                </div>
+                <div id="bj-count-stream" class="bj-speed-stream"></div>
+
+                <h3 class="bj-subheading">Count Sign Drill Targets (seconds)</h3>
+                <div class="bj-grid bj-target-grid">
+                    <label>L1 acceptable <input id="bj-count-quiz-target-l1" type="number" min="0.1" step="0.1" value="4.0" /></label>
+                    <label>L2 acceptable <input id="bj-count-quiz-target-l2" type="number" min="0.1" step="0.1" value="7.0" /></label>
+                    <label>L3 acceptable <input id="bj-count-quiz-target-l3" type="number" min="0.1" step="0.1" value="16.0" /></label>
+                    <label>L3 strong <input id="bj-count-quiz-strong-l3" type="number" min="0.1" step="0.1" value="15.0" /></label>
+                    <label>L4 acceptable <input id="bj-count-quiz-target-l4" type="number" min="0.1" step="0.1" value="13.0" /></label>
+                    <label>L4 strong <input id="bj-count-quiz-strong-l4" type="number" min="0.1" step="0.1" value="12.0" /></label>
+                    <label>L5 acceptable <input id="bj-count-quiz-target-l5" type="number" min="0.1" step="0.1" value="20.0" /></label>
+                    <label>L5 strong <input id="bj-count-quiz-strong-l5" type="number" min="0.1" step="0.1" value="15.0" /></label>
+                </div>
+
+                <h3 class="bj-subheading">Speed Count Targets (seconds)</h3>
+                <div class="bj-grid bj-target-grid">
+                    <label>L1 acceptable <input id="bj-speed-target-l1" type="number" min="0.1" step="0.1" value="4.0" /></label>
+                    <label>L2 acceptable <input id="bj-speed-target-l2" type="number" min="0.1" step="0.1" value="7.0" /></label>
+                    <label>L3 acceptable <input id="bj-speed-target-l3" type="number" min="0.1" step="0.1" value="30.0" /></label>
+                    <label>L3 strong <input id="bj-speed-strong-l3" type="number" min="0.1" step="0.1" value="22.0" /></label>
+                    <label>L4 acceptable <input id="bj-speed-target-l4" type="number" min="0.1" step="0.1" value="22.0" /></label>
+                    <label>L4 strong <input id="bj-speed-strong-l4" type="number" min="0.1" step="0.1" value="20.0" /></label>
+                    <label>L5 acceptable <input id="bj-speed-target-l5" type="number" min="0.1" step="0.1" value="18.0" /></label>
+                    <label>L5 strong <input id="bj-speed-strong-l5" type="number" min="0.1" step="0.1" value="15.0" /></label>
+                </div>
+                <p class="bj-mono">Readiness rule: 5 perfect runs in a row, repeated on 2 separate days.</p>
+            </div>
+        </details>
+    </section>
 </div>
 
 <style>
+    @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Rajdhani:wght@600;700&display=swap');
+
     :root {
-        --bj-page-bg: #eef4fa;
-        --bj-bg: rgba(5, 16, 30, 0.85);
-        --bj-surface: rgba(8, 24, 40, 0.8);
-        --bj-surface-strong: rgba(10, 34, 53, 0.92);
-        --bj-border: #285377;
-        --bj-border-soft: #264f72;
-        --bj-text: #d4ecff;
-        --bj-text-soft: #c8e7ff;
-        --bj-field-bg: #0a2036;
-        --bj-field-border: #34638c;
-        --bj-card-bg: #f2fbff;
-        --bj-card-text: #0f2236;
-        --bj-card-border: #9cc6df;
-        --bj-disabled-bg: #243747;
-        --bj-disabled-text: #88a7bf;
-        --bj-focus-glow: rgba(87, 162, 216, 0.22);
+        color-scheme: dark;
+        --bj-page-bg: #060708;
+        --bj-bg: #0b0d10;
+        --bj-panel: #111419;
+        --bj-panel-2: #171b22;
+        --bj-panel-3: #0d1015;
+        --bj-border: rgba(255,255,255,0.1);
+        --bj-border-strong: rgba(255,255,255,0.18);
+        --bj-text: #f4f4f5;
+        --bj-text-soft: #aeb4bf;
+        --bj-text-dim: #69717f;
+        --bj-field-bg: #090b0f;
+        --bj-field-border: rgba(255,255,255,0.16);
+        --bj-accent-red: #c41222;
+        --bj-accent-red-dark: #6f0710;
+        --bj-red-glow: rgba(220, 20, 45, 0.42);
+        --bj-gold: #d5a84f;
+        --bj-gold-muted: #8d6a2e;
+        --bj-success: #18b56b;
+        --bj-warning: #e6a93a;
+        --bj-danger: #e43f4f;
+        --bj-felt-dark: #032015;
+        --bj-felt-mid: #06462b;
+        --bj-felt-light: #0b7a45;
+        --bj-rail-black: #080808;
+        --bj-rail-brown: #2a160d;
+        --bj-card-bg: #f6f2e9;
+        --bj-card-text: #16191f;
+        --bj-card-border: rgba(0,0,0,0.3);
+        --bj-disabled-bg: #252933;
+        --bj-disabled-text: #676f7d;
+        --bj-focus-glow: rgba(196,18,34,0.28);
+        --bj-radius-sm: 8px;
+        --bj-radius-md: 12px;
+        --bj-shadow-panel: 0 18px 48px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.05);
+        --bj-shadow-hard: 0 28px 80px rgba(0,0,0,0.65);
     }
 
     :root[data-bj-theme="light"] {
-        --bj-page-bg: #f6f9fd;
-        --bj-bg: rgba(248, 251, 255, 0.95);
-        --bj-surface: rgba(238, 246, 255, 0.92);
-        --bj-surface-strong: rgba(226, 239, 253, 0.98);
-        --bj-border: #8ab3d6;
-        --bj-border-soft: #95bbdb;
-        --bj-text: #14324a;
-        --bj-text-soft: #234b6b;
-        --bj-field-bg: #ffffff;
-        --bj-field-border: #9bc0df;
-        --bj-card-bg: #ffffff;
-        --bj-card-text: #1f3850;
-        --bj-card-border: #9bc2df;
-        --bj-disabled-bg: #dbe8f4;
-        --bj-disabled-text: #6c8093;
-        --bj-focus-glow: rgba(58, 124, 176, 0.2);
+        color-scheme: light;
+        --bj-page-bg: #111318;
+        --bj-bg: #0d0f13;
+        --bj-panel: #151921;
+        --bj-panel-2: #1b2029;
+        --bj-panel-3: #11151b;
+        --bj-text: #f8fafc;
+        --bj-text-soft: #c4cad4;
+        --bj-text-dim: #7e8795;
+        --bj-field-bg: #0c0f14;
+        --bj-field-border: rgba(255,255,255,0.18);
     }
 
-    body { margin: 0 !important; padding: 0 !important; background: var(--bj-page-bg) !important; }
-    .container, .container-fluid { max-width: none !important; padding-left: 0 !important; padding-right: 0 !important; margin-left: 0 !important; margin-right: 0 !important; }
-    .app-shell { padding: 0 !important; gap: 0 !important; background: var(--bj-page-bg) !important; }
-    .app-main { padding: 0 !important; border-radius: 0 !important; background: var(--bj-page-bg) !important; }
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background:
+            radial-gradient(circle at 50% 0%, rgba(196, 18, 34, 0.2), transparent 34%),
+            radial-gradient(circle at 82% 64%, rgba(11, 122, 69, 0.13), transparent 30%),
+            linear-gradient(180deg, #101116 0%, var(--bj-page-bg) 100%) !important;
+        color: var(--bj-text) !important;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+    }
 
-    .bj-layout { display: grid; gap: 0.35rem; grid-template-columns: 1fr; font-size: 12px; padding: 0; margin: 0; }
-    .bj-table, .bj-panel { background: var(--bj-bg); border: 1px solid var(--bj-border); border-radius: 0.55rem; padding: 0.28rem; margin: 0; }
-    .bj-table { order: 1; }
-    .bj-panel { order: 2; }
-    .bj-rules-bottom { order: 3; grid-column: 1 / -1; }
-    .bj-guide-bottom { order: 4; grid-column: 1 / -1; }
-    .bj-basic-bottom { order: 5; grid-column: 1 / -1; }
-    .bj-perfect-bottom { order: 6; grid-column: 1 / -1; }
-    .bj-quiz-bottom { order: 7; grid-column: 1 / -1; }
-    .bj-speed-bottom { order: 8; grid-column: 1 / -1; }
-    .bj-subheading { margin: 0.1rem 0 0.24rem; font-size: 0.8rem; color: var(--bj-text-soft); }
+    .container,
+    .container-fluid {
+        max-width: none !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .app-shell {
+        padding: 0 !important;
+        gap: 0 !important;
+        background: transparent !important;
+    }
+
+    .app-main {
+        padding: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+
+    .bj-layout {
+        min-height: 100dvh;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "topbar"
+            "stage"
+            "hud"
+            "sidebar"
+            "bottom"
+            "study";
+        gap: 12px;
+        padding: 12px;
+        color: var(--bj-text);
+        font-size: 14px;
+        overflow-x: hidden;
+    }
+
+    .bj-topbar {
+        grid-area: topbar;
+        min-height: 64px;
+        display: grid;
+        gap: 12px;
+        align-items: center;
+        padding: 12px;
+        border-bottom: 1px solid rgba(196,18,34,0.45);
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015)),
+            repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 6px),
+            #0b0d10;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.38);
+    }
+
+    .bj-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .bj-brand-mark {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        background:
+            linear-gradient(135deg, rgba(213,168,79,0.95), rgba(111,7,16,0.95)),
+            radial-gradient(circle at 50% 42%, rgba(255,255,255,0.35), transparent 38%);
+        border: 1px solid rgba(255,255,255,0.18);
+        box-shadow: 0 0 30px rgba(196,18,34,0.3), inset 0 2px 0 rgba(255,255,255,0.22);
+        position: relative;
+    }
+
+    .bj-brand-mark::before,
+    .bj-brand-mark::after {
+        content: "";
+        position: absolute;
+        inset: 11px;
+        border: 2px solid rgba(8,8,8,0.74);
+        transform: rotate(45deg);
+    }
+
+    .bj-brand h1 {
+        margin: 0;
+        font-family: Rajdhani, Inter, sans-serif;
+        font-size: clamp(1.35rem, 2vw, 1.9rem);
+        line-height: 0.95;
+        letter-spacing: 0;
+        text-transform: uppercase;
+    }
+
+    .bj-kicker,
+    .bj-mode-chip span,
+    .bj-top-metric span,
+    .bj-subheading,
+    .bj-collapsible > summary,
+    .bj-stats-grid span,
+    .bj-speed-stats span,
+    .bj-count-quiz-stats span {
+        display: block;
+        color: var(--bj-text-soft);
+        font-size: 11px;
+        line-height: 1.2;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-weight: 700;
+    }
+
+    .bj-topbar-center,
+    .bj-topbar-metrics {
+        display: grid;
+        gap: 8px;
+    }
+
+    .bj-topbar-center {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bj-topbar-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bj-mode-chip,
+    .bj-top-metric {
+        min-width: 0;
+        padding: 10px 12px;
+        border-radius: var(--bj-radius-sm);
+        background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)), var(--bj-panel);
+        border: 1px solid var(--bj-border);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .bj-mode-chip strong,
+    .bj-top-metric strong {
+        display: block;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+        color: var(--bj-text);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .bj-sidebar,
+    .bj-stage,
+    .bj-hud,
+    .bj-bottom-strip,
+    .bj-study-panels {
+        min-width: 0;
+    }
+
+    .bj-sidebar {
+        grid-area: sidebar;
+        display: grid;
+        gap: 12px;
+        align-content: start;
+    }
+
+    .bj-sidebar-head {
+        display: none;
+    }
+
+    .bj-nav-list {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(148px, 1fr);
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+    }
+
+    .bj-nav-item {
+        min-height: 52px;
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 9px;
+        padding: 9px;
+        border-radius: var(--bj-radius-sm);
+        border: 1px solid var(--bj-border);
+        color: var(--bj-text-soft);
+        text-decoration: none;
+        background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)), var(--bj-panel);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        transition: transform 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .bj-nav-item:hover {
+        transform: translateY(-1px);
+        color: #fff;
+        border-color: rgba(213,168,79,0.38);
+    }
+
+    .bj-nav-item.active {
+        color: #fff;
+        background: linear-gradient(90deg, rgba(196,18,34,0.95), rgba(111,7,16,0.68));
+        border-color: rgba(255,255,255,0.16);
+        box-shadow: inset 3px 0 0 #ff4054, 0 0 24px rgba(196,18,34,0.25);
+    }
+
+    .bj-nav-item span:not(.bj-nav-icon) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 700;
+    }
+
+    .bj-nav-item em {
+        font-style: normal;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: rgba(255,255,255,0.68);
+    }
+
+    .bj-nav-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid rgba(255,255,255,0.16);
+        background:
+            radial-gradient(circle at 50% 50%, rgba(213,168,79,0.28), transparent 52%),
+            #0a0c10;
+        position: relative;
+    }
+
+    .bj-nav-icon::before,
+    .bj-nav-icon::after {
+        content: "";
+        position: absolute;
+        border-radius: 2px;
+        background: currentColor;
+        opacity: 0.78;
+    }
+
+    .bj-nav-icon.cards::before { width: 11px; height: 15px; left: 8px; top: 6px; transform: rotate(-9deg); background: transparent; border: 2px solid currentColor; }
+    .bj-nav-icon.chart::before { width: 3px; height: 12px; left: 7px; top: 10px; box-shadow: 6px -5px 0 currentColor, 12px -2px 0 currentColor; }
+    .bj-nav-icon.target::before { inset: 7px; background: transparent; border: 2px solid currentColor; border-radius: 50%; }
+    .bj-nav-icon.speed::before { width: 14px; height: 8px; left: 7px; top: 9px; background: transparent; border: 2px solid currentColor; border-bottom: 0; border-radius: 14px 14px 0 0; }
+    .bj-nav-icon.deviation::before { width: 14px; height: 2px; left: 7px; top: 13px; transform: rotate(-28deg); }
+    .bj-nav-icon.replay::before { width: 13px; height: 13px; left: 7px; top: 7px; background: transparent; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; }
+    .bj-nav-icon.rules::before { width: 14px; height: 10px; left: 7px; top: 9px; background: transparent; border: 2px solid currentColor; }
+    .bj-nav-icon.settings::before { width: 14px; height: 14px; left: 7px; top: 7px; background: transparent; border: 2px solid currentColor; border-radius: 50%; }
+
+    .bj-stage {
+        grid-area: stage;
+    }
+
+    .bj-table {
+        display: grid;
+        gap: 12px;
+    }
 
     .bj-game-focus {
-        border: 1px solid var(--bj-border);
-        border-radius: 0.52rem;
-        padding: 0.36rem;
-        background: var(--bj-surface);
-        box-shadow: 0 0 0 1px var(--bj-focus-glow);
-        margin-bottom: 0.34rem;
+        position: relative;
+        padding: clamp(18px, 2vw, 28px);
+        border-radius: 28px;
+        background:
+            radial-gradient(circle at 50% 0%, rgba(196,18,34,0.16), transparent 42%),
+            linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)),
+            #050607;
+        box-shadow: var(--bj-shadow-hard);
+        overflow: visible;
     }
-    .bj-game-focus h2 { margin: 0 0 0.28rem; font-size: 0.88rem; }
-    .bj-game-focus h3,
-    .bj-game-focus h3 small { color: var(--bj-text); }
-    .bj-lobby-neutral { color: var(--bj-text); }
-    .bj-lobby-win { color: #39c66f; }
-    .bj-lobby-loss { color: #e85d5d; }
+
+    .bj-table-felt {
+        position: relative;
+        width: min(100%, 1100px);
+        min-height: clamp(430px, 46vw, 610px);
+        margin: 0 auto;
+        border-radius: 48% 48% 40% 40% / 42% 42% 30% 30%;
+        background:
+            radial-gradient(circle at 50% 36%, rgba(70,180,100,0.28), transparent 43%),
+            radial-gradient(circle at 50% 92%, rgba(0,0,0,0.48), transparent 42%),
+            linear-gradient(145deg, var(--bj-felt-mid) 0%, #05381f 48%, var(--bj-felt-dark) 100%);
+        border: clamp(10px, 1.5vw, 16px) solid #101010;
+        box-shadow:
+            inset 0 0 100px rgba(0,0,0,0.6),
+            inset 0 0 10px rgba(255,255,255,0.08),
+            0 24px 70px rgba(0,0,0,0.7);
+        isolation: isolate;
+        overflow: hidden;
+    }
+
+    .bj-table-felt::before {
+        content: "";
+        position: absolute;
+        inset: -24px;
+        border-radius: inherit;
+        background: linear-gradient(145deg, var(--bj-rail-brown), #090909 45%, #24120c);
+        z-index: -1;
+        box-shadow: inset 0 2px 6px rgba(255,255,255,0.08), 0 20px 60px rgba(0,0,0,0.8);
+    }
+
+    .bj-felt-noise {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.52;
+        background-image:
+            radial-gradient(circle at 20% 10%, rgba(255,255,255,0.055), transparent 18%),
+            radial-gradient(circle at 80% 80%, rgba(0,0,0,0.22), transparent 26%),
+            repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 3px),
+            repeating-linear-gradient(90deg, rgba(0,0,0,0.035) 0 1px, transparent 1px 4px);
+        mix-blend-mode: overlay;
+    }
+
+    .bj-table-rule {
+        position: absolute;
+        z-index: 1;
+        color: rgba(218,255,222,0.16);
+        font-family: Rajdhani, Inter, sans-serif;
+        font-size: clamp(12px, 1.3vw, 18px);
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+        pointer-events: none;
+        white-space: nowrap;
+    }
+
+    .bj-table-rule-top { top: 19%; left: 50%; transform: translateX(-50%); }
+    .bj-table-rule-left { top: 44%; left: 7%; transform: rotate(-72deg); transform-origin: left center; }
+    .bj-table-rule-bottom { bottom: 15%; left: 50%; transform: translateX(-50%); }
+
+    .bj-dealer-zone,
+    .bj-player-zone {
+        position: absolute;
+        z-index: 3;
+        left: 50%;
+        transform: translateX(-50%);
+        display: grid;
+        justify-items: center;
+        gap: 12px;
+        width: min(86%, 720px);
+    }
+
+    .bj-dealer-zone { top: 7%; }
+    .bj-player-zone { bottom: 8%; }
+
+    .bj-dealer-plate,
+    .bj-player-heading {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 34px;
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02)), rgba(4,5,7,0.72);
+        border: 1px solid rgba(255,255,255,0.13);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+
+    .bj-dealer-plate span,
+    .bj-player-heading span {
+        color: var(--bj-text-soft);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-weight: 800;
+    }
+
+    .bj-dealer-plate strong,
+    .bj-player-heading strong {
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 14px;
+    }
+
+    .bj-lobby-win { color: var(--bj-success) !important; }
+    .bj-lobby-loss { color: var(--bj-danger) !important; }
+
+    .bj-cards {
+        display: flex;
+        gap: clamp(7px, 1vw, 12px);
+        flex-wrap: wrap;
+        justify-content: center;
+        min-height: clamp(78px, 12vw, 118px);
+    }
+
+    .bj-card {
+        width: clamp(56px, 7vw, 92px);
+        aspect-ratio: 5 / 7;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        background:
+            radial-gradient(circle at 32% 26%, rgba(255,255,255,0.78), transparent 28%),
+            linear-gradient(160deg, #fff, #e9e5dd);
+        color: var(--bj-card-text);
+        border: 1px solid var(--bj-card-border);
+        box-shadow: 0 10px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.9);
+        font-family: "JetBrains Mono", monospace;
+        font-size: clamp(1.1rem, 2.1vw, 1.8rem);
+        font-weight: 800;
+        line-height: 1;
+        position: relative;
+        transform: rotate(var(--card-tilt, -1deg));
+        animation: bj-card-deal 220ms ease-out both;
+    }
+
+    .bj-card:nth-child(even) { --card-tilt: 1.4deg; }
+    .bj-card-corner {
+        position: absolute;
+        display: grid;
+        justify-items: center;
+        gap: 1px;
+        font-size: clamp(0.62rem, 1vw, 0.82rem);
+        line-height: 1;
+    }
+
+    .bj-card-corner-top {
+        top: 7px;
+        left: 7px;
+    }
+
+    .bj-card-corner-bottom {
+        right: 7px;
+        bottom: 7px;
+        transform: rotate(180deg);
+    }
+
+    .bj-card-center {
+        font-size: clamp(1.22rem, 2.35vw, 2.05rem);
+    }
+
+    .bj-card.hidden {
+        background:
+            linear-gradient(135deg, #8b1018, #3b0509),
+            repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 8px);
+        color: rgba(255,230,190,0.92);
+        border: 2px solid rgba(255,210,120,0.45);
+    }
+
+    .bj-card.hidden::before {
+        content: "BJ";
+        display: grid;
+        place-items: center;
+        width: 62%;
+        aspect-ratio: 1;
+        border: 1px solid rgba(255,210,120,0.35);
+        transform: rotate(45deg);
+        color: rgba(255,230,190,0.88);
+        font-size: 0.8rem;
+    }
+
+    .bj-card.hidden > * { display: none; }
+    .bj-suit-red { color: #c41222; }
+
+    .bj-hand-stack {
+        display: grid;
+        gap: 10px;
+        width: min(100%, 720px);
+    }
+
+    .bj-hand {
+        display: grid;
+        justify-items: center;
+        gap: 9px;
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(2,10,7,0.32);
+        box-shadow: inset 0 0 30px rgba(0,0,0,0.2);
+    }
+
+    .bj-hand.active {
+        border-color: rgba(24,181,107,0.78);
+        box-shadow: 0 0 26px rgba(24,181,107,0.18), inset 0 0 30px rgba(0,0,0,0.2);
+    }
+
+    .bj-hand-meta {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        color: rgba(244,244,245,0.88);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .bj-tray {
+        position: absolute;
+        z-index: 2;
+        display: grid;
+        gap: 5px;
+        justify-items: center;
+        color: rgba(255,255,255,0.58);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-weight: 800;
+    }
+
+    .bj-shoe-tray { top: 25%; right: 8%; }
+    .bj-discard-tray { top: 25%; left: 8%; }
+    .bj-tray i {
+        display: block;
+        width: 44px;
+        height: 28px;
+        border-radius: 5px;
+        background: linear-gradient(135deg, #15191f, #050608);
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.4);
+    }
+
+    .bj-center-mark {
+        position: absolute;
+        z-index: 1;
+        inset: 39% 32% auto;
+        min-height: 64px;
+        border: 2px solid rgba(213,168,79,0.2);
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        color: rgba(255,230,170,0.18);
+        font-family: Rajdhani, Inter, sans-serif;
+        font-size: clamp(13px, 1.6vw, 20px);
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+    }
+
+    .bj-bet-circle {
+        position: absolute;
+        z-index: 3;
+        left: 18%;
+        bottom: 18%;
+        width: clamp(88px, 12vw, 132px);
+        aspect-ratio: 1;
+        border: 2px solid rgba(255,215,130,0.32);
+        box-shadow: inset 0 0 18px rgba(255,200,80,0.08), 0 0 24px rgba(255,190,80,0.08);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+    }
+
+    .bj-chip-stack {
+        position: relative;
+        width: 58px;
+        height: 44px;
+    }
+
+    .bj-chip {
+        position: absolute;
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        font-weight: 800;
+        border: 3px dashed rgba(255,255,255,0.55);
+        box-shadow: 0 8px 18px rgba(0,0,0,0.42), inset 0 0 0 4px rgba(0,0,0,0.16);
+    }
+
+    .chip-red { left: 0; top: 2px; background: #97101c; }
+    .chip-gold { left: 14px; top: -3px; background: #b38022; }
+    .chip-black { left: 28px; top: 3px; background: #15181f; }
+
+    .bj-hud {
+        grid-area: hud;
+        display: grid;
+        gap: 12px;
+        align-content: start;
+    }
+
+    .bj-bottom-strip {
+        grid-area: bottom;
+        display: grid;
+        gap: 10px;
+        align-items: start;
+    }
+
+    .bj-shortcuts {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 8px;
+        border: 1px solid var(--bj-border);
+        background: rgba(7,8,10,0.78);
+        box-shadow: var(--bj-shadow-panel);
+    }
+
+    .bj-shortcuts span {
+        color: var(--bj-text-soft);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 7px;
+        border-radius: 5px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: linear-gradient(180deg, #1b2028, #0a0c10);
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 11px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .bj-study-panels {
+        grid-area: study;
+        display: grid;
+        gap: 12px;
+    }
 
     .bj-collapsible {
         border: 1px solid var(--bj-border);
-        border-radius: 0.55rem;
-        background: var(--bj-surface);
-        margin-bottom: 0.3rem;
+        border-radius: var(--bj-radius-md);
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015)),
+            var(--bj-panel);
+        box-shadow: var(--bj-shadow-panel);
         overflow: hidden;
     }
+
     .bj-collapsible > summary {
         list-style: none;
         cursor: pointer;
-        padding: 0.3rem 0.45rem;
-        font-weight: 600;
-        color: var(--bj-text);
-        background: var(--bj-surface-strong);
-        border-bottom: 1px solid var(--bj-border-soft);
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        color: #fff;
+        background: linear-gradient(90deg, rgba(196,18,34,0.22), rgba(255,255,255,0.02));
+        border-bottom: 1px solid var(--bj-border);
         user-select: none;
-        font-size: 0.75rem;
     }
+
+    .bj-collapsible > summary::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg);
+        opacity: 0.7;
+        transition: transform 160ms ease;
+    }
+
+    .bj-collapsible[open] > summary::after {
+        transform: rotate(225deg);
+    }
+
     .bj-collapsible > summary::-webkit-details-marker { display: none; }
     .bj-collapsible > summary::marker { content: ""; }
-    .bj-collapsible-body { padding: 0.3rem; }
-    .bj-collapsible.nested { margin-top: 0.28rem; margin-bottom: 0; }
+    .bj-collapsible-body { padding: 14px; }
 
-    .bj-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; }
-    .bj-grid label, .bj-inline-grid label { font-size: 0.7rem; display: flex; flex-direction: column; gap: 0.15rem; color: var(--bj-text-soft); }
-    .bj-checks { margin: 0.2rem 0 0.4rem; display: grid; gap: 0.18rem; font-size: 0.7rem; color: var(--bj-text-soft); }
-    .bj-bet-row { margin-top: 0.2rem; display: flex; gap: 0.3rem; flex-wrap: wrap; align-items: center; }
-    .bj-inline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem; margin-bottom: 0.24rem; }
-    .bj-inline-check { display: inline-flex; align-items: center; gap: 0.24rem; font-size: 0.7rem; color: var(--bj-text-soft); }
+    .bj-counts-panel,
+    .bj-settings-panel {
+        box-shadow: none;
+    }
+
+    .bj-counts-panel {
+        max-width: 520px;
+        justify-self: center;
+        width: 100%;
+    }
+
+    .bj-control-panel {
+        max-width: 980px;
+        width: 100%;
+        justify-self: center;
+    }
+
+    .bj-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .bj-rules-grid,
+    .bj-target-grid {
+        grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    }
+
+    .bj-grid label,
+    .bj-speed-control,
+    .bj-bet-compact {
+        display: grid;
+        gap: 6px;
+        color: var(--bj-text-soft);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .bj-checks {
+        display: grid;
+        gap: 8px;
+        margin: 8px 0 14px;
+    }
+
+    .bj-checks label,
+    .bj-inline-check {
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--bj-text-soft);
+        font-size: 12px;
+        font-weight: 700;
+    }
+
     .bj-nowrap { white-space: nowrap; }
-    .bj-inline-check.bj-nowrap { flex: 0 0 auto; }
 
-    .bj-bet-compact { width: 96px; }
-    .bj-bet-compact span { display: block; font-size: 0.68rem; margin-bottom: 0.08rem; color: var(--bj-text-soft); }
+    input,
+    select {
+        width: 100%;
+        min-height: 40px;
+        border-radius: var(--bj-radius-sm);
+        border: 1px solid var(--bj-field-border);
+        background: var(--bj-field-bg);
+        color: var(--bj-text);
+        padding: 8px 10px;
+        font: 700 13px Inter, system-ui, sans-serif;
+        outline: none;
+        transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
 
-    .bj-btn { border: 1px solid #3f78a5; border-radius: 999px; padding: 0.22rem 0.5rem; font-size: 0.68rem; background: #0d2a43; color: #eaf5ff; cursor: pointer; }
-    .bj-btn.primary { background: linear-gradient(135deg, #4fb2ff, #7be0ad); color: #04121f; border: none; font-weight: 600; }
-    .bj-btn.ghost { background: transparent; }
-    :root[data-bj-theme="light"] .bj-btn { background: #f3f9ff; color: #1e4567; border-color: #7ca9cc; }
-    :root[data-bj-theme="light"] .bj-btn.primary { background: linear-gradient(135deg, #83c2f6, #8fd8b2); color: #123248; }
-    .bj-btn:disabled, .bj-btn.disabled { background: var(--bj-disabled-bg); color: var(--bj-disabled-text); border-color: var(--bj-border-soft); cursor: not-allowed; opacity: 1; }
-    :root[data-bj-theme="light"] .bj-btn:disabled,
-    :root[data-bj-theme="light"] .bj-btn.disabled {
-        background: #e4e7eb;
-        color: #8e9398;
-        border-color: #c5cbd2;
+    input[type="checkbox"] {
+        width: 18px;
+        min-height: 18px;
+        height: 18px;
+        accent-color: var(--bj-accent-red);
+    }
+
+    input:focus,
+    select:focus,
+    button:focus-visible,
+    a:focus-visible,
+    summary:focus-visible {
+        outline: 2px solid rgba(213,168,79,0.75);
+        outline-offset: 2px;
+    }
+
+    .bj-btn {
+        min-height: 44px;
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: var(--bj-radius-md);
+        padding: 11px 16px;
+        color: #fff;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: linear-gradient(180deg, #252b35 0%, #11151b 100%);
+        box-shadow: 0 12px 26px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.18);
+        cursor: pointer;
+        touch-action: manipulation;
+        transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease, opacity 160ms ease;
+    }
+
+    .bj-btn:hover:not(:disabled):not(.disabled) {
+        transform: translateY(-1px);
+        filter: brightness(1.08);
+        box-shadow: 0 16px 34px rgba(0,0,0,0.5), 0 0 26px rgba(220,31,53,0.2), inset 0 1px 0 rgba(255,255,255,0.24);
+    }
+
+    .bj-btn:active:not(:disabled):not(.disabled) {
+        transform: translateY(1px);
+    }
+
+    .bj-btn.primary,
+    .bj-deal-btn,
+    .bj-action-hit {
+        background: linear-gradient(180deg, #dc1f35 0%, #8d0b17 100%);
+    }
+
+    .bj-action-stand { background: linear-gradient(180deg, #3c4655 0%, #171c24 100%); }
+    .bj-action-double { background: linear-gradient(180deg, #d8a23b 0%, #7b5416 100%); color: #160f05; text-shadow: 0 1px 0 rgba(255,255,255,0.18); }
+    .bj-action-split { background: linear-gradient(180deg, #4f5fc5 0%, #22285f 100%); }
+    .bj-action-surrender { background: linear-gradient(180deg, #9c2130 0%, #4c0d15 100%); }
+    .bj-action-insurance { background: linear-gradient(180deg, #e1ad42 0%, #815b1d 100%); color: #180f03; }
+    .bj-action-skip { background: linear-gradient(180deg, #252b35 0%, #11151b 100%); }
+
+    .bj-btn:disabled,
+    .bj-btn.disabled {
+        background: var(--bj-disabled-bg);
+        color: var(--bj-disabled-text);
+        border-color: rgba(255,255,255,0.08);
+        cursor: not-allowed;
+        opacity: 0.72;
+        box-shadow: none;
+        filter: grayscale(0.35);
+    }
+
+    .bj-bet-row {
+        display: grid;
+        grid-template-columns: minmax(120px, 180px) minmax(130px, max-content);
+        gap: 10px;
+        align-items: end;
+        margin-bottom: 12px;
+    }
+
+    .bj-bet-row .bj-inline-check {
+        grid-column: 1 / -1;
     }
 
     .bj-action-row {
-        margin-top: 0.26rem;
         display: grid;
-        grid-template-columns: repeat(2, minmax(6.9rem, 7.6rem));
-        justify-content: end;
-        gap: 0.22rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
     }
-    .bj-action-btn { width: 100%; }
 
-    .bj-mono { font-family: ui-monospace, "Cascadia Code", "SFMono-Regular", Menlo, Consolas, monospace; font-size: 0.67rem; color: var(--bj-text-soft); }
-    input, select { width: 100%; border-radius: 0.42rem; border: 1px solid var(--bj-field-border); background: var(--bj-field-bg); color: var(--bj-text); padding: 0.18rem 0.3rem; font-size: 0.68rem; }
+    .bj-mono,
+    .bj-stats-grid strong,
+    .bj-count-quiz-stats strong,
+    .bj-speed-stats strong,
+    .bj-log-time,
+    .bj-speed-timer {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-variant-numeric: tabular-nums;
+    }
 
-    .bj-strip { display: grid; gap: 0.28rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .bj-pill { background: var(--bj-surface-strong); border: 1px solid var(--bj-border); border-radius: 0.45rem; padding: 0.27rem 0.32rem; display: flex; flex-direction: column; }
-    .bj-pill span { font-size: 0.63rem; color: var(--bj-text-soft); text-transform: uppercase; letter-spacing: 0.05em; }
-    .bj-pill strong { font-size: 0.76rem; margin-top: 0.06rem; color: var(--bj-text); }
+    .bj-mono {
+        color: var(--bj-text-soft);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
 
-    .bj-cards { display: flex; gap: 0.22rem; flex-wrap: wrap; min-height: 1.58rem; }
-    .bj-card { min-width: 1.5rem; padding: 0.16rem 0.27rem; border-radius: 0.36rem; background: var(--bj-card-bg); color: var(--bj-card-text); font-weight: 700; text-align: center; border: 1px solid var(--bj-card-border); font-size: 0.67rem; }
-    .bj-card.hidden { background: repeating-linear-gradient(45deg, #234867, #234867 8px, #2b5a80 8px, #2b5a80 16px); color: #d6ecfc; border-color: #5b8db5; }
-    .bj-suit-red { color: #d83a46; }
+    .bj-subheading {
+        margin: 14px 0 8px;
+        color: rgba(213,168,79,0.92);
+    }
 
-    .bj-hand-stack { display: grid; gap: 0.28rem; }
-    .bj-hand { border: 1px solid var(--bj-border); border-radius: 0.45rem; padding: 0.27rem; background: var(--bj-surface); }
-    .bj-hand.active { border-color: #7be0ad; box-shadow: 0 0 0 1px rgba(123, 224, 173, 0.25); }
-    .bj-hand-meta { font-size: 0.66rem; color: var(--bj-text-soft); margin-bottom: 0.15rem; display: flex; gap: 0.3rem; flex-wrap: wrap; }
+    .bj-hint-grid {
+        display: grid;
+        gap: 10px;
+    }
 
-    .bj-speed-row { display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.18rem; }
-    .bj-speed-controls { display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap; flex: 1 1 auto; }
-    .bj-speed-actions { width: 100%; display: flex; gap: 0.25rem; justify-content: flex-end; }
-    .bj-speed-control { display: inline-flex; align-items: center; gap: 0.2rem; font-size: 0.66rem; color: var(--bj-text-soft); }
-    .bj-speed-control select { width: auto; min-width: 6.4rem; padding: 0.16rem 0.24rem; font-size: 0.65rem; }
-    .bj-speed-timer { min-width: 5.6rem; text-align: center; border: 1px solid var(--bj-border-soft); border-radius: 999px; padding: 0.12rem 0.38rem; background: var(--bj-surface-strong); color: var(--bj-text); font-size: 0.74rem; font-family: ui-monospace, "Cascadia Code", monospace; font-weight: 700; }
-    .bj-speed-current { margin-bottom: 0.22rem; display: grid; gap: 0.08rem; }
-    .bj-speed-current-label { font-size: 0.58rem; color: var(--bj-text-soft); text-transform: uppercase; letter-spacing: 0.05em; }
-    .bj-speed-last-card { min-height: 2.65rem; min-width: 4.2rem; width: fit-content; max-width: 16rem; justify-self: start; display: flex; align-items: center; justify-content: center; text-align: center; border: 1px solid var(--bj-card-border); border-radius: 0.35rem; padding: 0.24rem 0.38rem; background: var(--bj-card-bg); color: var(--bj-card-text); font-weight: 800; font-size: 1.14rem; line-height: 1.2; }
-    .bj-speed-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem; margin-bottom: 0.2rem; }
-    .bj-speed-stats div { background: var(--bj-surface-strong); border: 1px solid var(--bj-border-soft); border-radius: 0.35rem; padding: 0.16rem 0.2rem; }
-    .bj-speed-stats span { display: block; font-size: 0.58rem; color: var(--bj-text-soft); text-transform: uppercase; letter-spacing: 0.05em; }
-    .bj-speed-stats strong { font-size: 0.66rem; color: var(--bj-text); }
-    .bj-speed-delta-better { color: #35bd6b !important; }
-    .bj-speed-delta-worse { color: #dd6374 !important; }
-    .bj-ready-status { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; border: 1px solid transparent; padding: 0.04rem 0.3rem; font-size: 0.58rem; line-height: 1.2; font-weight: 700; white-space: nowrap; }
-    .bj-ready-status-notpassed { background: #5a4a1d; border-color: #d5a94f; color: #fff2d6; }
-    .bj-ready-status-silver { background: #1f465a; border-color: #5ab5df; color: #e3f6ff; }
-    .bj-ready-status-gold { background: #1d5c3a; border-color: #38c270; color: #dbffe9; }
-    .bj-speed-stream { min-height: 1.1rem; display: flex; flex-wrap: wrap; gap: 0.16rem; }
-    .bj-speed-chip { border: 1px solid var(--bj-card-border); border-radius: 0.3rem; padding: 0.04rem 0.18rem; background: var(--bj-card-bg); color: var(--bj-card-text); font-size: 0.61rem; font-weight: 700; }
-    .bj-count-quiz-actions { width: 100%; display: grid; justify-items: end; gap: 0.24rem; }
-    .bj-count-quiz-actions > #bj-count-quiz-new-shoe { min-height: 2rem; padding: 0.24rem 0.72rem; font-size: 0.78rem; }
-    .bj-count-quiz-answer-row { display: flex; gap: 0.3rem; justify-content: flex-end; }
-    .bj-count-quiz-answer-row .bj-btn { width: 4.25rem; min-height: 2.8rem; padding: 0.28rem 0.58rem; font-size: 1.3rem; font-weight: 800; }
-    .bj-speed-actions .bj-btn { min-width: 4.25rem; min-height: 2.8rem; padding: 0.28rem 0.58rem; font-size: 1.3rem; font-weight: 800; }
-    .bj-count-quiz-feedback-row { margin-bottom: 0.2rem; }
-    .bj-count-quiz-feedback { display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid transparent; padding: 0.08rem 0.36rem; font-size: 0.63rem; font-weight: 700; }
-    .bj-count-quiz-feedback-neutral { background: #334b61; border-color: #5f7d98; color: #d6e9fa; }
-    .bj-count-quiz-feedback-correct { background: #1d5c3a; border-color: #38c270; color: #dbffe9; }
-    .bj-count-quiz-feedback-wrong { background: #642833; border-color: #df687a; color: #ffe3e8; }
-    .bj-count-quiz-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.2rem; margin-bottom: 0.2rem; }
-    .bj-count-quiz-stats div { background: var(--bj-surface-strong); border: 1px solid var(--bj-border-soft); border-radius: 0.35rem; padding: 0.16rem 0.2rem; }
-    .bj-count-quiz-stats span { display: block; font-size: 0.58rem; color: var(--bj-text-soft); text-transform: uppercase; letter-spacing: 0.05em; }
-    .bj-count-quiz-stats strong { font-size: 0.66rem; color: var(--bj-text); }
-    .bj-count-quiz-chip-correct { border-color: #38c270; }
-    .bj-count-quiz-chip-wrong { border-color: #df687a; }
+    .bj-hint-card {
+        min-height: 106px;
+        display: grid;
+        align-content: start;
+        gap: 8px;
+        padding: 12px;
+        border-radius: var(--bj-radius-sm);
+        border: 1px solid var(--bj-border);
+        background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)), var(--bj-panel-2);
+    }
 
-    #bj-log-list { display: grid; gap: 0.2rem; }
-    .bj-log-item { background: var(--bj-surface-strong); border: 1px solid var(--bj-border-soft); border-radius: 0.35rem; padding: 0.18rem 0.26rem; font-size: 0.66rem; color: var(--bj-text); }
-    .bj-log-time { color: var(--bj-text-soft); margin-right: 0.3rem; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 0.66rem; }
+    .bj-hint-card h4 {
+        margin: 0;
+        color: var(--bj-text-soft);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+    }
 
-    .bj-hint-grid { display: grid; gap: 0.28rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .bj-hint-card { border: 1px solid var(--bj-border-soft); border-radius: 0.36rem; padding: 0.24rem; background: var(--bj-surface-strong); min-height: 3.6rem; display: grid; align-content: start; gap: 0.16rem; }
-    .bj-hint-card h4 { margin: 0; font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--bj-text-soft); }
-    .bj-hint-card strong { font-size: 0.8rem; color: var(--bj-text); }
-    .bj-hint-card p { margin: 0; color: var(--bj-text); font-size: 0.67rem; }
-    .bj-hint-status { display: inline-flex; align-items: center; justify-content: center; max-width: 6.8rem; border-radius: 999px; padding: 0.05rem 0.32rem; border: 1px solid transparent; font-size: 0.59rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
-    .bj-hint-status-neutral { background: #334b61; border-color: #5f7d98; color: #d6e9fa; }
-    .bj-hint-status-correct { background: #1d5c3a; border-color: #38c270; color: #dbffe9; }
-    .bj-hint-status-wrong { background: #642833; border-color: #df687a; color: #ffe3e8; }
-    .bj-guide p { margin: 0 0 0.25rem; color: var(--bj-text); font-size: 0.68rem; }
-    .bj-guide h4 { margin: 0.24rem 0 0.15rem; font-size: 0.69rem; color: var(--bj-text-soft); }
-    .bj-guide ul { margin: 0; padding-left: 0.92rem; color: var(--bj-text); font-size: 0.66rem; display: grid; gap: 0.11rem; }
-    .bj-chart-note { margin: 0 0 0.3rem; color: var(--bj-text-soft); font-size: 0.66rem; }
-    .bj-legend { display: grid; grid-template-columns: auto 1fr; gap: 0.18rem 0.32rem; margin-bottom: 0.34rem; align-items: center; font-size: 0.64rem; color: var(--bj-text-soft); }
-    .bj-chart-grid { display: grid; gap: 0.3rem; grid-template-columns: 1fr; }
-    .bj-chart-wrap h4 { margin: 0 0 0.16rem; font-size: 0.68rem; color: var(--bj-text-soft); }
-    .bj-chart-wrap { border: 1px solid var(--bj-border-soft); border-radius: 0.36rem; padding: 0.22rem; background: var(--bj-surface-strong); overflow-x: auto; }
-    .bj-chart { width: 100%; border-collapse: collapse; font-size: 0.62rem; min-width: 290px; }
-    .bj-chart th, .bj-chart td { border: 1px solid var(--bj-border-soft); padding: 0.14rem 0.2rem; text-align: left; color: var(--bj-text); }
-    .bj-chart th { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--bj-text-soft); background: rgba(0, 0, 0, 0.08); }
-    .bj-chart-tips { margin: 0.32rem 0 0; padding-left: 0.95rem; color: var(--bj-text); font-size: 0.64rem; display: grid; gap: 0.1rem; }
+    .bj-hint-card strong {
+        color: #fff;
+        font-family: Rajdhani, Inter, sans-serif;
+        font-size: 28px;
+        line-height: 1;
+        text-transform: uppercase;
+    }
 
-    .bj-act { display: inline-flex; align-items: center; justify-content: center; min-width: 2.05rem; padding: 0.02rem 0.28rem; border-radius: 999px; border: 1px solid transparent; font-size: 0.58rem; line-height: 1.35; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
-    .bj-act-hit { background: #184c2f; border-color: #32b16a; color: #d6ffe8; }
-    .bj-act-stand { background: #5b2429; border-color: #cf4f59; color: #ffd8dc; }
-    .bj-act-double { background: #163f6f; border-color: #4aa5f1; color: #d5ecff; }
-    .bj-act-dh { background: #654e1c; border-color: #e6b354; color: #fff3d2; }
-    .bj-act-ds { background: #21534f; border-color: #4cc7bb; color: #d9fff9; }
-    .bj-act-split { background: #5b3e1f; border-color: #e6a25a; color: #ffe8d1; }
-    .bj-act-rh { background: #5a273a; border-color: #db5f88; color: #ffddea; }
+    .bj-hint-card p {
+        margin: 0;
+        color: var(--bj-text-soft);
+        font-size: 13px;
+        line-height: 1.45;
+    }
 
-    :root[data-bj-theme="light"] .bj-chart th { background: rgba(26, 63, 96, 0.08); }
-    :root[data-bj-theme="light"] .bj-act-hit { background: #dbf7e7; border-color: #46b377; color: #155332; }
-    :root[data-bj-theme="light"] .bj-act-stand { background: #ffe2e5; border-color: #df6f79; color: #7f1e27; }
-    :root[data-bj-theme="light"] .bj-act-double { background: #deefff; border-color: #4d97db; color: #174b7f; }
-    :root[data-bj-theme="light"] .bj-act-dh { background: #fff1d9; border-color: #d9a451; color: #6e4b12; }
-    :root[data-bj-theme="light"] .bj-act-ds { background: #dcf5f1; border-color: #49ada3; color: #1f5b56; }
-    :root[data-bj-theme="light"] .bj-act-split { background: #feead5; border-color: #cf8c44; color: #6b3f0f; }
-    :root[data-bj-theme="light"] .bj-act-rh { background: #ffe2ec; border-color: #ca5c80; color: #6f1f3b; }
-    :root[data-bj-theme="light"] .bj-suit-red { color: #bf1f2f; }
-    :root[data-bj-theme="light"] .bj-hint-status-neutral { background: #dde8f2; border-color: #9bb4c8; color: #33536e; }
-    :root[data-bj-theme="light"] .bj-hint-status-correct { background: #d8f2e2; border-color: #55b982; color: #1f603f; }
-    :root[data-bj-theme="light"] .bj-hint-status-wrong { background: #ffe0e6; border-color: #d96a7e; color: #7a2535; }
-    :root[data-bj-theme="light"] .bj-count-quiz-feedback-neutral { background: #dde8f2; border-color: #9bb4c8; color: #33536e; }
-    :root[data-bj-theme="light"] .bj-count-quiz-feedback-correct { background: #d8f2e2; border-color: #55b982; color: #1f603f; }
-    :root[data-bj-theme="light"] .bj-count-quiz-feedback-wrong { background: #ffe0e6; border-color: #d96a7e; color: #7a2535; }
-    :root[data-bj-theme="light"] .bj-ready-status-notpassed { background: #fff1d8; border-color: #d7ac58; color: #6d4a13; }
-    :root[data-bj-theme="light"] .bj-ready-status-silver { background: #dff2ff; border-color: #76b7de; color: #1d4f6b; }
-    :root[data-bj-theme="light"] .bj-ready-status-gold { background: #d8f2e2; border-color: #55b982; color: #1f603f; }
+    .bj-hint-status,
+    .bj-count-quiz-feedback,
+    .bj-ready-status,
+    .bj-act {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: fit-content;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-size: 11px;
+        line-height: 1.25;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 4px 8px;
+    }
 
-    .bj-stats-grid { display: grid; gap: 0.22rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .bj-stats-grid div { background: var(--bj-surface-strong); border: 1px solid var(--bj-border-soft); border-radius: 0.35rem; padding: 0.18rem 0.24rem; }
-    .bj-stats-grid span { font-size: 0.61rem; color: var(--bj-text-soft); text-transform: uppercase; letter-spacing: 0.05em; display: block; }
-    .bj-stats-grid strong { color: var(--bj-text); font-size: 0.68rem; }
+    .bj-hint-status-neutral,
+    .bj-count-quiz-feedback-neutral {
+        background: #252d38;
+        border-color: #465363;
+        color: #d5dce7;
+    }
 
-    .bj-mistakes, #bj-history-list { margin: 0.2rem 0 0; padding: 0; list-style: none; }
-    #bj-history-list { display: grid; gap: 0.2rem; }
-    .bj-history-item { border: 1px solid var(--bj-border-soft); border-radius: 0.35rem; padding: 0.18rem 0.26rem; background: var(--bj-surface-strong); font-size: 0.66rem; color: var(--bj-text); }
+    .bj-hint-status-correct,
+    .bj-count-quiz-feedback-correct {
+        background: rgba(24,181,107,0.16);
+        border-color: rgba(24,181,107,0.72);
+        color: #d7ffe8;
+        box-shadow: 0 0 18px rgba(24,181,107,0.16);
+    }
 
-    @@media (min-width: 1080px) {
-        .bj-layout { grid-template-columns: minmax(0, 1fr) minmax(300px, 330px); align-items: start; }
-        .bj-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .bj-stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .bj-chart-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .bj-action-row { grid-template-columns: repeat(4, minmax(0, 1fr)); justify-content: stretch; }
-        .bj-count-quiz-actions { width: auto; margin-left: auto; }
-        .bj-count-quiz-stats { grid-template-columns: repeat(11, minmax(0, 1fr)); }
-        .bj-speed-actions { width: auto; margin-left: auto; }
-        .bj-speed-stats { grid-template-columns: repeat(10, minmax(0, 1fr)); }
+    .bj-hint-status-wrong,
+    .bj-count-quiz-feedback-wrong {
+        background: rgba(228,63,79,0.18);
+        border-color: rgba(228,63,79,0.76);
+        color: #ffe1e5;
+        box-shadow: 0 0 18px rgba(228,63,79,0.18);
+    }
+
+    .bj-stats-grid,
+    .bj-count-quiz-stats,
+    .bj-speed-stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .bj-stats-grid div,
+    .bj-count-quiz-stats div,
+    .bj-speed-stats div {
+        min-width: 0;
+        padding: 10px;
+        border-radius: var(--bj-radius-sm);
+        background: var(--bj-panel-2);
+        border: 1px solid var(--bj-border);
+    }
+
+    .bj-stats-grid strong,
+    .bj-count-quiz-stats strong,
+    .bj-speed-stats strong {
+        display: block;
+        margin-top: 5px;
+        color: #fff;
+        font-size: 16px;
+        overflow-wrap: anywhere;
+    }
+
+    .bj-mistakes,
+    #bj-history-list {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 7px;
+    }
+
+    .bj-mistakes li,
+    .bj-history-item,
+    .bj-log-item {
+        padding: 9px 10px;
+        border-radius: var(--bj-radius-sm);
+        background: var(--bj-panel-2);
+        border: 1px solid var(--bj-border);
+        color: var(--bj-text-soft);
+        font-size: 12px;
+        line-height: 1.35;
+    }
+
+    #bj-log-list {
+        display: grid;
+        gap: 7px;
+        max-height: 210px;
+        overflow: auto;
+    }
+
+    .bj-log-time {
+        margin-right: 8px;
+        color: var(--bj-gold);
+        font-size: 11px;
+    }
+
+    .bj-guide p,
+    .bj-chart-note {
+        margin: 0 0 10px;
+        color: var(--bj-text-soft);
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .bj-guide h4,
+    .bj-chart-wrap h4 {
+        margin: 12px 0 8px;
+        color: #fff;
+        font-family: Rajdhani, Inter, sans-serif;
+        font-size: 18px;
+        text-transform: uppercase;
+    }
+
+    .bj-guide ul {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--bj-text-soft);
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .bj-legend {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 7px 10px;
+        margin-bottom: 12px;
+        align-items: center;
+        color: var(--bj-text-soft);
+        font-size: 12px;
+    }
+
+    .bj-chart-grid {
+        display: grid;
+        gap: 12px;
+    }
+
+    .bj-chart-wrap {
+        min-width: 0;
+        overflow-x: auto;
+        padding: 12px;
+        border-radius: var(--bj-radius-md);
+        background: var(--bj-panel-2);
+        border: 1px solid var(--bj-border);
+    }
+
+    .bj-chart {
+        width: 100%;
+        min-width: 360px;
+        border-collapse: collapse;
+        color: var(--bj-text-soft);
+        font-size: 12px;
+    }
+
+    .bj-chart th,
+    .bj-chart td {
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding: 8px;
+        text-align: left;
+    }
+
+    .bj-chart th {
+        position: sticky;
+        top: 0;
+        color: #fff;
+        background: #0c0f14;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .bj-act { min-width: 34px; padding: 4px 8px; }
+    .bj-act-hit { background: rgba(196,18,34,0.28); border-color: rgba(196,18,34,0.8); color: #ffdfe3; }
+    .bj-act-stand { background: rgba(77,89,108,0.32); border-color: rgba(121,136,160,0.8); color: #eef3fb; }
+    .bj-act-double { background: rgba(213,168,79,0.28); border-color: rgba(213,168,79,0.8); color: #ffe7b0; }
+    .bj-act-dh { background: rgba(230,169,58,0.22); border-color: rgba(230,169,58,0.7); color: #ffe5ad; }
+    .bj-act-ds { background: rgba(24,181,107,0.18); border-color: rgba(24,181,107,0.7); color: #dcffe9; }
+    .bj-act-split { background: rgba(89,95,201,0.3); border-color: rgba(127,134,237,0.78); color: #e8e8ff; }
+
+    .bj-speed-row {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .bj-speed-controls,
+    .bj-speed-actions,
+    .bj-count-quiz-actions,
+    .bj-count-quiz-answer-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: end;
+    }
+
+    .bj-speed-control select {
+        min-width: min(260px, 100%);
+    }
+
+    .bj-speed-timer {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 108px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: #090b0f;
+        border: 1px solid var(--bj-border);
+        color: #fff;
+        font-weight: 800;
+    }
+
+    .bj-speed-current {
+        display: grid;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .bj-speed-current-label {
+        color: var(--bj-text-soft);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-weight: 800;
+    }
+
+    .bj-speed-last-card {
+        min-height: 88px;
+        width: fit-content;
+        min-width: 94px;
+        max-width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 16px;
+        border-radius: var(--bj-radius-md);
+        background: var(--bj-card-bg);
+        color: var(--bj-card-text);
+        border: 1px solid var(--bj-card-border);
+        font-family: "JetBrains Mono", monospace;
+        font-size: clamp(1.4rem, 5vw, 2.4rem);
+        font-weight: 800;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.34);
+        overflow-wrap: anywhere;
+    }
+
+    .bj-count-quiz-answer-row .bj-btn,
+    .bj-speed-actions .bj-btn {
+        min-width: 82px;
+    }
+
+    .bj-count-quiz-answer-row .bj-btn {
+        min-height: 58px;
+        font-size: 22px;
+    }
+
+    .bj-speed-stream {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-height: 32px;
+        margin-top: 8px;
+    }
+
+    .bj-speed-chip {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 4px 8px;
+        border-radius: 7px;
+        background: var(--bj-card-bg);
+        color: var(--bj-card-text);
+        border: 1px solid var(--bj-card-border);
+        font-family: "JetBrains Mono", monospace;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .bj-count-quiz-chip-correct { border-color: var(--bj-success); box-shadow: 0 0 0 1px rgba(24,181,107,0.28); }
+    .bj-count-quiz-chip-wrong { border-color: var(--bj-danger); box-shadow: 0 0 0 1px rgba(228,63,79,0.28); }
+    .bj-speed-delta-better { color: #7dffb7 !important; }
+    .bj-speed-delta-worse { color: #ff9aa6 !important; }
+
+    .bj-ready-status-notpassed {
+        background: rgba(230,169,58,0.16);
+        border-color: rgba(230,169,58,0.72);
+        color: #ffe6b0;
+    }
+
+    .bj-ready-status-silver {
+        background: rgba(90,181,223,0.16);
+        border-color: rgba(90,181,223,0.72);
+        color: #dff5ff;
+    }
+
+    .bj-ready-status-gold {
+        background: rgba(24,181,107,0.18);
+        border-color: rgba(24,181,107,0.74);
+        color: #dcffe9;
+    }
+
+    @@keyframes bj-card-deal {
+        from {
+            opacity: 0;
+            transform: translate(38px, -28px) rotate(-9deg) scale(0.92);
+        }
+        to {
+            opacity: 1;
+            transform: rotate(var(--card-tilt, -1deg)) scale(1);
+        }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.001ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+
+    @@media (min-width: 760px) {
+        .bj-layout {
+            grid-template-columns: 220px minmax(0, 1fr);
+            grid-template-areas:
+                "topbar topbar"
+                "sidebar stage"
+                "sidebar hud"
+                "bottom bottom"
+                "study study";
+            padding: 14px;
+        }
+
+        .bj-topbar {
+            grid-template-columns: minmax(230px, 0.9fr) minmax(260px, 1fr) minmax(360px, 1.2fr);
+        }
+
+        .bj-topbar-metrics {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .bj-nav-list {
+            grid-auto-flow: row;
+            grid-auto-columns: auto;
+            overflow: visible;
+        }
+
+        .bj-sidebar-head {
+            display: block;
+            padding: 12px;
+            border-radius: var(--bj-radius-md);
+            background: var(--bj-panel);
+            border: 1px solid var(--bj-border);
+        }
+
+        .bj-sidebar-head strong {
+            display: block;
+            margin-top: 4px;
+            font-family: Rajdhani, Inter, sans-serif;
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+
+        .bj-hud {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .bj-bottom-strip {
+            grid-template-columns: minmax(220px, max-content) minmax(0, 1fr);
+        }
+
+        .bj-study-panels {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .bj-basic-bottom,
+        .bj-perfect-bottom,
+        .bj-quiz-bottom,
+        .bj-speed-bottom {
+            grid-column: 1 / -1;
+        }
+
+        .bj-action-row {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .bj-bet-row {
+            grid-template-columns: minmax(140px, 180px) max-content max-content;
+        }
+
+        .bj-bet-row .bj-inline-check {
+            grid-column: auto;
+        }
+
+        .bj-chart-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .bj-hint-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (min-width: 1180px) {
+        .bj-layout {
+            grid-template-columns: 236px minmax(0, 1fr) 330px;
+            grid-template-areas:
+                "topbar topbar topbar"
+                "sidebar stage hud"
+                "bottom bottom bottom"
+                "study study study";
+            gap: 14px;
+        }
+
+        .bj-hud {
+            grid-template-columns: 1fr;
+        }
+
+        .bj-study-panels {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .bj-basic-bottom,
+        .bj-perfect-bottom {
+            grid-column: span 2;
+        }
+
+        .bj-quiz-bottom,
+        .bj-speed-bottom {
+            grid-column: span 2;
+        }
+
+        .bj-chart-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .bj-speed-stats {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .bj-count-quiz-stats {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 520px) {
+        .bj-layout {
+            padding: 8px;
+            gap: 10px;
+        }
+
+        .bj-topbar {
+            padding: 10px;
+        }
+
+        .bj-topbar-center,
+        .bj-topbar-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .bj-topbar-center {
+            display: none;
+        }
+
+        .bj-mode-chip-rules {
+            display: none;
+        }
+
+        .bj-game-focus {
+            padding: 8px;
+            border-radius: 16px;
+        }
+
+        .bj-table-felt {
+            min-height: 400px;
+            border-radius: 26px;
+            border-width: 8px;
+        }
+
+        .bj-table-rule-left,
+        .bj-table-rule-bottom,
+        .bj-center-mark,
+        .bj-tray {
+            display: none;
+        }
+
+        .bj-table-rule-top {
+            top: 16px;
+            font-size: 10px;
+        }
+
+        .bj-dealer-zone {
+            top: 56px;
+            width: 94%;
+        }
+
+        .bj-player-zone {
+            bottom: 20px;
+            width: 94%;
+        }
+
+        .bj-cards {
+            min-height: 82px;
+        }
+
+        .bj-card {
+            width: clamp(48px, 17vw, 66px);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .bj-bet-circle {
+            display: none;
+        }
+
+        .bj-action-row,
+        .bj-bet-row,
+        .bj-grid,
+        .bj-stats-grid,
+        .bj-count-quiz-stats,
+        .bj-speed-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .bj-btn,
+        input,
+        select {
+            min-height: 48px;
+        }
+
+        .bj-shortcuts {
+            display: none;
+        }
+    }
+
+    /* Final art-direction layer: flat, square, fixed command controls. */
+    body {
+        background: #070809 !important;
+    }
+
+    .bj-layout {
+        padding-bottom: 190px;
+        background: #070809;
+    }
+
+    .bj-layout *,
+    .bj-layout *::before,
+    .bj-layout *::after {
+        border-radius: 0 !important;
+    }
+
+    .bj-topbar,
+    .bj-brand-mark,
+    .bj-mode-chip,
+    .bj-top-metric,
+    .bj-sidebar-head,
+    .bj-nav-item,
+    .bj-nav-icon,
+    .bj-game-focus,
+    .bj-table-felt,
+    .bj-table-felt::before,
+    .bj-dealer-plate,
+    .bj-player-heading,
+    .bj-hand,
+    .bj-tray i,
+    .bj-bet-circle,
+    .bj-chip,
+    .bj-shortcuts,
+    kbd,
+    .bj-collapsible,
+    .bj-collapsible > summary,
+    input,
+    select,
+    .bj-btn,
+    .bj-hint-card,
+    .bj-hint-status,
+    .bj-count-quiz-feedback,
+    .bj-ready-status,
+    .bj-act,
+    .bj-stats-grid div,
+    .bj-count-quiz-stats div,
+    .bj-speed-stats div,
+    .bj-mistakes li,
+    .bj-history-item,
+    .bj-log-item,
+    .bj-chart-wrap,
+    .bj-speed-timer,
+    .bj-speed-last-card,
+    .bj-speed-chip,
+    .bj-card,
+    .bj-card.hidden::before {
+        background-image: none !important;
+    }
+
+    .bj-topbar,
+    .bj-sidebar-head,
+    .bj-nav-item,
+    .bj-mode-chip,
+    .bj-top-metric,
+    .bj-collapsible,
+    .bj-hint-card,
+    .bj-stats-grid div,
+    .bj-count-quiz-stats div,
+    .bj-speed-stats div,
+    .bj-chart-wrap,
+    .bj-mistakes li,
+    .bj-history-item,
+    .bj-log-item,
+    .bj-shortcuts {
+        background-color: #11151b !important;
+    }
+
+    .bj-collapsible > summary {
+        background-color: #241116 !important;
+    }
+
+    .bj-nav-item.active,
+    .bj-btn.primary,
+    .bj-deal-btn,
+    .bj-action-hit {
+        background-color: #b80f1f !important;
+    }
+
+    .bj-action-stand,
+    .bj-action-skip {
+        background-color: #232a34 !important;
+    }
+
+    .bj-action-double,
+    .bj-action-insurance {
+        background-color: #c49335 !important;
+        color: #080808 !important;
+    }
+
+    .bj-action-split {
+        background-color: #343f88 !important;
+    }
+
+    .bj-action-surrender {
+        background-color: #66131d !important;
+    }
+
+    .bj-game-focus {
+        background-color: #050607 !important;
+    }
+
+    .bj-table-felt {
+        background-color: #063d25 !important;
+    }
+
+    .bj-table-felt::before {
+        background-color: #0b0b0b !important;
+    }
+
+    .bj-felt-noise {
+        opacity: 0.28;
+        background-image: none !important;
+    }
+
+    .bj-card,
+    .bj-speed-last-card,
+    .bj-speed-chip {
+        background-color: #f3eee4 !important;
+    }
+
+    .bj-card.hidden {
+        background-color: #760912 !important;
+        background-image: none !important;
+    }
+
+    .bj-control-panel {
+        position: fixed;
+        z-index: 100;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: auto;
+        max-width: none;
+        border-left: 0;
+        border-right: 0;
+        border-bottom: 0;
+        box-shadow: 0 -12px 28px rgba(0,0,0,0.62);
+    }
+
+    .bj-control-panel > summary {
+        display: none;
+    }
+
+    .bj-control-panel .bj-collapsible-body {
+        display: grid;
+        grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+        gap: 12px;
+        align-items: end;
+        padding: 10px 14px;
+    }
+
+    .bj-control-panel .bj-bet-row {
+        grid-template-columns: minmax(104px, 150px) minmax(110px, max-content);
+        margin: 0;
+    }
+
+    .bj-control-panel .bj-bet-row .bj-inline-check {
+        grid-column: 1 / -1;
+        min-height: 24px;
+    }
+
+    .bj-control-panel .bj-action-row {
+        margin: 0;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .bj-control-panel .bj-btn {
+        min-height: 52px;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .bj-control-panel input {
+        min-height: 38px;
+    }
+
+    .bj-toast-stack {
+        position: fixed;
+        z-index: 160;
+        right: 16px;
+        bottom: 150px;
+        width: min(360px, calc(100vw - 32px));
+        display: grid;
+        gap: 8px;
+        pointer-events: none;
+    }
+
+    .bj-toast {
+        display: grid;
+        gap: 3px;
+        padding: 12px 14px;
+        border: 2px solid #2f3742;
+        background-color: #11151b;
+        color: #f4f4f5;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.55);
+        animation: bj-toast-enter 160ms ease-out both;
+    }
+
+    .bj-toast strong {
+        font-family: Rajdhani, Inter, sans-serif;
+        font-size: 19px;
+        line-height: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .bj-toast span {
+        color: #c8ced8;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        line-height: 1.35;
+    }
+
+    .bj-toast-win {
+        border-color: #18b56b;
+        background-color: #071811;
+    }
+
+    .bj-toast-loss {
+        border-color: #e43f4f;
+        background-color: #1b080b;
+    }
+
+    .bj-toast-info {
+        border-color: #d5a84f;
+        background-color: #17130a;
+    }
+
+    .bj-toast-exit {
+        animation: bj-toast-exit 180ms ease-in both;
+    }
+
+    @@keyframes bj-toast-enter {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes bj-toast-exit {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+    }
+
+    @@media (max-width: 760px) {
+        .bj-layout {
+            padding-bottom: 265px;
+        }
+
+        .bj-control-panel .bj-collapsible-body {
+            grid-template-columns: 1fr;
+            gap: 8px;
+            padding: 8px;
+        }
+
+        .bj-control-panel .bj-bet-row {
+            grid-template-columns: minmax(0, 1fr) minmax(112px, max-content);
+            gap: 8px;
+        }
+
+        .bj-control-panel .bj-bet-row .bj-inline-check {
+            display: none;
+        }
+
+        .bj-control-panel .bj-action-row {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 7px;
+        }
+
+        .bj-control-panel .bj-btn {
+            min-height: 46px;
+            padding: 7px 6px;
+            font-size: 10px;
+            letter-spacing: 0.04em;
+        }
+
+        .bj-toast-stack {
+            left: 8px;
+            right: 8px;
+            bottom: 250px;
+            width: auto;
+        }
     }
 </style>
 

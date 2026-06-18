@@ -175,6 +175,11 @@ public sealed class IndexModel : PageModel
             return "BlackJack";
         }
 
+        if (string.Equals(url, "/reddit", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Reddit Teleprompter";
+        }
+
         return BuildTitle(url);
     }
 

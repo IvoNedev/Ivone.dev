@@ -1,0 +1,166 @@
+@page "/MaxOut"
+@model Ivone.dev.Pages.MaxOutModel
+@{
+    Layout = null;
+    ViewData["Title"] = "MaxOut";
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MaxOut</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/maxout.css" asp-append-version="true" />
+</head>
+<body class="maxout-body">
+    <div id="maxoutApp"
+         class="maxout-app"
+         data-state-url="@Url.Page("MaxOut", "State")"
+         data-create-user-url="@Url.Page("MaxOut", "CreateUser")"
+         data-recover-url="@Url.Page("MaxOut", "Recover")"
+         data-save-workout-url="@Url.Page("MaxOut", "SaveWorkout")"
+         data-end-workout-url="@Url.Page("MaxOut", "EndWorkout")"
+         data-request-token="@Model.RequestVerificationToken">
+        <div class="identity-box">
+            <button id="identityButton" class="identity-button" type="button">Recover data</button>
+            <form id="recoverForm" class="recover-popover" hidden>
+                <label for="recoverId">Recover ID</label>
+                <div class="recover-row">
+                    <input id="recoverId" type="number" inputmode="numeric" min="1" value="1" />
+                    <button type="submit">Load</button>
+                </div>
+            </form>
+        </div>
+
+        <main class="maxout-shell">
+            <section id="homeView" class="view view-home">
+                <div class="brand-lockup">
+                    <span>MaxOut</span>
+                    <h1>Workout log</h1>
+                </div>
+                <div class="home-actions">
+                    <button id="newWorkoutButton" class="action-button action-button-primary" type="button">New Workout</button>
+                    <button id="historyButton" class="action-button action-button-secondary" type="button">History</button>
+                    <button id="guideButton" class="action-button action-button-secondary" type="button">How it works</button>
+                </div>
+                <div id="homeStatus" class="status-line" role="status" aria-live="polite"></div>
+            </section>
+
+            <section id="workoutView" class="view workout-view" hidden>
+                <header class="workout-top">
+                    <div class="select-wrap">
+                        <label for="exerciseSelect">Exercise</label>
+                        <select id="exerciseSelect"></select>
+                    </div>
+                    <div class="workout-actions">
+                        <div class="unit-toggle" role="group" aria-label="Weight unit">
+                            <button id="unitKg" class="unit-button active" type="button" data-unit="kg">kg</button>
+                            <button id="unitLb" class="unit-button" type="button" data-unit="lb">lb</button>
+                        </div>
+                        <button id="endWorkoutButton" class="end-button" type="button">End workout</button>
+                    </div>
+                </header>
+
+                <div id="exerciseList" class="exercise-list" aria-live="polite"></div>
+            </section>
+
+            <section id="historyView" class="view history-view" hidden>
+                <header class="history-top">
+                    <button id="historyBackButton" class="back-button" type="button" aria-label="Back">
+                        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+                    </button>
+                    <h1>History</h1>
+                </header>
+                <div id="historyList" class="history-list"></div>
+            </section>
+
+            <section id="guideView" class="view guide-view" hidden>
+                <header class="history-top guide-top">
+                    <button id="guideBackButton" class="back-button" type="button" aria-label="Back">
+                        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+                    </button>
+                    <h1>How it works</h1>
+                </header>
+
+                <div class="guide-map" aria-label="MaxOut workout flow">
+                    <section class="guide-panel guide-panel-primary">
+                        <div class="guide-panel-head">
+                            <span class="guide-step">01</span>
+                            <h2>Start</h2>
+                        </div>
+                        <div class="guide-visual guide-visual-start" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <p>New Workout opens a clean session. If the device has no backup id yet, MaxOut creates one quietly and stores it locally.</p>
+                    </section>
+
+                    <section class="guide-panel">
+                        <div class="guide-panel-head">
+                            <span class="guide-step">02</span>
+                            <h2>Select</h2>
+                        </div>
+                        <div class="guide-visual guide-visual-select" aria-hidden="true">
+                            <i></i><i></i><i></i>
+                        </div>
+                        <p>Exercises are grouped by category. Recent exercises are tinted by recency: amber, green, then blue.</p>
+                    </section>
+
+                    <section class="guide-panel">
+                        <div class="guide-panel-head">
+                            <span class="guide-step">03</span>
+                            <h2>Recall</h2>
+                        </div>
+                        <div class="guide-visual guide-visual-recall" aria-hidden="true">
+                            <span>Last</span><strong>15</strong><em>42.5</em>
+                        </div>
+                        <p>When an exercise has history, set rows prefill from the most recent matching exercise and show the previous value beside the label.</p>
+                    </section>
+
+                    <section class="guide-panel">
+                        <div class="guide-panel-head">
+                            <span class="guide-step">04</span>
+                            <h2>Track</h2>
+                        </div>
+                        <div class="guide-visual guide-visual-track" aria-hidden="true">
+                            <span>-5</span><strong>12</strong><span>+5</span>
+                        </div>
+                        <p>Sets control how many rows exist. Reps and max weight can be tapped in steps or typed directly.</p>
+                    </section>
+
+                    <section class="guide-panel">
+                        <div class="guide-panel-head">
+                            <span class="guide-step">05</span>
+                            <h2>Convert</h2>
+                        </div>
+                        <div class="guide-visual guide-visual-convert" aria-hidden="true">
+                            <span>kg</span><i></i><span>lb</span>
+                        </div>
+                        <p>The unit toggle changes the visible weight unit and step sizes while the database keeps weight normalized in kg.</p>
+                    </section>
+
+                    <section class="guide-panel guide-panel-final">
+                        <div class="guide-panel-head">
+                            <span class="guide-step">06</span>
+                            <h2>Archive</h2>
+                        </div>
+                        <div class="guide-visual guide-visual-archive" aria-hidden="true">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <p>End workout moves the session into History. The next workout can use those values for autofill and dropdown recency hints.</p>
+                    </section>
+                </div>
+
+                <aside class="guide-backup-strip">
+                    <strong>Backup id</strong>
+                    <span>Use “Your ID” to continue from another device, or Recover data after browser storage is wiped.</span>
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <script src="~/js/maxout.js" asp-append-version="true"></script>
+</body>
+</html>

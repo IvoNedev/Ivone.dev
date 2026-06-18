@@ -1,0 +1,275 @@
+@page "/track"
+@model Ivone.dev.Pages.TrackModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+    <title>Track | Ivone.dev</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Archivo+Expanded:wght@700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/track.css" asp-append-version="true" />
+</head>
+<body class="track-body">
+    <div class="track-app"
+         data-track-root
+         data-state-url="@Url.Page("Track", "State")"
+         data-create-note-url="@Url.Page("Track", "CreateTodayNote")"
+         data-create-note-for-date-url="@Url.Page("Track", "CreateNote")"
+         data-save-template-url="@Url.Page("Track", "SaveTemplate")"
+         data-delete-template-url="@Url.Page("Track", "DeleteTemplate")"
+         data-toggle-item-url="@Url.Page("Track", "ToggleNoteItem")"
+         data-log-item-url="@Url.Page("Track", "LogNoteItem")"
+         data-resync-note-url="@Url.Page("Track", "ResyncNote")"
+         data-add-profit-url="@Url.Page("Track", "AddProfitEntry")"
+         data-delete-profit-url="@Url.Page("Track", "DeleteProfitEntry")"
+         data-add-measurement-url="@Url.Page("Track", "AddMeasurement")"
+         data-delete-measurement-url="@Url.Page("Track", "DeleteMeasurement")"
+         data-add-motivation-link-url="@Url.Page("Track", "AddMotivationLink")"
+         data-delete-motivation-url="@Url.Page("Track", "DeleteMotivationLink")"
+         data-log-choice-url="@Url.Page("Track", "LogChoice")"
+         data-reset-url="@Url.Page("Track", "Reset")"
+         data-request-token="@Model.RequestVerificationToken">
+
+        <header class="track-topbar">
+            <div class="track-brand">
+                <span class="track-brand__mark" aria-hidden="true"></span>
+                <span class="track-brand__name">TRACK</span>
+            </div>
+
+            <div class="track-topbar__primary">
+                <label class="track-template-picker" for="templatePicker">
+                    <span>Template</span>
+                    <select id="templatePicker" aria-label="Choose template"></select>
+                </label>
+                <button class="track-button track-button--primary" id="newNoteBtn" type="button">+ Log today</button>
+            </div>
+
+            <button class="track-menu-button" id="trackMenuBtn" type="button" aria-label="Open menu" aria-controls="trackHeaderMenu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="track-topbar__controls" id="trackHeaderMenu">
+                <section class="track-money" aria-label="Money saved">
+                    <div class="track-money__head">
+                        <div>
+                            <p class="track-eyebrow">Saved bank</p>
+                            <strong id="profitBalance">EUR 0.00</strong>
+                            <small id="profitWithdrawn">Withdrawn EUR 0.00</small>
+                        </div>
+                        <svg class="track-spark" id="profitTrend" viewBox="0 0 120 40" preserveAspectRatio="none" aria-hidden="true"></svg>
+                    </div>
+                    <div class="track-money__presets" id="profitPresets"></div>
+                    <form class="track-money__form" id="profitForm" autocomplete="off">
+                        <input id="profitAmount" type="number" min="0.01" step="0.01" placeholder="Amount" inputmode="decimal" aria-label="Amount" />
+                        <input id="profitMemo" type="text" maxlength="240" placeholder="What you skipped" aria-label="Reason" />
+                        <button class="track-button track-button--primary" type="submit" data-profit-type="Saved">Save</button>
+                        <button class="track-button track-button--ghost" type="submit" data-profit-type="Withdrawn">Spend</button>
+                    </form>
+                    <div class="track-money__entries" id="profitEntries"></div>
+                </section>
+
+                <div class="track-menu-group">
+                    <p class="track-eyebrow">Manage</p>
+                    <div class="track-menu-actions">
+                        <button class="track-button track-button--ghost" id="manageTemplatesBtn" type="button">Templates</button>
+                        <button class="track-button track-button--ghost" id="measurementsBtn" type="button">Measurements</button>
+                    </div>
+                </div>
+
+                <div class="track-menu-group track-menu-group--danger">
+                    <p class="track-eyebrow track-eyebrow--danger">Danger zone &mdash; reset the database</p>
+                    <div class="track-menu-actions">
+                        <button class="track-button track-button--danger" type="button" data-reset="templates">Reset templates</button>
+                        <button class="track-button track-button--danger" type="button" data-reset="progress">Reset progress</button>
+                        <button class="track-button track-button--danger" type="button" data-reset="money">Reset money</button>
+                        <button class="track-button track-button--danger" type="button" data-reset="measurements">Reset measurements</button>
+                        <button class="track-button track-button--danger" type="button" data-reset="motivation">Reset motivation</button>
+                        <button class="track-button track-button--danger" type="button" data-reset="all">Reset everything</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="track-main">
+            <section class="track-hero">
+                <div class="track-hero__head">
+                    <p class="track-eyebrow" id="focusEyebrow">Today</p>
+                    <h1 class="track-hero__title" id="heroTitle">Today</h1>
+                    <div class="track-status-pill" id="statusPill" role="status" aria-live="polite"></div>
+                </div>
+                <div class="track-stats" id="trackStats" aria-live="polite"></div>
+            </section>
+
+            <section class="track-panel track-panel--review" id="weeklyReviewPanel">
+                <div class="track-panel__head">
+                    <p class="track-eyebrow">Compounding</p>
+                    <h2>This week</h2>
+                </div>
+                <div id="weeklyReviewMount"></div>
+            </section>
+
+            <section class="track-panel track-panel--focus">
+                <div class="track-panel__head">
+                    <p class="track-eyebrow" id="focusEyebrow2">Today</p>
+                    <h2 id="focusHeading">@DateTime.Now.ToString("dddd, d MMMM", System.Globalization.CultureInfo.InvariantCulture)</h2>
+                </div>
+                <div id="focusNoteMount"></div>
+            </section>
+
+            <section class="track-panel">
+                <div class="track-panel__head">
+                    <p class="track-eyebrow">Consistency</p>
+                    <h2>Monthly lines</h2>
+                </div>
+                <div class="track-month-charts" id="monthChartsMount"></div>
+            </section>
+
+            <section class="track-panel">
+                <div class="track-panel__head">
+                    <p class="track-eyebrow">History</p>
+                    <h2 id="archiveHeading">Earlier cards</h2>
+                </div>
+                <div class="track-note-grid" id="archiveNotesMount"></div>
+            </section>
+
+            <section class="track-panel">
+                <div class="track-panel__head">
+                    <p class="track-eyebrow">Fuel</p>
+                    <h2>Motivation</h2>
+                </div>
+                <form class="track-link-form" id="motivationForm" autocomplete="off">
+                    <input id="motivationUrl" type="url" placeholder="Paste a YouTube, Instagram, Facebook or video link" required aria-label="Link" />
+                    <input id="motivationTitle" type="text" maxlength="180" placeholder="Title (optional)" aria-label="Title" />
+                    <button class="track-button track-button--primary" type="submit">Add</button>
+                </form>
+                <div class="track-video-grid" id="motivationLinksMount"></div>
+            </section>
+        </main>
+
+        <div class="track-toast" id="trackToast" role="status" aria-live="polite"></div>
+
+        <section class="track-studio hidden" id="templateStudio" aria-hidden="true">
+            <div class="track-studio__scrim" data-close-studio></div>
+            <div class="track-studio__panel" role="dialog" aria-modal="true" aria-labelledby="templateStudioTitle">
+                <header class="track-studio__header">
+                    <div>
+                        <p class="track-eyebrow">Template studio</p>
+                        <h2 id="templateStudioTitle">Build a stack that gets harder</h2>
+                    </div>
+                    <button class="track-icon-button" id="closeStudioBtn" type="button" aria-label="Close template studio">&times;</button>
+                </header>
+
+                <div class="track-studio__layout">
+                    <aside class="track-library">
+                        <div class="track-library__header">
+                            <h3>Your templates</h3>
+                            <button class="track-button track-button--ghost" id="newTemplateBtn" type="button">New</button>
+                        </div>
+                        <div id="templateLibrary"></div>
+                    </aside>
+
+                    <section class="track-editor">
+                        <form id="templateForm" class="track-form" autocomplete="off">
+                            <input type="hidden" id="templateId" />
+
+                            <div class="track-form__row">
+                                <label class="track-field">
+                                    <span>Name</span>
+                                    <input id="templateName" type="text" maxlength="120" placeholder="Daily stack" required />
+                                </label>
+                                <label class="track-field track-field--narrow">
+                                    <span>Cadence</span>
+                                    <select id="templateCadence">
+                                        <option value="Daily">Daily</option>
+                                        <option value="Weekly">Weekly</option>
+                                    </select>
+                                </label>
+                            </div>
+
+                            <label class="track-field">
+                                <span>Description</span>
+                                <textarea id="templateDescription" maxlength="480" rows="2" placeholder="Optional"></textarea>
+                            </label>
+
+                            <label class="track-switch" for="templateIsDefault">
+                                <input id="templateIsDefault" type="checkbox" />
+                                <span>Use as default launch template</span>
+                            </label>
+
+                            <section class="track-builder">
+                                <div class="track-builder__header">
+                                    <div>
+                                        <p class="track-eyebrow">Checklist items</p>
+                                        <h3>Tasks &amp; targets</h3>
+                                    </div>
+                                    <button class="track-button track-button--ghost" id="addItemBtn" type="button">Add item</button>
+                                </div>
+                                <p class="track-builder__note">Add a unit + target to make an item measurable. Growth bumps the target every week so you compound 1% better.</p>
+                                <div id="templateItems"></div>
+                            </section>
+
+                            <section class="track-builder">
+                                <div class="track-builder__header">
+                                    <div>
+                                        <p class="track-eyebrow">Bands</p>
+                                        <h3>Auto colour bands</h3>
+                                    </div>
+                                    <span class="track-builder__hint">From your items &middot; 0&ndash;30&ndash;60&ndash;90%</span>
+                                </div>
+                                <div id="templateBands"></div>
+                            </section>
+
+                            <div class="track-editor__actions">
+                                <button class="track-button track-button--danger" id="deleteTemplateBtn" type="button">Delete</button>
+                                <button class="track-button track-button--primary" id="saveTemplateBtn" type="submit">Save template</button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </div>
+        </section>
+
+        <section class="track-studio hidden" id="measurementsStudio" aria-hidden="true">
+            <div class="track-studio__scrim" data-close-measurements></div>
+            <div class="track-studio__panel track-studio__panel--narrow" role="dialog" aria-modal="true" aria-labelledby="measurementsTitle">
+                <header class="track-studio__header">
+                    <div>
+                        <p class="track-eyebrow">Measurements</p>
+                        <h2 id="measurementsTitle">Body log</h2>
+                    </div>
+                    <button class="track-icon-button" id="closeMeasurementsBtn" type="button" aria-label="Close measurements">&times;</button>
+                </header>
+
+                <div class="track-measurements-layout">
+                    <form id="measurementForm" class="track-measurement-form" autocomplete="off">
+                        <label><span>Date</span><input id="measurementDate" type="date" /></label>
+                        <label><span>Weight</span><input id="measurementWeight" type="number" min="0" step="0.1" inputmode="decimal" /></label>
+                        <label><span>Belly</span><input id="measurementBelly" type="number" min="0" step="0.1" inputmode="decimal" /></label>
+                        <label><span>Chest</span><input id="measurementChest" type="number" min="0" step="0.1" inputmode="decimal" /></label>
+                        <label><span>Arm</span><input id="measurementArm" type="number" min="0" step="0.1" inputmode="decimal" /></label>
+                        <label><span>Leg</span><input id="measurementLeg" type="number" min="0" step="0.1" inputmode="decimal" /></label>
+                        <button class="track-button track-button--primary" type="submit">Add measurement</button>
+                    </form>
+
+                    <div class="track-measurement-side">
+                        <div class="track-measurement-trends" id="measurementTrendsMount"></div>
+                        <div class="track-measurement-list" id="measurementsMount"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script id="trackBootstrap" type="application/json">@Html.Raw(Model.InitialStateJson)</script>
+    <script src="~/js/track.js" asp-append-version="true"></script>
+</body>
+</html>

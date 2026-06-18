@@ -1,7 +1,9 @@
 ﻿
 using System;
 using Ivone.dev.Data.Models;
+using Ivone.dev.Data.Models.Fitness;
 using Ivone.dev.Data.Models.Pyt;
+using Ivone.dev.Data.Models.Track;
 using Microsoft.EntityFrameworkCore;
 using NPOB.Data.Entities;
 
@@ -31,6 +33,19 @@ namespace ivone.dev.Data.Contexts
         public DbSet<PytLocation> PytLocations => Set<PytLocation>();
         public DbSet<PytTrip> PytTrips => Set<PytTrip>();
         public DbSet<PytUserPreference> PytUserPreferences => Set<PytUserPreference>();
+        public DbSet<TrackTemplate> TrackTemplates => Set<TrackTemplate>();
+        public DbSet<TrackTemplateItem> TrackTemplateItems => Set<TrackTemplateItem>();
+        public DbSet<TrackTemplateBand> TrackTemplateBands => Set<TrackTemplateBand>();
+        public DbSet<TrackNote> TrackNotes => Set<TrackNote>();
+        public DbSet<TrackNoteItem> TrackNoteItems => Set<TrackNoteItem>();
+        public DbSet<TrackNoteBand> TrackNoteBands => Set<TrackNoteBand>();
+        public DbSet<TrackProfitEntry> TrackProfitEntries => Set<TrackProfitEntry>();
+        public DbSet<TrackMeasurement> TrackMeasurements => Set<TrackMeasurement>();
+        public DbSet<TrackMotivationLink> TrackMotivationLinks => Set<TrackMotivationLink>();
+        public DbSet<FitnessUser> FitnessUsers => Set<FitnessUser>();
+        public DbSet<FitnessWorkout> FitnessWorkouts => Set<FitnessWorkout>();
+        public DbSet<FitnessWorkoutExercise> FitnessWorkoutExercises => Set<FitnessWorkoutExercise>();
+        public DbSet<FitnessWorkoutSet> FitnessWorkoutSets => Set<FitnessWorkoutSet>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -158,6 +173,227 @@ namespace ivone.dev.Data.Contexts
                     .WithMany(x => x.PreferredAsEndByUsers)
                     .HasForeignKey(x => x.LastEndLocationId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<TrackTemplate>(entity =>
+            {
+                entity.ToTable("Templates", "track");
+                entity.Property(x => x.Name).HasMaxLength(120).IsRequired();
+                entity.Property(x => x.Description).HasMaxLength(480);
+                entity.Property(x => x.Cadence).HasMaxLength(16).IsRequired().HasDefaultValue("Daily");
+                entity.Property(x => x.CreatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(x => x.UpdatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(x => x.Name).IsUnique();
+                entity.HasIndex(x => x.IsDefault);
+            });
+
+            modelBuilder.Entity<TrackTemplateItem>(entity =>
+            {
+                entity.ToTable("TemplateItems", "track");
+                entity.Property(x => x.Label).HasMaxLength(160).IsRequired();
+                entity.Property(x => x.Points).HasDefaultValue(1);
+                entity.Property(x => x.TargetKind).HasMaxLength(16).IsRequired().HasDefaultValue("Amount");
+                entity.Property(x => x.Unit).HasMaxLength(16);
+                entity.Property(x => x.BaseTarget).HasColumnType("decimal(10,2)");
+                entity.Property(x => x.GrowthMode).HasMaxLength(16).IsRequired().HasDefaultValue("None");
+                entity.Property(x => x.GrowthValue).HasColumnType("decimal(10,2)").HasDefaultValue(0m);
+                entity.HasIndex(x => new { x.TrackTemplateId, x.SortOrder });
+                entity.HasOne(x => x.Template)
+                    .WithMany(x => x.Items)
+                    .HasForeignKey(x => x.TrackTemplateId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_track_TemplateItems_Points", "[Points] >= 0");
+                });
+            });
+
+            modelBuilder.Entity<TrackTemplateBand>(entity =>
+            {
+                entity.ToTable("TemplateBands", "track");
+                entity.Property(x => x.Label).HasMaxLength(80).IsRequired();
+                entity.Property(x => x.ColorHex).HasMaxLength(16).IsRequired();
+                entity.HasIndex(x => new { x.TrackTemplateId, x.SortOrder });
+                entity.HasOne(x => x.Template)
+                    .WithMany(x => x.Bands)
+                    .HasForeignKey(x => x.TrackTemplateId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_track_TemplateBands_MinPoints", "[MinPoints] >= 0");
+                    table.HasCheckConstraint("CK_track_TemplateBands_MaxPoints", "[MaxPoints] IS NULL OR [MaxPoints] >= [MinPoints]");
+                });
+            });
+
+            modelBuilder.Entity<TrackNote>(entity =>
+            {
+                entity.ToTable("Notes", "track");
+                entity.Property(x => x.Title).HasMaxLength(120).IsRequired();
+                entity.Property(x => x.TemplateNameSnapshot).HasMaxLength(120).IsRequired();
+                entity.Property(x => x.PeriodType).HasMaxLength(16).IsRequired().HasDefaultValue("Daily");
+                entity.Property(x => x.TrackDate).HasColumnType("date");
+                entity.Property(x => x.CreatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(x => x.UpdatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(x => x.TrackDate);
+                entity.HasIndex(x => new { x.TrackTemplateId, x.TrackDate })
+                    .IsUnique()
+                    .HasFilter("[TrackTemplateId] IS NOT NULL");
+                entity.HasOne(x => x.Template)
+                    .WithMany(x => x.Notes)
+                    .HasForeignKey(x => x.TrackTemplateId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<TrackNoteItem>(entity =>
+            {
+                entity.ToTable("NoteItems", "track");
+                entity.Property(x => x.Label).HasMaxLength(160).IsRequired();
+                entity.Property(x => x.Points).HasDefaultValue(1);
+                entity.Property(x => x.TargetKind).HasMaxLength(16).IsRequired().HasDefaultValue("Amount");
+                entity.Property(x => x.Unit).HasMaxLength(16);
+                entity.Property(x => x.TargetValue).HasColumnType("decimal(10,2)");
+                entity.Property(x => x.ActualValue).HasColumnType("decimal(10,2)");
+                entity.HasIndex(x => new { x.TrackNoteId, x.SortOrder });
+                entity.HasOne(x => x.Note)
+                    .WithMany(x => x.Items)
+                    .HasForeignKey(x => x.TrackNoteId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_track_NoteItems_Points", "[Points] >= 0");
+                });
+            });
+
+            modelBuilder.Entity<TrackNoteBand>(entity =>
+            {
+                entity.ToTable("NoteBands", "track");
+                entity.Property(x => x.Label).HasMaxLength(80).IsRequired();
+                entity.Property(x => x.ColorHex).HasMaxLength(16).IsRequired();
+                entity.HasIndex(x => new { x.TrackNoteId, x.SortOrder });
+                entity.HasOne(x => x.Note)
+                    .WithMany(x => x.Bands)
+                    .HasForeignKey(x => x.TrackNoteId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_track_NoteBands_MinPoints", "[MinPoints] >= 0");
+                    table.HasCheckConstraint("CK_track_NoteBands_MaxPoints", "[MaxPoints] IS NULL OR [MaxPoints] >= [MinPoints]");
+                });
+            });
+
+            modelBuilder.Entity<TrackProfitEntry>(entity =>
+            {
+                entity.ToTable("ProfitEntries", "track");
+                entity.Property(x => x.EntryType).HasMaxLength(24).IsRequired();
+                entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(x => x.Currency).HasMaxLength(3).IsRequired();
+                entity.Property(x => x.Memo).HasMaxLength(240);
+                entity.Property(x => x.EntryDate).HasColumnType("date");
+                entity.Property(x => x.CreatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(x => new { x.EntryDate, x.CreatedOnUtc });
+                entity.HasIndex(x => x.EntryType);
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_track_ProfitEntries_Amount", "[Amount] > 0");
+                    table.HasCheckConstraint("CK_track_ProfitEntries_EntryType", "[EntryType] IN (N'Saved', N'Withdrawn')");
+                });
+            });
+
+            modelBuilder.Entity<TrackMeasurement>(entity =>
+            {
+                entity.ToTable("Measurements", "track");
+                entity.Property(x => x.MeasurementDate).HasColumnType("date");
+                entity.Property(x => x.Weight).HasColumnType("decimal(8,2)");
+                entity.Property(x => x.Belly).HasColumnType("decimal(8,2)");
+                entity.Property(x => x.Chest).HasColumnType("decimal(8,2)");
+                entity.Property(x => x.Arm).HasColumnType("decimal(8,2)");
+                entity.Property(x => x.Leg).HasColumnType("decimal(8,2)");
+                entity.Property(x => x.CreatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(x => new { x.MeasurementDate, x.CreatedOnUtc });
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_track_Measurements_Weight", "[Weight] IS NULL OR [Weight] > 0");
+                    table.HasCheckConstraint("CK_track_Measurements_Belly", "[Belly] IS NULL OR [Belly] > 0");
+                    table.HasCheckConstraint("CK_track_Measurements_Chest", "[Chest] IS NULL OR [Chest] > 0");
+                    table.HasCheckConstraint("CK_track_Measurements_Arm", "[Arm] IS NULL OR [Arm] > 0");
+                    table.HasCheckConstraint("CK_track_Measurements_Leg", "[Leg] IS NULL OR [Leg] > 0");
+                });
+            });
+
+            modelBuilder.Entity<TrackMotivationLink>(entity =>
+            {
+                entity.ToTable("MotivationLinks", "track");
+                entity.Property(x => x.Url).HasMaxLength(1200).IsRequired();
+                entity.Property(x => x.Title).HasMaxLength(180);
+                entity.Property(x => x.Provider).HasMaxLength(40).IsRequired();
+                entity.Property(x => x.EmbedUrl).HasMaxLength(1200);
+                entity.Property(x => x.CreatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(x => x.CreatedOnUtc);
+            });
+
+            modelBuilder.Entity<FitnessUser>(entity =>
+            {
+                entity.ToTable("Users", "fitness");
+                entity.Property(x => x.DeviceLabel).HasMaxLength(120);
+                entity.Property(x => x.CreatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(x => x.UpdatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+            });
+
+            modelBuilder.Entity<FitnessWorkout>(entity =>
+            {
+                entity.ToTable("Workouts", "fitness");
+                entity.Property(x => x.Status).HasMaxLength(24).IsRequired();
+                entity.Property(x => x.WeightUnit).HasMaxLength(3).IsRequired();
+                entity.Property(x => x.CreatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(x => x.UpdatedOnUtc).HasDefaultValueSql("GETUTCDATE()");
+                entity.HasIndex(x => new { x.FitnessUserId, x.StartedOnUtc });
+                entity.HasIndex(x => new { x.FitnessUserId, x.CompletedOnUtc });
+                entity.HasOne(x => x.User)
+                    .WithMany(x => x.Workouts)
+                    .HasForeignKey(x => x.FitnessUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_fitness_Workouts_Status", "[Status] IN (N'InProgress', N'Completed')");
+                    table.HasCheckConstraint("CK_fitness_Workouts_WeightUnit", "[WeightUnit] IN (N'kg', N'lb')");
+                });
+            });
+
+            modelBuilder.Entity<FitnessWorkoutExercise>(entity =>
+            {
+                entity.ToTable("WorkoutExercises", "fitness");
+                entity.Property(x => x.ExerciseName).HasMaxLength(160).IsRequired();
+                entity.Property(x => x.ExerciseCategory).HasMaxLength(80);
+                entity.HasIndex(x => new { x.FitnessWorkoutId, x.SortOrder });
+                entity.HasOne(x => x.Workout)
+                    .WithMany(x => x.Exercises)
+                    .HasForeignKey(x => x.FitnessWorkoutId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<FitnessWorkoutSet>(entity =>
+            {
+                entity.ToTable("WorkoutSets", "fitness");
+                entity.Property(x => x.MaxKg).HasColumnType("decimal(8,2)");
+                entity.HasIndex(x => new { x.FitnessWorkoutExerciseId, x.SetNumber });
+                entity.HasOne(x => x.Exercise)
+                    .WithMany(x => x.Sets)
+                    .HasForeignKey(x => x.FitnessWorkoutExerciseId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.ToTable(table =>
+                {
+                    table.HasCheckConstraint("CK_fitness_WorkoutSets_SetNumber", "[SetNumber] > 0");
+                    table.HasCheckConstraint("CK_fitness_WorkoutSets_Reps", "[Reps] >= 0");
+                    table.HasCheckConstraint("CK_fitness_WorkoutSets_MaxKg", "[MaxKg] >= 0");
+                });
             });
 
             modelBuilder.Entity<PytUser>().HasData(

@@ -10,6 +10,7 @@
     let lastFeedbackSignature = "";
     let lastActionReview = null;
     let autoCollapsedForFocus = false;
+    let toastContainer = null;
     const activityLog = [];
     const actionButtons = new Map();
     const phaseNames = ["WaitingForBet", "OfferInsurance", "PlayerTurn", "DealerTurn", "RoundComplete"];
@@ -218,6 +219,8 @@
 
     applyPersistedUiState();
     initActionButtons();
+    pinActionConsoleOpen();
+    bindKeyboardShortcuts();
     initTheme();
     initCountQuizPanel();
     initSpeedCountPanel();
@@ -492,6 +495,7 @@
             const payload = readSessionConfig();
             snapshot = await apiFetch(`${apiRoot}/session`, "POST", payload);
             appendLog("Started a new session.");
+            showGameToast("Session started", "New shoe is live.", "info");
             render();
             createdSession = true;
         } catch (error) {
@@ -533,6 +537,9 @@
             refs.betUnits.value = String(betUnits);
             snapshot = await apiFetch(`${apiRoot}/session/${snapshot.gameId}/deal`, "POST", { betUnits });
             lastActionReview = null;
+            if (!isAuto) {
+                showGameToast("Hand dealt", `Bet ${formatCurrency(betUnits)}.`, "info");
+            }
             render();
         } catch (error) {
             showError(error);
@@ -554,6 +561,12 @@
                 lastActionReview = pendingReview;
             }
             render();
+            if (pendingReview) {
+                showGameToast(
+                    pendingReview.correct ? "Correct decision" : "Wrong decision",
+                    `${pendingReview.playerLabel} vs optimal ${pendingReview.optimalLabel}.`,
+                    pendingReview.correct ? "win" : "loss");
+            }
         } catch (error) {
             showError(error);
         } finally {
@@ -806,7 +819,74 @@
         if (latest && latest.roundNumber > lastCompletedRound) {
             lastCompletedRound = latest.roundNumber;
             appendLog(`Round #${latest.roundNumber}: ${latest.outcome} ${formatCurrency(latest.netUnits)} (bet ${formatCurrency(latest.betUnits)}).`);
+            showRoundToast(latest, snapshot.history || []);
         }
+    }
+
+    function showRoundToast(round, history) {
+        const netUnits = Number(round.netUnits);
+        const title = netUnits > 0
+            ? "Win"
+            : netUnits < 0
+                ? "Loss"
+                : "Push";
+        const tone = netUnits > 0 ? "win" : netUnits < 0 ? "loss" : "info";
+        const streak = netUnits > 0 ? countCurrentWinStreak(history) : 0;
+        const streakText = streak >= 2 ? ` Win streak: ${streak}.` : "";
+        showGameToast(
+            `${title}: ${round.outcome}`,
+            `Round #${round.roundNumber} ${formatCurrency(netUnits)}.${streakText}`,
+            tone);
+    }
+
+    function countCurrentWinStreak(history) {
+        let streak = 0;
+        const rows = (history || []).slice().sort((a, b) => b.roundNumber - a.roundNumber);
+        for (const row of rows) {
+            const netUnits = Number(row.netUnits);
+            if (Number.isFinite(netUnits) && netUnits > 0) {
+                streak += 1;
+                continue;
+            }
+
+            break;
+        }
+
+        return streak;
+    }
+
+    function showGameToast(title, message, tone) {
+        const container = getToastContainer();
+        const toast = document.createElement("div");
+        toast.className = `bj-toast bj-toast-${tone || "info"}`;
+        toast.setAttribute("role", "status");
+
+        const titleNode = document.createElement("strong");
+        titleNode.textContent = title;
+        const messageNode = document.createElement("span");
+        messageNode.textContent = message;
+        toast.append(titleNode, messageNode);
+
+        container.prepend(toast);
+        window.setTimeout(() => {
+            toast.classList.add("bj-toast-exit");
+            window.setTimeout(() => {
+                toast.remove();
+            }, 220);
+        }, 3200);
+    }
+
+    function getToastContainer() {
+        if (toastContainer) {
+            return toastContainer;
+        }
+
+        toastContainer = document.createElement("div");
+        toastContainer.className = "bj-toast-stack";
+        toastContainer.setAttribute("aria-live", "polite");
+        toastContainer.setAttribute("aria-atomic", "false");
+        document.body.appendChild(toastContainer);
+        return toastContainer;
     }
 
     function applyAutoFocus() {
@@ -2128,18 +2208,18 @@
 
         element.classList.remove("bj-ready-status-notpassed", "bj-ready-status-silver", "bj-ready-status-gold");
         if (badgeTier === "gold") {
-            element.textContent = "\u2B50 Ready to move on";
+            element.textContent = "Ready to move on";
             element.classList.add("bj-ready-status-gold");
             return;
         }
 
         if (badgeTier === "silver") {
-            element.textContent = "\u2705 Passed (silver)";
+            element.textContent = "Passed (silver)";
             element.classList.add("bj-ready-status-silver");
             return;
         }
 
-        element.textContent = "\u274C Not passed";
+        element.textContent = "Not passed";
         element.classList.add("bj-ready-status-notpassed");
     }
 
@@ -2175,10 +2255,10 @@
             const suffix = notMeaningful
                 ? " [not meaningful yet]"
                 : tier === "gold"
-                    ? " \u2B50"
+                    ? " [ready]"
                     : tier === "silver"
-                        ? " \u2705"
-                        : " \u274C";
+                        ? " [passed]"
+                        : " [open]";
             option.textContent = `${baseLabel}${suffix}`;
         }
     }
@@ -2198,7 +2278,32 @@
     function renderCard(card) {
         const div = document.createElement("div");
         div.className = `bj-card${card.hidden ? " hidden" : ""}`;
-        renderLabelWithSuitColors(div, card.label);
+        if (card.hidden) {
+            div.setAttribute("aria-label", "Dealer hole card");
+            return div;
+        }
+
+        const normalized = normalizeSuitGlyphs(card.label);
+        const token = String(normalized).trim().split(/\s+/).filter(Boolean)[0] || "";
+        const suit = token.slice(-1);
+        const rank = allSuitGlyphs.has(suit) ? token.slice(0, -1) : token;
+        if (rank && allSuitGlyphs.has(suit)) {
+            const top = document.createElement("span");
+            top.className = "bj-card-corner bj-card-corner-top";
+            renderLabelWithSuitColors(top, token);
+
+            const center = document.createElement("span");
+            center.className = "bj-card-center";
+            renderLabelWithSuitColors(center, token);
+
+            const bottom = document.createElement("span");
+            bottom.className = "bj-card-corner bj-card-corner-bottom";
+            renderLabelWithSuitColors(bottom, token);
+
+            div.append(top, center, bottom);
+        } else {
+            renderLabelWithSuitColors(div, card.label);
+        }
         return div;
     }
 
@@ -2256,10 +2361,10 @@
         }
 
         let label = String(rawLabel);
-        label = label.split("â™ ").join("\u2660");
-        label = label.split("â™¥").join("\u2665");
-        label = label.split("â™¦").join("\u2666");
-        label = label.split("â™£").join("\u2663");
+        label = label.split("\u00e2\u2122\u00a0").join("\u2660");
+        label = label.split("\u00e2\u2122\u00a5").join("\u2665");
+        label = label.split("\u00e2\u2122\u00a6").join("\u2666");
+        label = label.split("\u00e2\u2122\u00a3").join("\u2663");
         return label;
     }
 
@@ -2295,6 +2400,62 @@
                     void sendAction(action);
                 }
             });
+        });
+    }
+
+    function pinActionConsoleOpen() {
+        if (!(refs.panelControls instanceof HTMLDetailsElement)) {
+            return;
+        }
+
+        refs.panelControls.open = true;
+        refs.panelControls.addEventListener("toggle", () => {
+            if (!refs.panelControls.open) {
+                refs.panelControls.open = true;
+            }
+        });
+    }
+
+    function bindKeyboardShortcuts() {
+        document.addEventListener("keydown", event => {
+            if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+                return;
+            }
+
+            const target = event.target;
+            if (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement || target?.isContentEditable) {
+                return;
+            }
+
+            const key = event.key.toLowerCase();
+            const actionByKey = {
+                h: "Hit",
+                s: "Stand",
+                d: "Double",
+                p: "Split",
+                r: "Surrender"
+            };
+
+            if (key === " " || key === "spacebar") {
+                if (refs.deal && !refs.deal.disabled) {
+                    event.preventDefault();
+                    void dealRound(false);
+                }
+                return;
+            }
+
+            const action = actionByKey[key];
+            if (!action) {
+                return;
+            }
+
+            const button = actionButtons.get(action);
+            if (!button || button.disabled) {
+                return;
+            }
+
+            event.preventDefault();
+            void sendAction(action);
         });
     }
 
