@@ -1,0 +1,37 @@
+@page "/Road"
+@model Ivone.dev.Pages.Games.RoadModel
+@{
+    ViewData["Title"] = "Road";
+}
+
+<section class="game-hero">
+    <div>
+        <p class="eyebrow">Motorway Run</p>
+        <h1>Road</h1>
+        <p>Top-down procedurally generated motorway that weaves through countryside. Lanes branch off into exits, loop back, and interconnect. The visual foundation for a roguelike car journey — stay on the motorway or take an exit to a town.</p>
+    </div>
+</section>
+
+<div class="game-stage road-stage">
+    <div id="road-game-root"></div>
+</div>
+
+<style>
+    .game-stage.road-stage {
+        border-radius: 1rem;
+        border: 1px solid #1a1a3e;
+        padding: 0.5rem;
+        background: #0d0d20;
+        overflow: hidden;
+    }
+    #road-game-root canvas {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 0.5rem;
+    }
+</style>
+
+@section Scripts {
+    <script src="~/js/games/road.bundle.js" defer></script>
+}
