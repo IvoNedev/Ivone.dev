@@ -1,0 +1,309 @@
+@page "/todo"
+@model Ivone.dev.Pages.TodoModel
+@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f2ec" />
+    <meta name="color-scheme" content="light" />
+    <title>Todo | Ivone.dev</title>
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="~/css/todo.css" asp-append-version="true" />
+</head>
+<body class="todo-body">
+    <a class="todo-skip-link" href="#todoMain">Skip to content</a>
+
+    <svg class="todo-symbols" aria-hidden="true">
+        <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+        <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.12.37.33.7.6 1 .3.29.68.43 1.1.4H21v4h-.09A1.7 1.7 0 0 0 19.4 15Z"></path></symbol>
+        <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.6 11 4 4 0 0 1 17.5 19Z"></path><path d="m9.5 14 1.7 1.7 3.8-4"></path></symbol>
+        <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></symbol>
+        <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4 10-10"></path></symbol>
+        <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"></path></symbol>
+        <symbol id="i-indent" viewBox="0 0 24 24"><path d="M4 6h16M10 10h10M10 14h10M4 18h16M4 10l3 2-3 2"></path></symbol>
+        <symbol id="i-outdent" viewBox="0 0 24 24"><path d="M4 6h16M10 10h10M10 14h10M4 18h16M7 10l-3 2 3 2"></path></symbol>
+        <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"></path></symbol>
+        <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14"></path></symbol>
+        <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4m0 0 4 4m-4-4L8 8M5 20h14"></path></symbol>
+        <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></symbol>
+        <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle></symbol>
+        <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="8" cy="6" r="1"></circle><circle cx="16" cy="6" r="1"></circle><circle cx="8" cy="12" r="1"></circle><circle cx="16" cy="12" r="1"></circle><circle cx="8" cy="18" r="1"></circle><circle cx="16" cy="18" r="1"></circle></symbol>
+        <symbol id="i-pin" viewBox="0 0 24 24"><path d="m14 4 6 6-3 1-4 4-1 5-3-3-5 3 3-5-3-3 5-1 4-4 1-3Z"></path></symbol>
+        <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m6 10 6-6 6 6M12 4v16"></path></symbol>
+        <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="m6 14 6 6 6-6M12 20V4"></path></symbol>
+        <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M7 3v4M17 3v4M3 10h18"></path></symbol>
+        <symbol id="i-todo-mark" viewBox="0 0 24 24"><path d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17V7A2.5 2.5 0 0 1 5 4.5Z"></path><path d="m7 12.5 3.2 3.2L17.5 8"></path></symbol>
+    </svg>
+
+    <div id="todoApp" class="todo-app" data-api-root="/api/todo">
+        <header class="todo-topbar">
+            <button id="homeButton" class="todo-brand" type="button" aria-label="Go to all groups">
+                <span class="todo-brand__mark" aria-hidden="true"><svg><use href="#i-todo-mark"></use></svg></span>
+                <span>TODO</span>
+            </button>
+            <button id="syncButton" class="todo-sync-pill" type="button" aria-label="Open storage and sync settings">
+                <svg aria-hidden="true"><use href="#i-cloud"></use></svg>
+                <span id="syncStatus">Saved locally</span>
+            </button>
+        </header>
+
+        <main id="todoMain" class="todo-main" tabindex="-1">
+            <section id="homeView" class="todo-view todo-home-view">
+                <div class="todo-search-wrap">
+                    <svg aria-hidden="true"><use href="#i-search"></use></svg>
+                    <label class="todo-visually-hidden" for="globalSearch">Search notes</label>
+                    <input id="globalSearch" type="search" placeholder="Search everything" autocomplete="off" />
+                    <kbd>Ctrl K</kbd>
+                </div>
+
+                <div class="todo-section-heading">
+                    <div>
+                        <p class="todo-eyebrow">Your spaces</p>
+                        <h1 id="homeHeading">Everything has a place.</h1>
+                    </div>
+                    <button id="newGroupButton" class="todo-text-button" type="button">
+                        <svg aria-hidden="true"><use href="#i-plus"></use></svg> Group
+                    </button>
+                </div>
+                <div id="homeGrid" class="todo-tile-grid" aria-live="polite"></div>
+
+                <section id="recentSection" class="todo-recent-section" aria-labelledby="recentHeading">
+                    <div class="todo-subsection-heading">
+                        <div>
+                            <p class="todo-eyebrow">Quick access</p>
+                            <h2 id="recentHeading">Recent</h2>
+                        </div>
+                    </div>
+                    <div id="recentGrid" class="todo-note-grid" aria-live="polite"></div>
+                </section>
+            </section>
+
+            <section id="groupView" class="todo-view" hidden>
+                <header class="todo-view-header">
+                    <button class="todo-icon-button" type="button" data-action="back-home" aria-label="Back to groups">
+                        <svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+                    </button>
+                    <div class="todo-view-header__title">
+                        <span id="groupColor" class="todo-group-dot" aria-hidden="true"></span>
+                        <div><p class="todo-eyebrow">Group</p><h1 id="groupTitle"></h1></div>
+                    </div>
+                    <button id="newGroupNoteButton" class="todo-primary-button" type="button">
+                        <svg aria-hidden="true"><use href="#i-plus"></use></svg> New note
+                    </button>
+                </header>
+                <div class="todo-group-meta"><span id="groupSummary"></span></div>
+                <div id="noteGrid" class="todo-note-grid" aria-live="polite"></div>
+            </section>
+
+            <section id="calendarView" class="todo-view todo-calendar-view" hidden>
+                <header class="todo-calendar-header">
+                    <button class="todo-icon-button" type="button" data-action="back-home" aria-label="Back to categories">
+                        <svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+                    </button>
+                    <div class="todo-calendar-heading">
+                        <p class="todo-eyebrow">Daily planner</p>
+                        <h1 id="calendarTitle">Today</h1>
+                        <p id="calendarDateLabel"></p>
+                    </div>
+                    <nav class="todo-calendar-nav" aria-label="Choose planner date">
+                        <button id="previousDayButton" class="todo-icon-button" type="button" aria-label="Previous day">
+                            <svg class="is-previous" aria-hidden="true"><use href="#i-chevron"></use></svg>
+                        </button>
+                        <label class="todo-icon-button todo-calendar-picker" title="Choose a date">
+                            <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
+                            <span class="todo-visually-hidden">Choose a date</span>
+                            <input id="calendarDatePicker" type="date" aria-label="Choose a date" />
+                        </label>
+                        <button id="nextDayButton" class="todo-icon-button" type="button" aria-label="Next day">
+                            <svg aria-hidden="true"><use href="#i-chevron"></use></svg>
+                        </button>
+                    </nav>
+                </header>
+                <div class="todo-calendar-meta">
+                    <span id="calendarSummary">No plans yet</span>
+                    <button id="calendarTodayButton" class="todo-text-button" type="button">Jump to today</button>
+                </div>
+                <div id="calendarScroll" class="todo-calendar-scroll" tabindex="0" aria-label="Day schedule. Select a time to add an event.">
+                    <div id="calendarTimeline" class="todo-calendar-timeline"></div>
+                </div>
+            </section>
+
+            <section id="editorView" class="todo-view" hidden>
+                <header class="todo-view-header todo-editor-header">
+                    <button class="todo-icon-button" type="button" data-action="close-editor" aria-label="Back">
+                        <svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+                    </button>
+                    <div class="todo-editor-save-state"><span></span><span id="editorSaveState">Saved</span></div>
+                    <button id="editorMenuButton" class="todo-icon-button" type="button" aria-label="More note actions" aria-expanded="false">
+                        <svg aria-hidden="true"><use href="#i-more"></use></svg>
+                    </button>
+                    <div id="editorMenu" class="todo-popover" hidden>
+                        <button id="pinNoteButton" type="button">Pin note</button>
+                        <button id="moveNoteFirstButton" type="button">Move to first</button>
+                        <button id="duplicateNoteButton" type="button">Duplicate note</button>
+                        <button id="deleteNoteButton" class="is-danger" type="button">Delete note</button>
+                    </div>
+                </header>
+
+                <article class="todo-editor-card">
+                    <div class="todo-note-fields">
+                        <label class="todo-visually-hidden" for="noteTitle">Note title</label>
+                        <input id="noteTitle" class="todo-title-input" type="text" maxlength="180" placeholder="Untitled note" autocomplete="off" />
+                        <div class="todo-note-group-control">
+                            <label for="noteGroup">Move to</label>
+                            <select id="noteGroup"></select>
+                            <button id="newGroupFromEditorButton" class="todo-new-group-inline" type="button">
+                                <svg aria-hidden="true"><use href="#i-plus"></use></svg> New group
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="todo-list-heading">
+                        <div><p class="todo-eyebrow" title="Enter adds an item. Tab nests it.">Checklist</p></div>
+                        <button id="addRootItemButton" class="todo-secondary-button" type="button">
+                            <svg aria-hidden="true"><use href="#i-plus"></use></svg> Item
+                        </button>
+                    </div>
+                    <div id="itemList" class="todo-item-list"></div>
+                    <button id="emptyAddButton" class="todo-empty-add" type="button" hidden>
+                        <span><svg aria-hidden="true"><use href="#i-plus"></use></svg></span>
+                        Add your first item
+                    </button>
+                </article>
+            </section>
+        </main>
+
+        <div id="todoToast" class="todo-toast" role="status" aria-live="polite"></div>
+
+        <section id="settingsModal" class="todo-modal" hidden aria-hidden="true">
+            <button class="todo-modal__scrim" type="button" data-close-modal aria-label="Close settings"></button>
+            <div class="todo-modal__panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+                <header class="todo-modal__header">
+                    <div><p class="todo-eyebrow">Storage</p><h2 id="settingsTitle">Keep your notes close</h2></div>
+                    <button class="todo-icon-button" type="button" data-close-modal aria-label="Close settings"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
+                </header>
+                <p class="todo-modal__intro">Changes save instantly here and reconcile in the background. Every device must use the exact same private sync key.</p>
+
+                <label class="todo-field" for="currentSyncKey"><span>Your sync key</span><small>Treat this like a password.</small></label>
+                <div class="todo-copy-row">
+                    <input id="currentSyncKey" type="text" readonly />
+                    <button id="copySyncKeyButton" class="todo-icon-button" type="button" aria-label="Copy sync key"><svg aria-hidden="true"><use href="#i-copy"></use></svg></button>
+                </div>
+                <button id="syncNowButton" class="todo-primary-button todo-wide-button" type="button">Sync now</button>
+
+                <div class="todo-divider"><span>Use on another device</span></div>
+                <form id="connectSyncForm">
+                    <label class="todo-field" for="otherSyncKey"><span>Existing sync key</span></label>
+                    <input id="otherSyncKey" type="text" minlength="24" maxlength="128" autocomplete="off" placeholder="Paste the key from your other device" required />
+                    <button class="todo-secondary-button todo-wide-button" type="submit">Compare and connect</button>
+                </form>
+
+                <div class="todo-divider"><span>Portable backup</span></div>
+                <div class="todo-backup-actions">
+                    <button id="exportButton" class="todo-secondary-button" type="button"><svg aria-hidden="true"><use href="#i-download"></use></svg> Export</button>
+                    <button id="importButton" class="todo-secondary-button" type="button"><svg aria-hidden="true"><use href="#i-upload"></use></svg> Import</button>
+                    <input id="importFile" type="file" accept="application/json,.json" hidden />
+                </div>
+                <p class="todo-fine-print">Sync checks for newer changes while this page stays open and protects them from stale uploads. Anyone with the key can access the notes.</p>
+            </div>
+        </section>
+
+        <section id="syncConflictModal" class="todo-modal" hidden aria-hidden="true">
+            <button class="todo-modal__scrim" type="button" data-close-sync-conflict aria-label="Cancel sync connection"></button>
+            <div class="todo-modal__panel todo-sync-conflict-panel" role="dialog" aria-modal="true" aria-labelledby="syncConflictTitle" aria-describedby="syncConflictIntro">
+                <header class="todo-modal__header">
+                    <div><p class="todo-eyebrow">Sync choice</p><h2 id="syncConflictTitle">Two saves found</h2></div>
+                    <button class="todo-icon-button" type="button" data-close-sync-conflict aria-label="Cancel sync connection"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
+                </header>
+                <p id="syncConflictIntro" class="todo-modal__intro">Nothing will be replaced until you choose. Combining is safest when both devices contain notes you want.</p>
+
+                <div class="todo-sync-compare">
+                    <article class="todo-sync-save-card">
+                        <p class="todo-eyebrow">This device</p>
+                        <h3>Local save</h3>
+                        <ul>
+                            <li><strong id="localSyncNotes">0 notes</strong></li>
+                            <li><span id="localSyncItems">0 checklist items</span></li>
+                            <li><span id="localSyncEvents">0 calendar events</span></li>
+                        </ul>
+                        <p id="localSyncUpdated" class="todo-sync-save-time"></p>
+                        <button id="useLocalSyncButton" class="todo-secondary-button todo-wide-button" type="button">Use this device</button>
+                    </article>
+                    <article class="todo-sync-save-card is-server">
+                        <p class="todo-eyebrow">Shared key</p>
+                        <h3>Server save</h3>
+                        <ul>
+                            <li><strong id="serverSyncNotes">0 notes</strong></li>
+                            <li><span id="serverSyncItems">0 checklist items</span></li>
+                            <li><span id="serverSyncEvents">0 calendar events</span></li>
+                        </ul>
+                        <p id="serverSyncUpdated" class="todo-sync-save-time"></p>
+                        <button id="useServerSyncButton" class="todo-secondary-button todo-wide-button" type="button">Use server</button>
+                    </article>
+                </div>
+
+                <button id="mergeSyncButton" class="todo-primary-button todo-wide-button todo-sync-merge-button" type="button">Combine both saves (recommended)</button>
+                <p class="todo-fine-print">“Use this device” uploads this device’s save. “Use server” replaces this device’s save. Combine keeps unique notes and newer edits from both.</p>
+            </div>
+        </section>
+
+        <section id="groupModal" class="todo-modal" hidden aria-hidden="true">
+            <button class="todo-modal__scrim" type="button" data-close-group-modal aria-label="Close group form"></button>
+            <form id="groupForm" class="todo-modal__panel todo-modal__panel--small" role="dialog" aria-modal="true" aria-labelledby="groupFormTitle">
+                <header class="todo-modal__header">
+                    <div><p class="todo-eyebrow">New space</p><h2 id="groupFormTitle">Create a group</h2></div>
+                    <button class="todo-icon-button" type="button" data-close-group-modal aria-label="Close group form"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
+                </header>
+                <label class="todo-field" for="groupName"><span>Name</span></label>
+                <input id="groupName" type="text" maxlength="40" placeholder="Ideas, Garden, Someday…" required />
+                <fieldset class="todo-color-fieldset">
+                    <legend>Colour</legend>
+                    <div id="groupColors" class="todo-color-options"></div>
+                </fieldset>
+                <button class="todo-primary-button todo-wide-button" type="submit">Create group</button>
+            </form>
+        </section>
+
+        <section id="calendarEventModal" class="todo-modal" hidden aria-hidden="true">
+            <button class="todo-modal__scrim" type="button" data-close-calendar-event aria-label="Close event form"></button>
+            <form id="calendarEventForm" class="todo-modal__panel todo-modal__panel--small" role="dialog" aria-modal="true" aria-labelledby="calendarEventFormTitle">
+                <header class="todo-modal__header">
+                    <div><p class="todo-eyebrow">Daily plan</p><h2 id="calendarEventFormTitle">Add an event</h2></div>
+                    <button class="todo-icon-button" type="button" data-close-calendar-event aria-label="Close event form"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
+                </header>
+                <label class="todo-field" for="calendarEventTitle"><span>What are you planning?</span></label>
+                <input id="calendarEventTitle" type="text" maxlength="180" autocomplete="off" placeholder="Focus block, lunch, workout…" required />
+                <div class="todo-calendar-form-grid">
+                    <label class="todo-field" for="calendarEventDate"><span>Date</span><input id="calendarEventDate" type="date" required /></label>
+                    <label class="todo-field" for="calendarEventTime"><span>Starts</span><input id="calendarEventTime" type="time" step="900" required /></label>
+                    <label class="todo-field" for="calendarEventDuration"><span>Duration</span>
+                        <select id="calendarEventDuration">
+                            <option value="15">15 minutes</option>
+                            <option value="30">30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60" selected>1 hour</option>
+                            <option value="90">1 hour 30 minutes</option>
+                            <option value="120">2 hours</option>
+                            <option value="180">3 hours</option>
+                            <option value="240">4 hours</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="todo-calendar-form-actions">
+                    <button id="deleteCalendarEventButton" class="todo-secondary-button is-danger" type="button" hidden>Delete event</button>
+                    <button class="todo-primary-button" type="submit">Save event</button>
+                </div>
+            </form>
+        </section>
+    </div>
+
+    <noscript>This app needs JavaScript to edit and store your notes.</noscript>
+    <script src="~/js/todo.js" asp-append-version="true"></script>
+</body>
+</html>

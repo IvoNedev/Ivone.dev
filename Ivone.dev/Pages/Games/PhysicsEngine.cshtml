@@ -1,0 +1,178 @@
+@page "/games/physics-engine"
+@model Ivone.dev.Pages.Games.PhysicsEngineModel
+@{
+    ViewData["Title"] = "2D Physics Engine";
+}
+
+<section class="physics-lab" aria-label="2D physics engine demo">
+    <div class="physics-toolbar">
+        <div>
+            <p class="physics-kicker">Fixed timestep rigid bodies</p>
+            <h1>2D Physics Engine</h1>
+        </div>
+        <div class="physics-toolbar-actions" aria-label="Simulation actions">
+            <button type="button" class="physics-button" data-scenario="ball-pit">Ball pit</button>
+            <button type="button" class="physics-button" data-scenario="crate-stack">Crate stack</button>
+            <button type="button" class="physics-button" data-scenario="mixed">Mixed collisions</button>
+            <button type="button" class="physics-button physics-button-accent" data-scenario="low-gravity">Low gravity</button>
+        </div>
+    </div>
+
+    <div id="physics-engine-root" class="physics-stage">
+        <canvas id="physics-canvas" width="1280" height="720" aria-label="Physics simulation canvas"></canvas>
+        <div class="physics-hud" aria-live="polite">
+            <span>FPS <strong data-metric="fps">0</strong></span>
+            <span>Hz <strong data-metric="ticks">0</strong></span>
+            <span>Bodies <strong data-metric="bodies">0</strong></span>
+            <span>Contacts <strong data-metric="contacts">0</strong></span>
+            <span>Pairs <strong data-metric="pairs">0</strong></span>
+        </div>
+        <div class="physics-game-hud" aria-live="polite">
+            <span>Room <strong data-game-metric="room">Sandbox</strong></span>
+            <span>Rule <strong data-game-metric="rule">Normal</strong></span>
+            <span>Orbs <strong data-game-metric="orbs">0/0</strong></span>
+            <span>HP <strong data-game-metric="hp">3</strong></span>
+            <span>Status <strong data-game-metric="status">Sandbox</strong></span>
+        </div>
+        <button type="button" id="physics-game-toggle" class="physics-game-toggle" aria-label="Open game design controls" aria-expanded="false" aria-controls="physics-game-panel">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <button type="button" id="physics-settings-toggle" class="physics-settings-toggle" aria-label="Open physics controls" aria-expanded="false" aria-controls="physics-settings-panel">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <aside id="physics-game-panel" class="physics-panel physics-panel-left" aria-label="Game design controls" aria-hidden="true">
+            <div class="physics-panel-header">
+                <div>
+                    <p class="physics-kicker">Roguelike layer</p>
+                    <h2>Game Design</h2>
+                </div>
+                <button type="button" id="physics-game-close" class="physics-icon-button" aria-label="Close game design controls">x</button>
+            </div>
+
+            <div class="physics-panel-section">
+                <button type="button" class="physics-button physics-button-player" data-game-action="start-run">Start run</button>
+                <button type="button" class="physics-button" data-game-action="next-room">Next room</button>
+                <button type="button" class="physics-button" data-game-action="reroll-room">Reroll room</button>
+                <button type="button" class="physics-button physics-button-danger" data-game-action="end-run">End run</button>
+            </div>
+
+            <div class="physics-panel-section physics-jump-modes" aria-label="Room type">
+                <button type="button" class="physics-button active" data-room-type="climb" aria-pressed="true">Climb</button>
+                <button type="button" class="physics-button" data-room-type="descent" aria-pressed="false">Descent</button>
+                <button type="button" class="physics-button" data-room-type="bounce" aria-pressed="false">Bounce</button>
+                <button type="button" class="physics-button" data-room-type="chaos" aria-pressed="false">Chaos</button>
+                <button type="button" class="physics-button" data-room-type="crates" aria-pressed="false">Crates</button>
+            </div>
+
+            <div class="physics-panel-section physics-jump-modes" aria-label="Room rule">
+                <button type="button" class="physics-button active" data-room-rule="normal" aria-pressed="true">Normal</button>
+                <button type="button" class="physics-button" data-room-rule="low-gravity" aria-pressed="false">Low gravity</button>
+                <button type="button" class="physics-button" data-room-rule="bouncy" aria-pressed="false">Bouncy</button>
+                <button type="button" class="physics-button" data-room-rule="ice" aria-pressed="false">Ice</button>
+                <button type="button" class="physics-button" data-room-rule="heavy" aria-pressed="false">Heavy</button>
+            </div>
+
+            <div class="physics-panel-section" aria-label="Upgrade controls">
+                <button type="button" class="physics-button" data-upgrade="extra-jump">Extra jump</button>
+                <button type="button" class="physics-button" data-upgrade="spring-body">Spring body</button>
+                <button type="button" class="physics-button" data-upgrade="tiny-body">Tiny body</button>
+                <button type="button" class="physics-button" data-upgrade="heavy-body">Heavy body</button>
+                <button type="button" class="physics-button" data-upgrade="fast-roll">Fast roll</button>
+            </div>
+        </aside>
+        <aside id="physics-settings-panel" class="physics-panel" aria-label="Physics controls" aria-hidden="true">
+            <div class="physics-panel-header">
+                <div>
+                    <p class="physics-kicker">Live controls</p>
+                    <h2>Settings</h2>
+                </div>
+                <button type="button" id="physics-settings-close" class="physics-icon-button" aria-label="Close physics controls">x</button>
+            </div>
+
+            <div class="physics-panel-section">
+                <button type="button" class="physics-button physics-button-accent" data-action="pause">Pause</button>
+                <button type="button" class="physics-button" data-action="step">Step</button>
+                <button type="button" class="physics-button" data-action="reset">Reset</button>
+                <button type="button" class="physics-button" data-action="burst">Burst</button>
+                <button type="button" class="physics-button physics-button-player" data-action="spawn-player">Spawn player</button>
+                <button type="button" class="physics-button" data-action="bounce-mode">High bounce</button>
+                <button type="button" class="physics-button physics-button-danger" data-action="clear-world">Clear all</button>
+                <button type="button" class="physics-button" data-action="random-platforms">Random platforms</button>
+            </div>
+
+            <div class="physics-panel-section physics-jump-modes" aria-label="Player jump mode">
+                <button type="button" class="physics-button active" data-jump-mode="1" aria-pressed="true">Jump 1x</button>
+                <button type="button" class="physics-button" data-jump-mode="2" aria-pressed="false">Jump 2x</button>
+                <button type="button" class="physics-button" data-jump-mode="3" aria-pressed="false">Jump 3x</button>
+                <button type="button" class="physics-button" data-jump-mode="infinite" aria-pressed="false">Infinite jumps</button>
+            </div>
+
+            <div class="physics-panel-section compact">
+                <label><input type="checkbox" data-toggle="gravity" checked> Gravity</label>
+                <label><input type="checkbox" data-toggle="colliders" checked> Colliders</label>
+                <label><input type="checkbox" data-toggle="aabbs"> AABBs</label>
+                <label><input type="checkbox" data-toggle="velocities" checked> Velocities</label>
+                <label><input type="checkbox" data-toggle="contacts" checked> Contacts</label>
+            </div>
+
+            <div class="physics-sliders" aria-label="Simulation variables">
+                <label>
+                    <span>Gravity X <output data-output="gravityX">0</output></span>
+                    <input type="range" min="-1200" max="1200" step="10" value="0" data-setting="gravityX">
+                </label>
+                <label>
+                    <span>Gravity Y <output data-output="gravityY">980</output></span>
+                    <input type="range" min="-1200" max="1800" step="10" value="980" data-setting="gravityY">
+                </label>
+                <label>
+                    <span>Bounciness <output data-output="restitution">45%</output></span>
+                    <input type="range" min="0" max="1.2" step="0.01" value="0.45" data-setting="restitution">
+                </label>
+                <label>
+                    <span>Static friction <output data-output="staticFriction">0.55</output></span>
+                    <input type="range" min="0" max="2" step="0.01" value="0.55" data-setting="staticFriction">
+                </label>
+                <label>
+                    <span>Dynamic friction <output data-output="dynamicFriction">0.32</output></span>
+                    <input type="range" min="0" max="2" step="0.01" value="0.32" data-setting="dynamicFriction">
+                </label>
+                <label>
+                    <span>Damping <output data-output="damping">0.998</output></span>
+                    <input type="range" min="0.94" max="1" step="0.001" value="0.998" data-setting="damping">
+                </label>
+                <label>
+                    <span>Correction <output data-output="correction">0.8</output></span>
+                    <input type="range" min="0" max="1" step="0.01" value="0.8" data-setting="correction">
+                </label>
+                <label>
+                    <span>Slow motion <output data-output="timeScale">1.00</output></span>
+                    <input type="range" min="0.1" max="1.5" step="0.05" value="1" data-setting="timeScale">
+                </label>
+                <label>
+                    <span>Player force <output data-output="playerForce">1500</output></span>
+                    <input type="range" min="300" max="3200" step="50" value="1500" data-setting="playerForce">
+                </label>
+                <label>
+                    <span>Player jump <output data-output="playerJump">520</output></span>
+                    <input type="range" min="120" max="1100" step="10" value="520" data-setting="playerJump">
+                </label>
+                <label>
+                    <span>Player max speed <output data-output="playerMaxSpeed">520</output></span>
+                    <input type="range" min="120" max="1100" step="10" value="520" data-setting="playerMaxSpeed">
+                </label>
+            </div>
+        </aside>
+    </div>
+</section>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/physics-engine.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="~/js/games/physics-engine.js" asp-append-version="true" defer></script>
+}

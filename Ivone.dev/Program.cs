@@ -7,6 +7,7 @@ using Ivone.dev.Areas.Pyt.Services;
 using Ivone.dev.Blackjack;
 using Ivone.dev.Poker;
 using Ivone.dev.Timer;
+using Ivone.dev.Todo;
 using LifeInTheUK.Web.Services;
 using LifeInTheUK.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -95,6 +96,7 @@ builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<PytTripService>();
 builder.Services.AddScoped<PytExportService>();
 builder.Services.AddSingleton<ITimerConfigService, TimerConfigService>();
+builder.Services.AddSingleton<TodoFileStore>();
 
 builder.Services.AddSingleton<ShoeService>();
 builder.Services.AddSingleton<StrategyEngine>();
