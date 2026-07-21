@@ -599,6 +599,315 @@ select:focus-visible,
     opacity: .78;
 }
 
+.todo-goals-tile {
+    display: flex;
+    flex-direction: column;
+    border-color: #5d3dac;
+    background: var(--group-color, #6d4cc7);
+    color: white;
+}
+
+.todo-goals-tile::before {
+    display: none;
+}
+
+.todo-goals-tile:hover {
+    border-color: #4e3294;
+    background: #6041b5;
+}
+
+.todo-goals-tile__icon {
+    display: inline-flex;
+    margin-bottom: auto;
+    opacity: .28;
+}
+
+.todo-goals-tile__icon svg {
+    width: 76px;
+    height: 76px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.35;
+}
+
+.todo-goals-tile__label {
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    opacity: .72;
+}
+
+.todo-goals-tile__copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.todo-goals-tile__copy strong,
+.todo-goals-tile__copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-goals-tile__copy strong {
+    font-size: 20px;
+    letter-spacing: -.025em;
+}
+
+.todo-goals-tile__copy small {
+    font-size: 13px;
+    font-weight: 750;
+    opacity: .84;
+}
+
+.todo-goals-view {
+    width: min(100%, 1000px);
+    margin: 0 auto;
+}
+
+.todo-goals-header {
+    margin-bottom: 24px;
+}
+
+.todo-goals-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    border-radius: 13px;
+    background: #ece7fb;
+    color: #6544ba;
+}
+
+.todo-goals-mark svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+}
+
+.todo-goal-form {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(160px, .35fr) auto auto;
+    align-items: end;
+    gap: 12px;
+    padding: 22px;
+    border: 1px solid var(--todo-line);
+    border-radius: var(--todo-radius);
+    background: var(--todo-surface);
+}
+
+.todo-goal-form__field {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+}
+
+.todo-goal-form__field label {
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.todo-goal-form__field input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid var(--todo-line);
+    border-radius: 10px;
+    background: white;
+    color: var(--todo-ink);
+}
+
+.todo-goal-main-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 0 10px;
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.todo-goal-main-choice input {
+    width: 17px;
+    height: 17px;
+    accent-color: #6544ba;
+}
+
+.todo-goals-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+    margin: 36px 0 14px;
+}
+
+.todo-goals-heading h2 {
+    margin-top: 2px;
+    font-size: 24px;
+}
+
+.todo-goals-heading small {
+    max-width: 300px;
+    color: var(--todo-muted);
+    font-size: 12px;
+    text-align: right;
+}
+
+.todo-goals-list {
+    display: grid;
+    gap: 9px;
+}
+
+.todo-goal-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    min-height: 92px;
+    padding: 16px 18px;
+    border: 1px solid var(--todo-line);
+    border-left: 5px solid transparent;
+    border-radius: 14px;
+    background: var(--todo-surface);
+}
+
+.todo-goal-row.is-main {
+    border-left-color: #6d4cc7;
+    background: color-mix(in srgb, #ece7fb 45%, var(--todo-surface));
+}
+
+.todo-goal-row.is-completed {
+    opacity: .62;
+}
+
+.todo-goal-complete {
+    position: relative;
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+}
+
+.todo-goal-complete input {
+    position: absolute;
+    opacity: 0;
+}
+
+.todo-goal-complete span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 2px solid #aaa89e;
+    border-radius: 50%;
+    color: transparent;
+}
+
+.todo-goal-complete span svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+}
+
+.todo-goal-complete input:checked + span {
+    border-color: var(--todo-success);
+    background: var(--todo-success);
+    color: white;
+}
+
+.todo-goal-complete input:focus-visible + span {
+    outline: 3px solid color-mix(in srgb, var(--todo-focus) 45%, transparent);
+    outline-offset: 2px;
+}
+
+.todo-goal-row__fields {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+}
+
+.todo-goal-row__title {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--todo-ink);
+    font-size: 18px;
+    font-weight: 750;
+}
+
+.todo-goal-row.is-completed .todo-goal-row__title {
+    text-decoration: line-through;
+}
+
+.todo-goal-row__deadline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.todo-goal-row__deadline input {
+    min-height: 30px;
+    padding: 2px 7px;
+    border: 1px solid var(--todo-line);
+    border-radius: 7px;
+    background: white;
+    color: var(--todo-muted);
+    font-size: 11px;
+}
+
+.todo-goal-row__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.todo-goal-main-button {
+    min-height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--todo-line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.todo-goal-main-button:hover:not(:disabled),
+.todo-goal-main-button.is-active {
+    border-color: #6d4cc7;
+    background: #ece7fb;
+    color: #5637a3;
+}
+
+.todo-goal-main-button:disabled {
+    opacity: .45;
+}
+
+.todo-goal-delete {
+    color: var(--todo-danger);
+}
+
+.todo-goals-empty {
+    grid-column: auto;
+}
+
 .todo-calendar-view {
     width: min(100%, 1000px);
     margin: 0 auto;
@@ -2084,6 +2393,41 @@ body.todo-modal-open {
         grid-template-columns: 1fr;
     }
 
+    .todo-goal-form {
+        grid-template-columns: 1fr 1fr;
+        padding: 18px;
+    }
+
+    .todo-goal-form__field--title {
+        grid-column: 1 / -1;
+    }
+
+    .todo-goal-form .todo-primary-button {
+        width: 100%;
+    }
+
+    .todo-goals-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .todo-goals-heading small {
+        text-align: left;
+    }
+
+    .todo-goal-row {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        gap: 12px;
+        padding: 15px 13px;
+    }
+
+    .todo-goal-row__actions {
+        grid-column: 2;
+        justify-content: space-between;
+    }
+
     .todo-sync-conflict-panel {
         padding: 22px 16px;
     }
@@ -2230,6 +2574,14 @@ body.todo-modal-open {
 
     .todo-sync-pill span {
         max-width: 88px;
+    }
+
+    .todo-goal-form {
+        grid-template-columns: 1fr;
+    }
+
+    .todo-goal-form__field--title {
+        grid-column: auto;
     }
 
 }

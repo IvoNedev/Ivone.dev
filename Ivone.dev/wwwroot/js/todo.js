@@ -6,6 +6,7 @@
     var DEVICE_KEY = "ivone.todo.device-id.v1";
     var CLOUD_POLL_INTERVAL = 10000;
     var CALENDAR_GROUP_ID = "calendar";
+    var GOALS_COLOR = "#6d4cc7";
     var CALENDAR_HOUR_HEIGHT = 72;
     var STATUS_ORDER = ["open", "done", "kept", "blocked"];
     var STATUS_LABELS = {
@@ -26,6 +27,7 @@
         groupView: document.getElementById("groupView"),
         editorView: document.getElementById("editorView"),
         calendarView: document.getElementById("calendarView"),
+        goalsView: document.getElementById("goalsView"),
         homeGrid: document.getElementById("homeGrid"),
         recentSection: document.getElementById("recentSection"),
         recentGrid: document.getElementById("recentGrid"),
@@ -59,15 +61,23 @@
         calendarEventTime: document.getElementById("calendarEventTime"),
         calendarEventDuration: document.getElementById("calendarEventDuration"),
         deleteCalendarEventButton: document.getElementById("deleteCalendarEventButton"),
+        goalForm: document.getElementById("goalForm"),
+        goalTitle: document.getElementById("goalTitle"),
+        goalDeadline: document.getElementById("goalDeadline"),
+        goalIsMain: document.getElementById("goalIsMain"),
+        goalsSummary: document.getElementById("goalsSummary"),
+        goalsList: document.getElementById("goalsList"),
         settingsModal: document.getElementById("settingsModal"),
         syncConflictModal: document.getElementById("syncConflictModal"),
         localSyncNotes: document.getElementById("localSyncNotes"),
         localSyncItems: document.getElementById("localSyncItems"),
         localSyncEvents: document.getElementById("localSyncEvents"),
+        localSyncGoals: document.getElementById("localSyncGoals"),
         localSyncUpdated: document.getElementById("localSyncUpdated"),
         serverSyncNotes: document.getElementById("serverSyncNotes"),
         serverSyncItems: document.getElementById("serverSyncItems"),
         serverSyncEvents: document.getElementById("serverSyncEvents"),
+        serverSyncGoals: document.getElementById("serverSyncGoals"),
         serverSyncUpdated: document.getElementById("serverSyncUpdated"),
         useLocalSyncButton: document.getElementById("useLocalSyncButton"),
         useServerSyncButton: document.getElementById("useServerSyncButton"),
@@ -160,7 +170,7 @@
     function defaultDocument() {
         var now = new Date().toISOString();
         return {
-            version: 3,
+            version: 4,
             updatedAt: now,
             groups: [
                 { id: CALENDAR_GROUP_ID, name: "Calendar", color: "#c74363", createdAt: now, manualOrder: 0, orderUpdatedAt: now },
@@ -173,7 +183,9 @@
             notes: [],
             deletedNotes: {},
             calendarEvents: [],
-            deletedCalendarEvents: {}
+            deletedCalendarEvents: {},
+            goals: [],
+            deletedGoals: {}
         };
     }
 
@@ -294,14 +306,42 @@
             : [];
         calendarEvents.sort(function (a, b) { return a.id.localeCompare(b.id); });
 
+        var deletedGoals = {};
+        if (value.deletedGoals && typeof value.deletedGoals === "object" && !Array.isArray(value.deletedGoals)) {
+            Object.keys(value.deletedGoals).sort().forEach(function (goalId) {
+                if (value.deletedGoals[goalId]) {
+                    deletedGoals[String(goalId)] = String(value.deletedGoals[goalId]);
+                }
+            });
+        }
+
+        var goals = Array.isArray(value.goals) ? value.goals.filter(Boolean).map(function (goal) {
+            return {
+                id: String(goal.id || createId("goal")),
+                title: String(goal.title || "Untitled goal").slice(0, 180),
+                deadline: /^\d{4}-\d{2}-\d{2}$/.test(goal.deadline || "") ? goal.deadline : localDateKey(new Date()),
+                isMain: Boolean(goal.isMain),
+                completed: Boolean(goal.completed),
+                createdAt: goal.createdAt || now,
+                updatedAt: goal.updatedAt || now
+            };
+        }).filter(function (goal) { return !deletedGoals[goal.id]; }) : [];
+        goals.sort(function (a, b) { return a.id.localeCompare(b.id); });
+        var mainGoals = goals.filter(function (goal) { return goal.isMain && !goal.completed; }).sort(byUpdatedDescending);
+        if (mainGoals.length > 1) {
+            goals.forEach(function (goal) { goal.isMain = goal.id === mainGoals[0].id; });
+        }
+
         return {
-            version: 3,
+            version: 4,
             updatedAt: value.updatedAt || now,
             groups: groups,
             notes: notes.filter(function (note) { return !deletedNotes[note.id]; }),
             deletedNotes: deletedNotes,
             calendarEvents: calendarEvents,
-            deletedCalendarEvents: deletedCalendarEvents
+            deletedCalendarEvents: deletedCalendarEvents,
+            goals: goals,
+            deletedGoals: deletedGoals
         };
     }
 
@@ -434,14 +474,33 @@
         calendarEvents = calendarEvents.filter(function (event) { return !deletedCalendarEvents[event.id]; });
         calendarEvents.sort(function (a, b) { return a.id.localeCompare(b.id); });
 
+        var deletedGoals = {};
+        Array.from(new Set(Object.keys(local.deletedGoals).concat(Object.keys(remote.deletedGoals))))
+            .sort()
+            .forEach(function (goalId) {
+                deletedGoals[goalId] = latestIso(local.deletedGoals[goalId], remote.deletedGoals[goalId]);
+            });
+        var remoteGoalsById = new Map(remote.goals.map(function (goal) { return [goal.id, goal]; }));
+        var goals = local.goals.map(function (goal) {
+            var remoteGoal = remoteGoalsById.get(goal.id);
+            remoteGoalsById.delete(goal.id);
+            if (!remoteGoal) {
+                return goal;
+            }
+            return (Date.parse(goal.updatedAt) || 0) >= (Date.parse(remoteGoal.updatedAt) || 0) ? goal : remoteGoal;
+        }).concat(Array.from(remoteGoalsById.values()));
+        goals = goals.filter(function (goal) { return !deletedGoals[goal.id]; });
+
         return normalizeDocument({
-            version: 3,
+            version: 4,
             updatedAt: latestIso(local.updatedAt, remote.updatedAt),
             groups: groups,
             notes: notes,
             deletedNotes: deletedNotes,
             calendarEvents: calendarEvents,
-            deletedCalendarEvents: deletedCalendarEvents
+            deletedCalendarEvents: deletedCalendarEvents,
+            goals: goals,
+            deletedGoals: deletedGoals
         });
     }
 
@@ -784,6 +843,7 @@
         elements.groupView.hidden = name !== "group";
         elements.editorView.hidden = name !== "editor";
         elements.calendarView.hidden = name !== "calendar";
+        elements.goalsView.hidden = name !== "goals";
         elements.editorMenu.hidden = true;
         elements.editorMenuButton.setAttribute("aria-expanded", "false");
         window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
@@ -802,6 +862,11 @@
 
         if (activeView === "calendar") {
             renderCalendar(selectedCalendarDate, false);
+            return;
+        }
+
+        if (activeView === "goals") {
+            renderGoals();
             return;
         }
 
@@ -848,6 +913,9 @@
 
         orderedGroups().forEach(function (group) {
             elements.homeGrid.appendChild(buildGroupTile(group));
+            if (group.id === CALENDAR_GROUP_ID) {
+                elements.homeGrid.appendChild(buildGoalsTile());
+            }
         });
 
         clear(elements.recentGrid);
@@ -931,6 +999,232 @@
             renderCalendar(today, true);
         });
         return button;
+    }
+
+    function getMainGoal() {
+        return state.goals.find(function (goal) { return goal.isMain && !goal.completed; }) || null;
+    }
+
+    function goalDaysRemaining(deadline) {
+        var today = localDateKey(new Date()).split("-").map(Number);
+        var target = deadline.split("-").map(Number);
+        return Math.round((Date.UTC(target[0], target[1] - 1, target[2]) - Date.UTC(today[0], today[1] - 1, today[2])) / 86400000);
+    }
+
+    function goalCountdownLabel(goal) {
+        var days = goalDaysRemaining(goal.deadline);
+        if (days < 0) {
+            return Math.abs(days) + "D overdue";
+        }
+        return days + "D remaining";
+    }
+
+    function buildGoalsTile() {
+        var mainGoal = getMainGoal();
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "todo-group-tile todo-goals-tile";
+        button.style.setProperty("--group-color", GOALS_COLOR);
+        button.setAttribute("aria-label", mainGoal
+            ? "Open Goals. Main goal: " + mainGoal.title + ", " + goalCountdownLabel(mainGoal)
+            : "Open Goals and set a main goal");
+
+        var iconWrap = document.createElement("span");
+        iconWrap.className = "todo-goals-tile__icon";
+        iconWrap.innerHTML = icon("target");
+        var label = document.createElement("span");
+        label.className = "todo-goals-tile__label";
+        label.textContent = "Goals";
+        var copy = document.createElement("span");
+        copy.className = "todo-goals-tile__copy";
+        var title = document.createElement("strong");
+        title.textContent = mainGoal ? mainGoal.title : "Set your main goal";
+        var countdown = document.createElement("small");
+        countdown.textContent = mainGoal ? goalCountdownLabel(mainGoal) : "Add a target and deadline";
+        copy.append(title, countdown);
+        button.append(iconWrap, label, copy);
+        button.addEventListener("click", openGoals);
+        return button;
+    }
+
+    function openGoals() {
+        elements.goalIsMain.checked = !getMainGoal();
+        if (!elements.goalDeadline.value) {
+            elements.goalDeadline.value = shiftDateKey(localDateKey(new Date()), 90);
+        }
+        renderGoals();
+    }
+
+    function renderGoals() {
+        showView("goals");
+        clear(elements.goalsList);
+        var goals = state.goals.slice().sort(function (a, b) {
+            if (a.completed !== b.completed) {
+                return a.completed ? 1 : -1;
+            }
+            if (a.isMain !== b.isMain) {
+                return a.isMain ? -1 : 1;
+            }
+            return a.deadline.localeCompare(b.deadline) || a.id.localeCompare(b.id);
+        });
+        var openCount = goals.filter(function (goal) { return !goal.completed; }).length;
+        elements.goalsSummary.textContent = goals.length
+            ? plural(openCount, "active goal") + (goals.length !== openCount ? " · " + plural(goals.length - openCount, "completed") : "")
+            : "No goals yet";
+
+        if (!goals.length) {
+            var empty = document.createElement("div");
+            empty.className = "todo-group-empty todo-goals-empty";
+            empty.innerHTML = "<strong>What are you aiming for?</strong><br>Add a specific result and give it a deadline.";
+            elements.goalsList.appendChild(empty);
+            return;
+        }
+
+        goals.forEach(function (goal) {
+            elements.goalsList.appendChild(buildGoalRow(goal));
+        });
+    }
+
+    function buildGoalRow(goal) {
+        var row = document.createElement("article");
+        row.className = "todo-goal-row" + (goal.isMain ? " is-main" : "") + (goal.completed ? " is-completed" : "");
+        row.dataset.goalId = goal.id;
+
+        var completeLabel = document.createElement("label");
+        completeLabel.className = "todo-goal-complete";
+        var complete = document.createElement("input");
+        complete.type = "checkbox";
+        complete.checked = goal.completed;
+        complete.setAttribute("aria-label", goal.completed ? "Mark goal active" : "Mark goal complete");
+        var checkmark = document.createElement("span");
+        checkmark.innerHTML = icon("check");
+        completeLabel.append(complete, checkmark);
+
+        var fields = document.createElement("div");
+        fields.className = "todo-goal-row__fields";
+        var title = document.createElement("input");
+        title.className = "todo-goal-row__title";
+        title.type = "text";
+        title.maxLength = 180;
+        title.value = goal.title;
+        title.setAttribute("aria-label", "Goal title");
+        var deadlineWrap = document.createElement("label");
+        deadlineWrap.className = "todo-goal-row__deadline";
+        var deadlineText = document.createElement("span");
+        deadlineText.textContent = goal.completed ? "Completed goal" : goalCountdownLabel(goal);
+        var deadline = document.createElement("input");
+        deadline.type = "date";
+        deadline.value = goal.deadline;
+        deadline.setAttribute("aria-label", "Goal deadline");
+        deadlineWrap.append(deadlineText, deadline);
+        fields.append(title, deadlineWrap);
+
+        var actions = document.createElement("div");
+        actions.className = "todo-goal-row__actions";
+        var main = document.createElement("button");
+        main.type = "button";
+        main.className = "todo-goal-main-button" + (goal.isMain ? " is-active" : "");
+        main.textContent = goal.isMain ? "Main goal" : "Make main";
+        main.disabled = goal.completed;
+        main.setAttribute("aria-pressed", goal.isMain ? "true" : "false");
+        var remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "todo-icon-button todo-goal-delete";
+        remove.innerHTML = icon("trash");
+        remove.setAttribute("aria-label", "Delete " + goal.title);
+        actions.append(main, remove);
+        row.append(completeLabel, fields, actions);
+
+        title.addEventListener("input", function () {
+            goal.title = title.value;
+            goal.updatedAt = new Date().toISOString();
+            persist({ touchActiveNote: false });
+        });
+        title.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                deadline.focus();
+            }
+        });
+        deadline.addEventListener("change", function () {
+            if (!deadline.value) {
+                return;
+            }
+            goal.deadline = deadline.value;
+            goal.updatedAt = new Date().toISOString();
+            persist({ touchActiveNote: false });
+            renderGoals();
+        });
+        complete.addEventListener("change", function () {
+            goal.completed = complete.checked;
+            if (goal.completed) {
+                goal.isMain = false;
+            }
+            goal.updatedAt = new Date().toISOString();
+            persist({ touchActiveNote: false });
+            renderGoals();
+        });
+        main.addEventListener("click", function () {
+            setMainGoal(goal.id);
+        });
+        remove.addEventListener("click", function () {
+            deleteGoal(goal.id);
+        });
+        return row;
+    }
+
+    function addGoal(event) {
+        event.preventDefault();
+        var title = elements.goalTitle.value.trim();
+        var deadline = elements.goalDeadline.value;
+        if (!title || !deadline) {
+            return;
+        }
+        var now = new Date().toISOString();
+        var makeMain = elements.goalIsMain.checked || !getMainGoal();
+        if (makeMain) {
+            state.goals.forEach(function (goal) { goal.isMain = false; });
+        }
+        state.goals.push({
+            id: createId("goal"),
+            title: title,
+            deadline: deadline,
+            isMain: makeMain,
+            completed: false,
+            createdAt: now,
+            updatedAt: now
+        });
+        persist({ touchActiveNote: false });
+        elements.goalForm.reset();
+        elements.goalDeadline.value = shiftDateKey(localDateKey(new Date()), 90);
+        elements.goalIsMain.checked = !getMainGoal();
+        renderGoals();
+        elements.goalTitle.focus();
+    }
+
+    function setMainGoal(goalId) {
+        var now = new Date().toISOString();
+        state.goals.forEach(function (goal) {
+            var next = goal.id === goalId;
+            if (goal.isMain !== next) {
+                goal.isMain = next;
+                goal.updatedAt = now;
+            }
+        });
+        persist({ touchActiveNote: false });
+        renderGoals();
+    }
+
+    function deleteGoal(goalId) {
+        var goal = state.goals.find(function (candidate) { return candidate.id === goalId; });
+        if (!goal || !window.confirm("Delete goal “" + goal.title + "”?")) {
+            return;
+        }
+        state.deletedGoals[goalId] = new Date().toISOString();
+        state.goals = state.goals.filter(function (candidate) { return candidate.id !== goalId; });
+        persist({ touchActiveNote: false });
+        elements.goalIsMain.checked = !getMainGoal();
+        renderGoals();
     }
 
     function openGroup(groupId) {
@@ -2360,6 +2654,7 @@
             notes: documentCopy.notes.length,
             items: documentCopy.notes.reduce(function (total, note) { return total + countItems(note.items); }, 0),
             events: documentCopy.calendarEvents.length,
+            goals: documentCopy.goals.length,
             updatedAt: documentCopy.updatedAt
         };
     }
@@ -2380,6 +2675,7 @@
         elements[prefix + "SyncNotes"].textContent = plural(stats.notes, "note");
         elements[prefix + "SyncItems"].textContent = plural(stats.items, "checklist item");
         elements[prefix + "SyncEvents"].textContent = plural(stats.events, "calendar event");
+        elements[prefix + "SyncGoals"].textContent = plural(stats.goals, "goal");
         elements[prefix + "SyncUpdated"].textContent = syncSaveTime(stats.updatedAt);
     }
 
@@ -2601,6 +2897,19 @@
             persist();
         }
     });
+    elements.noteTitle.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" || event.isComposing) {
+            return;
+        }
+        event.preventDefault();
+        var firstItemInput = elements.itemList.querySelector("[data-item-input]");
+        if (firstItemInput) {
+            firstItemInput.focus();
+            firstItemInput.setSelectionRange(firstItemInput.value.length, firstItemInput.value.length);
+        } else {
+            addRootItem();
+        }
+    });
     elements.noteGroup.addEventListener("change", function () {
         var note = getActiveNote();
         if (note) {
@@ -2673,6 +2982,19 @@
     });
     elements.calendarEventForm.addEventListener("submit", saveCalendarEvent);
     elements.deleteCalendarEventButton.addEventListener("click", deleteCalendarEvent);
+    elements.calendarEventTitle.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.isComposing) {
+            event.preventDefault();
+            elements.calendarEventDate.focus();
+        }
+    });
+    elements.goalTitle.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.isComposing) {
+            event.preventDefault();
+            elements.goalDeadline.focus();
+        }
+    });
+    elements.goalForm.addEventListener("submit", addGoal);
     elements.groupForm.addEventListener("submit", createGroup);
     document.getElementById("copySyncKeyButton").addEventListener("click", async function () {
         try {
@@ -2726,6 +3048,8 @@
             } else if (activeView === "group") {
                 renderHome();
             } else if (activeView === "calendar") {
+                renderHome();
+            } else if (activeView === "goals") {
                 renderHome();
             }
         }

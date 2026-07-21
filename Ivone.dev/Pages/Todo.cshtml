@@ -38,6 +38,7 @@
         <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m6 10 6-6 6 6M12 4v16"></path></symbol>
         <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="m6 14 6 6 6-6M12 20V4"></path></symbol>
         <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M7 3v4M17 3v4M3 10h18"></path></symbol>
+        <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></symbol>
         <symbol id="i-todo-mark" viewBox="0 0 24 24"><path d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17V7A2.5 2.5 0 0 1 5 4.5Z"></path><path d="m7 12.5 3.2 3.2L17.5 8"></path></symbol>
     </svg>
 
@@ -132,6 +133,40 @@
                 <div id="calendarScroll" class="todo-calendar-scroll" tabindex="0" aria-label="Day schedule. Select a time to add an event.">
                     <div id="calendarTimeline" class="todo-calendar-timeline"></div>
                 </div>
+            </section>
+
+            <section id="goalsView" class="todo-view todo-goals-view" hidden>
+                <header class="todo-view-header todo-goals-header">
+                    <button class="todo-icon-button" type="button" data-action="back-home" aria-label="Back to categories">
+                        <svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+                    </button>
+                    <div class="todo-view-header__title">
+                        <span class="todo-goals-mark" aria-hidden="true"><svg><use href="#i-target"></use></svg></span>
+                        <div><p class="todo-eyebrow">Long-term focus</p><h1>Goals</h1></div>
+                    </div>
+                </header>
+
+                <form id="goalForm" class="todo-goal-form">
+                    <div class="todo-goal-form__field todo-goal-form__field--title">
+                        <label for="goalTitle">Specific goal</label>
+                        <input id="goalTitle" type="text" maxlength="180" autocomplete="off" placeholder="Lose 5kg" required />
+                    </div>
+                    <div class="todo-goal-form__field">
+                        <label for="goalDeadline">Deadline</label>
+                        <input id="goalDeadline" type="date" required />
+                    </div>
+                    <label class="todo-goal-main-choice" for="goalIsMain">
+                        <input id="goalIsMain" type="checkbox" />
+                        <span>Make main</span>
+                    </label>
+                    <button class="todo-primary-button" type="submit"><svg aria-hidden="true"><use href="#i-plus"></use></svg> Add goal</button>
+                </form>
+
+                <div class="todo-goals-heading">
+                    <div><p class="todo-eyebrow">Your targets</p><h2 id="goalsSummary">No goals yet</h2></div>
+                    <small>Choose one main goal to show on the home tile.</small>
+                </div>
+                <div id="goalsList" class="todo-goals-list" aria-live="polite"></div>
             </section>
 
             <section id="editorView" class="todo-view" hidden>
@@ -231,6 +266,7 @@
                             <li><strong id="localSyncNotes">0 notes</strong></li>
                             <li><span id="localSyncItems">0 checklist items</span></li>
                             <li><span id="localSyncEvents">0 calendar events</span></li>
+                            <li><span id="localSyncGoals">0 goals</span></li>
                         </ul>
                         <p id="localSyncUpdated" class="todo-sync-save-time"></p>
                         <button id="useLocalSyncButton" class="todo-secondary-button todo-wide-button" type="button">Use this device</button>
@@ -242,6 +278,7 @@
                             <li><strong id="serverSyncNotes">0 notes</strong></li>
                             <li><span id="serverSyncItems">0 checklist items</span></li>
                             <li><span id="serverSyncEvents">0 calendar events</span></li>
+                            <li><span id="serverSyncGoals">0 goals</span></li>
                         </ul>
                         <p id="serverSyncUpdated" class="todo-sync-save-time"></p>
                         <button id="useServerSyncButton" class="todo-secondary-button todo-wide-button" type="button">Use server</button>
