@@ -170,6 +170,11 @@ public sealed class IndexModel : PageModel
 
     private static string GetDisplayTitle(string url)
     {
+        if (string.Equals(url, "/3dAnimation", StringComparison.OrdinalIgnoreCase))
+        {
+            return "3D Animation Studio";
+        }
+
         if (string.Equals(url, "/Bj", StringComparison.OrdinalIgnoreCase))
         {
             return "BlackJack";

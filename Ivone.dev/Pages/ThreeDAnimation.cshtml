@@ -1,0 +1,367 @@
+@page "/3dAnimation"
+@model Ivone.dev.Pages.ThreeDAnimationModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#111312" />
+    <title>SceneScript — 3D Animation Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/3d-animation.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="studio" id="studio">
+        <header class="topbar">
+            <a class="brand" href="/" aria-label="Back to Ivone.dev">
+                <span class="brand-mark" aria-hidden="true">
+                    <i></i><i></i><i></i>
+                </span>
+                <span>SceneScript</span>
+                <b>studio</b>
+            </a>
+
+            <div class="project-heading">
+                <button class="icon-button mobile-only" id="leftPanelToggle" title="Toggle scene panel" type="button">
+                    <span class="icon">☰</span>
+                </button>
+                <div>
+                    <input id="projectName" class="project-name" value="Office departure" aria-label="Project name" />
+                    <div class="save-state"><span></span><span id="saveState">Saved locally</span></div>
+                </div>
+            </div>
+
+            <div class="toolbar-actions">
+                <div class="history-actions">
+                    <button class="icon-button" id="undoButton" title="Undo (Ctrl+Z)" type="button">↶</button>
+                    <button class="icon-button" id="redoButton" title="Redo (Ctrl+Shift+Z)" type="button">↷</button>
+                </div>
+                <button class="button button-muted" id="saveButton" type="button">
+                    <span class="button-icon">⌘</span> Save
+                </button>
+                <button class="button button-accent" id="exportButton" type="button">
+                    <span class="button-icon">↗</span> Export
+                </button>
+                <button class="icon-button mobile-only" id="rightPanelToggle" title="Toggle inspector" type="button">
+                    <span class="icon">⚙</span>
+                </button>
+            </div>
+        </header>
+
+        <main class="editor-shell">
+            <aside class="side-panel left-panel" id="leftPanel">
+                <div class="panel-tabs" role="tablist">
+                    <button class="panel-tab is-active" data-left-tab="scene" type="button">Scene</button>
+                    <button class="panel-tab" data-left-tab="assets" type="button">Assets</button>
+                </div>
+
+                <section class="left-tab-view is-active" data-left-view="scene">
+                    <div class="panel-section-heading">
+                        <span>Scene graph</span>
+                        <button class="small-icon-button" id="addPrimitiveButton" title="Add primitive" type="button">＋</button>
+                    </div>
+                    <div class="scene-tree" id="sceneTree"></div>
+                </section>
+
+                <section class="left-tab-view" data-left-view="assets">
+                    <div class="asset-search">
+                        <span>⌕</span>
+                        <input id="assetSearch" placeholder="Search assets" aria-label="Search assets" />
+                    </div>
+                    <div class="asset-grid" id="assetGrid">
+                        <button class="asset-card" data-add-asset="character" type="button">
+                            <span class="asset-preview asset-character"><i></i></span>
+                            <strong>Humanoid</strong><small>Rigged</small>
+                        </button>
+                        <button class="asset-card" data-add-asset="desk" type="button">
+                            <span class="asset-preview asset-desk"><i></i></span>
+                            <strong>Desk</strong><small>Furniture</small>
+                        </button>
+                        <button class="asset-card" data-add-asset="chair" type="button">
+                            <span class="asset-preview asset-chair"><i></i></span>
+                            <strong>Chair</strong><small>Seat provider</small>
+                        </button>
+                        <button class="asset-card" data-add-asset="box" type="button">
+                            <span class="asset-preview asset-box"><i></i></span>
+                            <strong>Primitive</strong><small>Box</small>
+                        </button>
+                    </div>
+                    <label class="import-dropzone" id="importDropzone">
+                        <input type="file" id="assetUpload" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" />
+                        <span class="dropzone-icon">⇧</span>
+                        <strong>Import a 3D asset</strong>
+                        <small>Drop a GLB or glTF here</small>
+                    </label>
+                </section>
+
+                <div class="left-footer">
+                    <span class="status-dot"></span>
+                    <span>Deterministic runtime</span>
+                    <b>60 FPS</b>
+                </div>
+            </aside>
+
+            <section class="workspace">
+                <div class="viewport-shell" id="viewportShell">
+                    <canvas id="sceneCanvas" aria-label="Interactive 3D scene viewport"></canvas>
+
+                    <div class="viewport-toolbar" aria-label="Transform tools">
+                        <button class="viewport-tool is-active" data-tool="select" title="Select (V)" type="button">↖</button>
+                        <span></span>
+                        <button class="viewport-tool" data-tool="move" title="Move (G)" type="button">✣</button>
+                        <button class="viewport-tool" data-tool="rotate" title="Rotate (R)" type="button">↻</button>
+                        <button class="viewport-tool" data-tool="scale" title="Scale (S)" type="button">⌜</button>
+                    </div>
+
+                    <div class="viewport-meta">
+                        <button class="meta-button" id="viewModeButton" type="button"><i></i> Perspective</button>
+                        <button class="meta-button" id="gridButton" type="button"><span>#</span> Grid</button>
+                    </div>
+
+                    <div class="viewport-status">
+                        <span class="live-pill"><i></i> LIVE</span>
+                        <span id="objectCount">8 objects</span>
+                        <span>•</span>
+                        <span>24 fps</span>
+                    </div>
+
+                    <div class="camera-cube" aria-hidden="true">
+                        <div class="cube-top">TOP</div>
+                        <div class="cube-face">FRONT</div>
+                        <span class="axis-x">X</span><span class="axis-y">Y</span><span class="axis-z">Z</span>
+                    </div>
+
+                    <div class="dialogue-bubble" id="dialogueBubble">
+                        <span>JOHN</span>
+                        <p>We need to leave.</p>
+                    </div>
+
+                    <div class="selection-label" id="selectionLabel">John · Humanoid</div>
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loader-mark"><i></i><i></i><i></i></div>
+                        <span>Building deterministic scene…</span>
+                    </div>
+                </div>
+
+                <section class="timeline-panel">
+                    <div class="timeline-header">
+                        <div class="playback-controls">
+                            <button class="transport-button" id="jumpStartButton" title="Jump to start" type="button">|◀</button>
+                            <button class="play-button" id="playButton" title="Play" type="button"><span id="playIcon">▶</span></button>
+                            <button class="transport-button" id="jumpEndButton" title="Jump to end" type="button">▶|</button>
+                            <div class="timecode"><span id="currentTimecode">00:00:00</span><i>/</i><span id="durationTimecode">00:14:00</span></div>
+                        </div>
+                        <div class="timeline-tools">
+                            <button id="snapButton" class="timeline-tool is-active" title="Snap clips" type="button">⌁ <span>Snap</span></button>
+                            <button id="timelineZoomOut" class="timeline-tool" title="Zoom out" type="button">−</button>
+                            <input id="timelineZoom" class="zoom-range" type="range" min="80" max="180" value="100" aria-label="Timeline zoom" />
+                            <button id="timelineZoomIn" class="timeline-tool" title="Zoom in" type="button">＋</button>
+                        </div>
+                    </div>
+
+                    <div class="timeline-body">
+                        <div class="track-labels">
+                            <div class="track-label ruler-corner">TRACKS</div>
+                            <div class="track-label"><span class="track-icon red">●</span><strong>John</strong><small>3 clips</small></div>
+                            <div class="track-label"><span class="track-icon blue">●</span><strong>Robot</strong><small>1 clip</small></div>
+                            <div class="track-label"><span class="track-icon green">◆</span><strong>Door</strong><small>1 clip</small></div>
+                            <div class="track-label"><span class="track-icon yellow">◉</span><strong>Camera</strong><small>2 clips</small></div>
+                        </div>
+                        <div class="timeline-scroll" id="timelineScroll">
+                            <div class="timeline-content" id="timelineContent">
+                                <div class="timeline-ruler" id="timelineRuler"></div>
+                                <div class="playhead" id="playhead"><span></span></div>
+                                <div class="track-row" data-track="john">
+                                    <button class="timeline-clip clip-dialogue" style="--start: 8%; --width: 19%" data-start="1.1" data-duration="2.7" type="button"><b>▣</b> Speak</button>
+                                    <button class="timeline-clip clip-motion" style="--start: 29%; --width: 12%" data-start="4" data-duration="1.6" type="button"><b>◆</b> Stand</button>
+                                    <button class="timeline-clip clip-motion selected" style="--start: 40%; --width: 28%" data-start="5.6" data-duration="3.9" type="button"><b>→</b> Walk to door</button>
+                                </div>
+                                <div class="track-row" data-track="robot">
+                                    <button class="timeline-clip clip-idle" style="--start: 0%; --width: 68%" data-start="0" data-duration="9.5" type="button"><b>≈</b> Seated idle</button>
+                                </div>
+                                <div class="track-row" data-track="door">
+                                    <button class="timeline-clip clip-door" style="--start: 64%; --width: 10%" data-start="9" data-duration="1.4" type="button"><b>↱</b> Open</button>
+                                </div>
+                                <div class="track-row" data-track="camera">
+                                    <button class="timeline-clip clip-camera" style="--start: 0%; --width: 40%" data-start="0" data-duration="5.6" type="button"><b>◉</b> Wide shot</button>
+                                    <button class="timeline-clip clip-camera" style="--start: 40%; --width: 50%" data-start="5.6" data-duration="7" type="button"><b>◉</b> Follow John</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="prompt-panel">
+                    <div class="prompt-topline">
+                        <div class="assistant-identity">
+                            <span class="assistant-mark">✦</span>
+                            <div><strong>Scene Assistant</strong><small>Structured patch planner</small></div>
+                        </div>
+                        <div class="patch-status" id="patchStatus"><i></i> Scene is valid</div>
+                    </div>
+                    <div class="prompt-composer">
+                        <textarea id="promptInput" rows="1" aria-label="Describe a scene change" placeholder="Describe what should happen next…"></textarea>
+                        <div class="prompt-footer">
+                            <div class="prompt-suggestions">
+                                <button type="button" data-prompt="Move the camera closer to John">Move camera closer</button>
+                                <button type="button" data-prompt="Make the whole room monochrome">Make monochrome</button>
+                                <button type="button" data-prompt="Add a blue cube beside the desk">Add a blue cube</button>
+                            </div>
+                            <button class="generate-button" id="generateButton" type="button">
+                                <span>Generate patch</span><b>⌘ ↵</b>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </section>
+
+            <aside class="side-panel right-panel" id="rightPanel">
+                <div class="inspector-heading">
+                    <div><span>Inspector</span><small id="selectedId">entity_john</small></div>
+                    <button class="small-icon-button" id="moreButton" type="button">•••</button>
+                </div>
+
+                <div class="selected-entity-card">
+                    <span class="entity-avatar" id="entityAvatar">J</span>
+                    <div><input id="entityName" value="John" aria-label="Entity name" /><small id="entityType">Humanoid character</small></div>
+                    <button class="visibility-toggle is-visible" id="entityVisibleButton" title="Toggle visibility" type="button">◉</button>
+                </div>
+
+                <div class="inspector-scroll">
+                    <details class="inspector-section" open>
+                        <summary>Transform <span>⌃</span></summary>
+                        <div class="section-content">
+                            <label class="property-row"><span>Position</span>
+                                <i class="axis-tag x">X</i><input id="positionX" type="number" step="0.1" value="-1.35" />
+                                <i class="axis-tag y">Y</i><input id="positionY" type="number" step="0.1" value="0" />
+                                <i class="axis-tag z">Z</i><input id="positionZ" type="number" step="0.1" value="0.35" />
+                            </label>
+                            <label class="property-row"><span>Rotation</span>
+                                <i class="axis-tag x">X</i><input id="rotationX" type="number" step="1" value="0" />
+                                <i class="axis-tag y">Y</i><input id="rotationY" type="number" step="1" value="90" />
+                                <i class="axis-tag z">Z</i><input id="rotationZ" type="number" step="1" value="0" />
+                            </label>
+                            <label class="property-row"><span>Scale</span>
+                                <i class="axis-tag x">X</i><input id="scaleX" type="number" step="0.1" value="1" />
+                                <i class="axis-tag y">Y</i><input id="scaleY" type="number" step="0.1" value="1" />
+                                <i class="axis-tag z">Z</i><input id="scaleZ" type="number" step="0.1" value="1" />
+                            </label>
+                        </div>
+                    </details>
+
+                    <details class="inspector-section" open>
+                        <summary>Material <span>⌃</span></summary>
+                        <div class="section-content">
+                            <label class="material-row"><span>Base color</span><input id="materialColor" type="color" value="#d85a4f" /><code id="materialHex">#D85A4F</code></label>
+                            <label class="slider-row"><span>Roughness</span><input id="roughness" type="range" min="0" max="1" step="0.05" value="0.8" /><b id="roughnessValue">0.80</b></label>
+                            <label class="slider-row"><span>Metalness</span><input id="metalness" type="range" min="0" max="1" step="0.05" value="0" /><b id="metalnessValue">0.00</b></label>
+                        </div>
+                    </details>
+
+                    <details class="inspector-section" open>
+                        <summary>Capabilities <span>⌃</span></summary>
+                        <div class="section-content capability-list" id="capabilityList">
+                            <span>Locomotion <b>×</b></span>
+                            <span>Speakable <b>×</b></span>
+                            <span>LookAt <b>×</b></span>
+                            <button id="addCapabilityButton" type="button">＋ Add capability</button>
+                        </div>
+                    </details>
+
+                    <details class="inspector-section">
+                        <summary>Metadata <span>⌃</span></summary>
+                        <div class="section-content metadata-list">
+                            <label><span>Asset ID</span><code id="assetId">character_red_01</code></label>
+                            <label><span>Role</span><input id="entityRole" value="employee" /></label>
+                            <label><span>State</span><code id="runtimeState">seated</code></label>
+                        </div>
+                    </details>
+                </div>
+
+                <div class="inspector-actions">
+                    <button id="duplicateButton" type="button">⧉ Duplicate</button>
+                    <button id="deleteButton" class="danger" type="button">⌫</button>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div class="modal-backdrop" id="exportModal" aria-hidden="true">
+        <section class="modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+            <button class="modal-close" data-close-modal type="button">×</button>
+            <span class="modal-eyebrow">RENDER OUTPUT</span>
+            <h2 id="exportTitle">Export your scene</h2>
+            <p>Choose a deterministic output. Scene data is available now; video rendering is represented by a preview capture in this prototype.</p>
+            <div class="export-options">
+                <button id="exportSceneButton" type="button"><span>{ }</span><div><strong>Scene JSON</strong><small>Editable project data</small></div><b>↗</b></button>
+                <button id="captureFrameButton" type="button"><span>▧</span><div><strong>Current frame</strong><small>PNG at viewport size</small></div><b>↗</b></button>
+                <button id="exportVideoButton" type="button"><span>▶</span><div><strong>Timeline video</strong><small>MP4 or WebM at 24 fps</small></div><b>↗</b></button>
+            </div>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="assetWizardModal" aria-hidden="true">
+        <section class="modal asset-wizard-modal" role="dialog" aria-modal="true" aria-labelledby="assetWizardTitle">
+            <button class="modal-close" data-close-asset-wizard type="button">×</button>
+            <span class="modal-eyebrow">ASSET CONFIGURATION</span>
+            <h2 id="assetWizardTitle">Make this asset understandable</h2>
+            <p>Classification, orientation, anchors and capabilities are stored as semantic scene data—not baked into the mesh.</p>
+            <div class="asset-wizard-form">
+                <label>
+                    <span>Classification</span>
+                    <select id="assetClassification">
+                        <option value="prop">Prop</option>
+                        <option value="character">Character</option>
+                        <option value="animal">Animal</option>
+                        <option value="furniture">Furniture</option>
+                        <option value="vehicle">Vehicle</option>
+                        <option value="building">Building</option>
+                        <option value="environment">Environment</option>
+                        <option value="door">Door</option>
+                        <option value="container">Container</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </label>
+                <div class="wizard-pair">
+                    <label><span>Forward axis</span>
+                        <select id="assetForwardAxis">
+                            <option value="-Z">−Z</option>
+                            <option value="+Z">+Z</option>
+                            <option value="+X">+X</option>
+                            <option value="-X">−X</option>
+                        </select>
+                    </label>
+                    <label><span>World scale</span><input id="assetWorldScale" type="number" min="0.01" max="100" step="0.01" value="1" /></label>
+                </div>
+                <label>
+                    <span>Semantic anchors</span>
+                    <input id="assetAnchors" placeholder="grip, top, focus" />
+                </label>
+                <fieldset>
+                    <legend>Capabilities</legend>
+                    <label><input type="checkbox" value="Movable" checked /> Movable</label>
+                    <label><input type="checkbox" value="Interactable" /> Interactable</label>
+                    <label><input type="checkbox" value="Openable" /> Openable</label>
+                    <label><input type="checkbox" value="SeatProvider" /> Seat provider</label>
+                    <label><input type="checkbox" value="PathFollower" /> Path follower</label>
+                    <label><input type="checkbox" value="AnimationPlayback" /> Animation playback</label>
+                </fieldset>
+            </div>
+            <button class="wizard-save-button" id="saveAssetConfiguration" type="button">Save asset configuration</button>
+        </section>
+    </div>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="~/js/3d-animation.js" asp-append-version="true"></script>
+</body>
+</html>
