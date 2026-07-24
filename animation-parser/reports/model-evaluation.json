@@ -1,0 +1,10 @@
+{
+  "architecture": "hashed word/bigram/character-trigram linear softmax classifier",
+  "quantization": "INT8 QDQ weights",
+  "trainExamples": 3262,
+  "validationExamples": 2270,
+  "testExamples": 2282,
+  "validationIntentAccuracy": 0.23612334801762114,
+  "heldOutIntentAccuracy": 0.38562664329535495,
+  "modelBytes": 5158
+}

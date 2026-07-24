@@ -3,13 +3,24 @@ using System.Text.Json.Nodes;
 
 namespace Ivone.dev.ThreeDAnimation;
 
-public sealed record ScenePlanRequest(string Prompt, JsonElement Scene);
+public sealed record ScenePlanRequest(
+    string Prompt,
+    JsonElement Scene,
+    string? PreviousPrompt = null);
+
+public sealed record PromptChange(
+    string ChangeType,
+    string Text,
+    IReadOnlyList<string> Verbs,
+    IReadOnlyList<string> Nouns,
+    string Intent);
 
 public sealed record ScenePlanResponse(
     string PatchId,
     IReadOnlyList<JsonObject> Operations,
     IReadOnlyList<string> Warnings,
-    string Planner);
+    string Planner,
+    IReadOnlyList<PromptChange> Changes);
 
 public sealed record SceneValidationResponse(
     bool IsValid,

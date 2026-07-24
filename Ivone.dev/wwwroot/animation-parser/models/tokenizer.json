@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "type": "hashed-word-bigram-char-trigram",
+  "normalization": "NFKC lowercase whitespace-collapse",
+  "featureCount": 256,
+  "hash": "dual-32-bit-FNV-like; first word modulo 256",
+  "labels": [
+    "create",
+    "remove",
+    "move",
+    "rotate",
+    "face",
+    "scale",
+    "appearance",
+    "clip",
+    "cameraMove",
+    "cameraTrack",
+    "cameraFocus",
+    "interact",
+    "fall",
+    "keyframe",
+    "wait",
+    "repeat",
+    "unsupported"
+  ]
+}

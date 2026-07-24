@@ -1,154 +1,77 @@
-using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 
 namespace Ivone.dev.ThreeDAnimation;
 
-public sealed partial class ScenePlanner
+public sealed class ScenePlanner
 {
+    private const string PlannerVersion = "canonical-action-planner-v2";
+
     public ScenePlanResponse Plan(ScenePlanRequest request)
     {
         var prompt = request.Prompt?.Trim() ?? string.Empty;
-        var normalized = prompt.ToLowerInvariant();
-        var operations = new List<JsonObject>();
-        var warnings = new List<string>();
+        var previousPrompt = request.PreviousPrompt?.Trim() ?? string.Empty;
+        var normalized = Normalize(prompt);
+        var normalizedPrevious = Normalize(previousPrompt);
+        var inputHash = BuildInputHash(
+            normalized,
+            normalizedPrevious,
+            request.Scene.GetRawText());
+        var changes = NaturalLanguageActionCompiler.AnalyzeChanges(previousPrompt, prompt);
 
         if (string.IsNullOrWhiteSpace(prompt))
         {
-            warnings.Add("The prompt was empty.");
+            return new ScenePlanResponse(
+                $"patch_{inputHash[..24]}",
+                [],
+                ["The prompt was empty."],
+                PlannerVersion,
+                changes);
         }
 
-        if (normalized.Contains("camera") &&
-            (normalized.Contains("closer") || normalized.Contains("close")))
+        if (!string.IsNullOrWhiteSpace(previousPrompt) &&
+            string.Equals(normalized, normalizedPrevious, StringComparison.Ordinal))
         {
-            operations.Add(Operation("updateCamera",
-                ("id", "camera_main"),
-                ("framing", "closer")));
+            return new ScenePlanResponse(
+                $"patch_{inputHash[..24]}",
+                [],
+                ["The prompt is unchanged from the latest applied version."],
+                PlannerVersion,
+                changes);
         }
 
-        if (normalized.Contains("monochrome") ||
-            normalized.Contains("black and white") ||
-            normalized.Contains("grayscale"))
-        {
-            operations.Add(Operation("updateStyle", ("style", "monochrome")));
-        }
-
-        if ((normalized.Contains("add") || normalized.Contains("create")) &&
-            (normalized.Contains("cube") || normalized.Contains("box")))
-        {
-            var color = normalized.Contains("red")
-                ? "#D85A4F"
-                : normalized.Contains("green")
-                    ? "#5B9A68"
-                    : "#5E80D5";
-            var shapeName = normalized.Contains("box") ? "Box" : "Cube";
-            var colorName = color == "#5E80D5" ? "Blue " : string.Empty;
-            operations.Add(Operation("addPrimitive",
-                ("primitive", "box"),
-                ("name", $"{colorName}{shapeName}"),
-                ("color", color)));
-        }
-
-        if ((normalized.Contains("add") || normalized.Contains("create")) &&
-            normalized.Contains("sphere"))
-        {
-            operations.Add(Operation("addPrimitive",
-                ("primitive", "sphere"),
-                ("name", "Sphere"),
-                ("color", "#D6A954")));
-        }
-
-        if (normalized.Contains("robot") && normalized.Contains("slower"))
-        {
-            operations.Add(Operation("updateClip",
-                ("clipId", "john_walk"),
-                ("speedMultiplier", 0.7)));
-        }
-
-        var trimMatch = TrimPattern().Match(normalized);
-        if (trimMatch.Success &&
-            double.TryParse(trimMatch.Groups[1].Value, NumberStyles.Number, CultureInfo.InvariantCulture, out var end))
-        {
-            operations.Add(Operation("trimTimeline", ("end", Math.Clamp(end, 2, 14))));
-        }
-
-        if (operations.Count == 0 && !string.IsNullOrWhiteSpace(prompt))
-        {
-            if (normalized.Contains("stand") ||
-                normalized.Contains("walk") ||
-                normalized.Contains("door") ||
-                normalized.Contains("leave"))
-            {
-                operations.Add(Operation("updateClip",
-                    ("clipId", "john_speak"),
-                    ("text", "We need to leave.")));
-                operations.Add(Operation("addClip",
-                    ("type", "Stand"),
-                    ("entityId", "entity_john"),
-                    ("start", 4)));
-                operations.Add(Operation("addClip",
-                    ("type", "WalkTo"),
-                    ("entityId", "entity_john"),
-                    ("target", "entity_door"),
-                    ("start", 5.6)));
-                operations.Add(Operation("addClip",
-                    ("type", "Open"),
-                    ("entityId", "entity_door"),
-                    ("start", 9)));
-                operations.Add(Operation("updateCamera",
-                    ("type", "CameraFollow"),
-                    ("target", "entity_john")));
-            }
-            else
-            {
-                warnings.Add("No supported scene command could be resolved from this prompt.");
-            }
-        }
-
-        var inputHash = BuildInputHash(normalized, request.Scene.GetRawText());
-        for (var index = 0; index < operations.Count; index++)
-        {
-            if (string.Equals(
-                operations[index]["op"]?.GetValue<string>(),
-                "addPrimitive",
-                StringComparison.Ordinal))
-            {
-                operations[index]["entityId"] = $"entity_generated_{inputHash[..16]}_{index:D2}";
-            }
-        }
-
+        var result = NaturalLanguageActionCompiler.Compile(
+            prompt,
+            request.Scene,
+            inputHash);
         return new ScenePlanResponse(
             $"patch_{inputHash[..24]}",
-            operations,
-            warnings,
-            "deterministic-rule-planner-v1");
+            result.Operations,
+            result.Warnings,
+            PlannerVersion,
+            changes);
     }
 
-    private static JsonObject Operation(string op, params (string Name, object? Value)[] values)
-    {
-        var operation = new JsonObject { ["op"] = op };
-        foreach (var (name, value) in values)
-        {
-            operation[name] = JsonValue.Create(value);
-        }
-
-        return operation;
-    }
-
-    private static string BuildInputHash(string normalizedPrompt, string sceneJson)
+    private static string BuildInputHash(
+        string normalizedPrompt,
+        string normalizedPreviousPrompt,
+        string sceneJson)
     {
         var scene = JsonNode.Parse(sceneJson) as JsonObject;
         scene?.Remove("currentPrompt");
         scene?.Remove("promptHistory");
         var plannerSceneJson = scene?.ToJsonString() ?? sceneJson;
-        var input = $"deterministic-rule-planner-v1\n{normalizedPrompt}\n{plannerSceneJson}";
+        var input =
+            $"{PlannerVersion}\n{normalizedPreviousPrompt}\n{normalizedPrompt}\n{plannerSceneJson}";
         return Convert.ToHexString(
                 SHA256.HashData(Encoding.UTF8.GetBytes(input)))
             .ToLowerInvariant();
     }
 
-    [GeneratedRegex(@"remove everything after\s+(\d+(?:\.\d+)?)\s*(?:seconds?|s)?", RegexOptions.CultureInvariant)]
-    private static partial Regex TrimPattern();
+    private static string Normalize(string value) =>
+        string.Join(' ', value
+            .Replace("**", string.Empty)
+            .ToLowerInvariant()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 }

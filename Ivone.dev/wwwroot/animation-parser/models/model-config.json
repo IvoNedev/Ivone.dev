@@ -1,0 +1,41 @@
+{
+  "modelVersion": "ivone-intent-linear-int8-1.0.0",
+  "input": {
+    "name": "features",
+    "shape": [
+      1,
+      256
+    ],
+    "dtype": "float32"
+  },
+  "output": {
+    "name": "logits",
+    "shape": [
+      1,
+      17
+    ],
+    "dtype": "float32"
+  },
+  "labels": [
+    "create",
+    "remove",
+    "move",
+    "rotate",
+    "face",
+    "scale",
+    "appearance",
+    "clip",
+    "cameraMove",
+    "cameraTrack",
+    "cameraFocus",
+    "interact",
+    "fall",
+    "keyframe",
+    "wait",
+    "repeat",
+    "unsupported"
+  ],
+  "deterministic": true,
+  "sampling": false,
+  "quantization": "INT8 QDQ weights"
+}

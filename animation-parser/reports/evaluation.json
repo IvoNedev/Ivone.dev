@@ -1,0 +1,30 @@
+{
+  "evaluatedAt": "2026-07-24T16:42:06.584Z",
+  "testExamples": 2282,
+  "intentActionExactMatch": 0.9986853637160386,
+  "actionOrderingAccuracy": 1,
+  "entityResolutionAccuracy": 0.7792832167832168,
+  "slotArgumentF1": 1,
+  "timingAccuracy": 1,
+  "validJsonSchemaRate": 1,
+  "promptDeltaAccuracy": 1,
+  "determinismRate": 1,
+  "unsupportedDetection": {
+    "precision": 1,
+    "recall": 1,
+    "f1": 1
+  },
+  "plannerExecutionSuccess": 1,
+  "nodeLatencyMs": {
+    "median": 0.0888999999999669,
+    "p95": 0.3269000000000233
+  },
+  "memory": {
+    "measurement": "browser-only; emitted by tests/browser/parser.spec.ts when run"
+  },
+  "notes": [
+    "Dataset exact-match is intentionally strict and includes typo/adversarial examples.",
+    "Schema, determinism, and planner checks cover every held-out example.",
+    "Browser worker/model loading is exercised separately by npm run test:browser."
+  ]
+}

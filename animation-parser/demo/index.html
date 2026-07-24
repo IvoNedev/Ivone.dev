@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ivone animation parser test</title>
+  <style>
+    body{font:16px system-ui;max-width:960px;margin:2rem auto;padding:0 1rem;background:#17201d;color:#eef3e8}
+    textarea,pre{box-sizing:border-box;width:100%;padding:1rem;border:1px solid #64736c;border-radius:.5rem;background:#101613;color:#eef3e8}
+    textarea{min-height:7rem}button{margin:1rem 0;padding:.7rem 1rem;background:#d7f36b;border:0;border-radius:.4rem;font-weight:700}
+    small{color:#b7c4bc}pre{min-height:20rem;overflow:auto}
+  </style>
+</head>
+<body>
+  <h1>Local animation parser</h1>
+  <small id="status">Loading…</small>
+  <textarea id="prompt">A blue box starts at the lower-left, moves halfway up and to the right over three seconds, turns red, then falls to the ground.</textarea>
+  <button id="parse">Parse locally</button>
+  <pre id="output"></pre>
+  <script type="module">
+    import { BrowserAnimationParser, resolveToPlanner } from "../dist/browser/index.js";
+    const parser = new BrowserAnimationParser({ baseUrl: "../dist/browser/" });
+    const scene = {
+      scene: { duration: 12 },
+      entities: [
+        { id:"entity_john",name:"John",type:"character",aliases:["man"],position:[-1,0,0],rotation:[0,0,0],scale:[1,1,1] },
+        { id:"entity_door",name:"Exit Door",type:"door",aliases:["door"],position:[3,0,-2],rotation:[0,0,0],scale:[1,1,1] },
+        { id:"camera_main",name:"Camera",type:"camera",position:[6,4,8],rotation:[0,0,0],scale:[1,1,1] }
+      ]
+    };
+    window.__animationParser = parser;
+    window.__animationScene = scene;
+    try {
+      await parser.initialize();
+      document.querySelector("#status").textContent = `${parser.getModelVersion()} · ${parser.getLoadProgress().backend}`;
+    } catch (error) {
+      document.querySelector("#status").textContent = `ERROR · ${error.message}`;
+      throw error;
+    }
+    async function run() {
+      const result = await parser.parse({ currentPrompt: document.querySelector("#prompt").value, previousPrompt:"", scene, selectedEntityId:"entity_john" });
+      document.querySelector("#output").textContent = JSON.stringify({ result, planner: resolveToPlanner(result, scene) }, null, 2);
+    }
+    document.querySelector("#parse").addEventListener("click", run);
+    await run();
+  </script>
+</body>
+</html>

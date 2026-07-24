@@ -90,6 +90,65 @@ public static class SceneDocumentValidator
             }
         }
 
+        if (document.TryGetProperty("actions", out var actions))
+        {
+            if (actions.ValueKind != JsonValueKind.Array)
+            {
+                errors.Add("actions must be an array when provided.");
+            }
+            else
+            {
+                var actionIds = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var action in actions.EnumerateArray())
+                {
+                    if (action.ValueKind != JsonValueKind.Object)
+                    {
+                        errors.Add("Every action must be an object.");
+                        continue;
+                    }
+
+                    if (!action.TryGetProperty("id", out var actionId) ||
+                        actionId.ValueKind != JsonValueKind.String ||
+                        string.IsNullOrWhiteSpace(actionId.GetString()))
+                    {
+                        errors.Add("Every action must have a non-empty string id.");
+                    }
+                    else if (!actionIds.Add(actionId.GetString()!))
+                    {
+                        errors.Add($"Duplicate action id '{actionId.GetString()}'.");
+                    }
+
+                    if (!action.TryGetProperty("type", out var actionType) ||
+                        actionType.ValueKind != JsonValueKind.String ||
+                        string.IsNullOrWhiteSpace(actionType.GetString()))
+                    {
+                        errors.Add("Every action must have a non-empty string type.");
+                    }
+
+                    if (!action.TryGetProperty("entityId", out var actionEntityId) ||
+                        actionEntityId.ValueKind != JsonValueKind.String ||
+                        !entityIds.Contains(actionEntityId.GetString()!))
+                    {
+                        errors.Add("Every action must reference an existing entityId.");
+                    }
+
+                    if (!action.TryGetProperty("start", out var start) ||
+                        start.ValueKind != JsonValueKind.Number ||
+                        start.GetDouble() < 0)
+                    {
+                        errors.Add("Every action must have a non-negative numeric start.");
+                    }
+
+                    if (!action.TryGetProperty("duration", out var duration) ||
+                        duration.ValueKind != JsonValueKind.Number ||
+                        duration.GetDouble() < 0)
+                    {
+                        errors.Add("Every action must have a non-negative numeric duration.");
+                    }
+                }
+            }
+        }
+
         return new SceneValidationResponse(errors.Count == 0, errors, warnings);
     }
 

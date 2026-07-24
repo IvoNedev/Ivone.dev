@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0",
+  "license": "CC0-1.0",
+  "generatedAt": "reproducible-no-timestamp",
+  "generator": "scripts/generate-dataset.mjs",
+  "total": 7814,
+  "splitCounts": {
+    "train": 3262,
+    "validation": 2270,
+    "test": 2282
+  },
+  "splitPolicy": "Stratified by intent and whole templateFamily; training seeds are train-only and no family crosses splits",
+  "provenance": [
+    "Original grammar-generated examples",
+    "Original manually-authored adversarial examples"
+  ],
+  "externalDatasets": []
+}

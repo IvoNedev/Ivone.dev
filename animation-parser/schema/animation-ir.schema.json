@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ivone.dev/schemas/animation-ir/1.0.json",
+  "title": "Ivone deterministic animation intermediate representation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "modelVersion", "promptRevision", "entities", "actions", "unresolvedReferences", "warnings", "confidence", "deterministicKey"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "modelVersion": { "type": "string", "minLength": 1 },
+    "deterministicKey": { "type": "string", "pattern": "^[a-f0-9]{16}$" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "promptRevision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changeType", "summary", "addedClauses", "removedClauses", "retainedClauses"],
+      "properties": {
+        "changeType": { "enum": ["initial", "add", "modify", "remove", "unchanged"] },
+        "summary": { "type": "string" },
+        "addedClauses": { "$ref": "#/$defs/stringArray" },
+        "removedClauses": { "$ref": "#/$defs/stringArray" },
+        "retainedClauses": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["operation", "entityId", "sourceText", "confidence"],
+        "properties": {
+          "operation": { "enum": ["create", "modify", "remove"] },
+          "entityId": { "type": "string", "minLength": 1 },
+          "entityType": { "type": "string" },
+          "name": { "type": "string" },
+          "aliases": { "$ref": "#/$defs/stringArray" },
+          "properties": { "type": "object" },
+          "sourceText": { "type": "string" },
+          "confidence": { "$ref": "#/$defs/confidence" }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/action" }
+    },
+    "unresolvedReferences": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["text", "candidates", "reason"],
+        "properties": {
+          "text": { "type": "string" },
+          "actionId": { "type": "string" },
+          "candidates": { "$ref": "#/$defs/stringArray" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message", "severity"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "sourceText": { "type": "string" },
+          "severity": { "enum": ["info", "warning", "error"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "stringArray": { "type": "array", "items": { "type": "string" } },
+    "vector3": {
+      "type": "array",
+      "prefixItems": [{ "type": "number" }, { "type": "number" }, { "type": "number" }],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "entityReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "resolution", "confidence"],
+      "properties": {
+        "text": { "type": "string" },
+        "entityId": { "type": "string" },
+        "resolution": { "enum": ["exact", "alias", "type", "selected", "pronoun", "created", "unresolved"] },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "candidates": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "number", "minimum": 0 },
+        "duration": { "type": "number", "minimum": 0 },
+        "delay": { "type": "number", "minimum": 0 },
+        "speed": { "type": "number", "exclusiveMinimum": 0 },
+        "style": { "type": "string" },
+        "easing": { "type": "string" },
+        "relation": { "enum": ["sequence", "parallel", "before", "after"] },
+        "relativeToActionId": { "type": "string" }
+      }
+    },
+    "spatialTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "enum": ["position", "direction", "entity", "relationship", "ground"] },
+        "position": { "$ref": "#/$defs/vector3" },
+        "direction": { "type": "string" },
+        "entityId": { "type": "string" },
+        "relation": { "type": "string" },
+        "amount": { "type": "number" },
+        "unit": { "type": "string" }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "entityRef", "timing", "sourceText", "confidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["place", "move", "rotate", "face", "scale", "appearance", "clip", "cameraMove", "cameraTrack", "cameraFocus", "interact", "fall", "keyframe", "wait", "repeat", "remove"] },
+        "entityRef": { "$ref": "#/$defs/entityReference" },
+        "target": { "$ref": "#/$defs/spatialTarget" },
+        "timing": { "$ref": "#/$defs/timing" },
+        "relative": { "type": "boolean" },
+        "values": { "type": "object" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/action" } },
+        "sourceText": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    }
+  }
+}

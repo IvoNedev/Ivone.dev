@@ -1,0 +1,33 @@
+{
+  "name": "@ivone/animation-parser",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "generate:data": "node scripts/generate-dataset.mjs",
+    "train": "node scripts/train.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "test:browser": "playwright test",
+    "test:app": "playwright test --config playwright.app.config.ts",
+    "evaluate": "node scripts/evaluate.mjs",
+    "checksums": "node scripts/checksums.mjs",
+    "verify": "npm run generate:data && npm run train && npm run build && npm test && npm run evaluate && npm run checksums",
+    "verify:clean": "npm run generate:data && npm run train && npm run typecheck && npm run build && npm test && npm run evaluate && npm run test:browser && npm run checksums && dotnet build ../Ivone.dev.sln --no-restore",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "onnxruntime-web": "1.27.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.54.1",
+    "@types/node": "24.1.0",
+    "esbuild": "0.25.8",
+    "onnx-proto": "8.0.1",
+    "typescript": "5.8.3",
+    "vitest": "3.2.4"
+  }
+}

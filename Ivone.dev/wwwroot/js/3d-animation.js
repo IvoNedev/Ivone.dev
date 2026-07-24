@@ -19,6 +19,68 @@
     const PROJECT_ID = "office-departure";
     const DEFAULT_PROMPT = "Two characters sit across a desk. John says “We need to leave”, stands, walks to the door, opens it and exits while the camera follows.";
     const DEFAULT_TRACK_IDS = ["entity_john", "entity_robot", "entity_door", "camera_main"];
+    const DEFAULT_MOTION_PLAN = {
+        entityId: "entity_john",
+        speak: true,
+        speakText: "We need to leave.",
+        stepDirection: 0,
+        duck: false,
+        walkToDoor: true,
+        openDoor: true,
+        followCamera: true
+    };
+    const DEFAULT_ACTIONS = [
+        {
+            id: "action_john_speak",
+            type: "speak",
+            entityId: "entity_john",
+            start: 1.1,
+            duration: 2.7,
+            text: "We need to leave."
+        },
+        {
+            id: "action_john_stand",
+            type: "stand",
+            entityId: "entity_john",
+            start: 4,
+            duration: 1.2
+        },
+        {
+            id: "action_john_walk",
+            type: "moveTo",
+            entityId: "entity_john",
+            start: 5.2,
+            duration: 4.2,
+            from: [-1.35, 0, 0.35],
+            to: [3.5, 0, -1.16],
+            locomotion: "walk"
+        },
+        {
+            id: "action_door_open",
+            type: "open",
+            entityId: "entity_door",
+            start: 9.15,
+            duration: 1.2
+        },
+        {
+            id: "action_john_exit",
+            type: "moveTo",
+            entityId: "entity_john",
+            start: 10.15,
+            duration: 2.2,
+            from: [3.5, 0, -1.16],
+            to: [5.3, 0, -1.16],
+            locomotion: "walk"
+        },
+        {
+            id: "action_camera_follow",
+            type: "cameraFollow",
+            entityId: "camera_main",
+            targetId: "entity_john",
+            start: 5.2,
+            duration: 7.15
+        }
+    ];
     const GENERATED_TRANSFORM_MARKERS = {
         entity_john: [0, 5.6, 9.5, 12.7],
         entity_door: [9, 10.4],
@@ -170,6 +232,8 @@
         timelineTrackIds: [...DEFAULT_TRACK_IDS],
         keyframes: {},
         selectedKeyframe: null,
+        motionPlan: cloneData(DEFAULT_MOTION_PLAN),
+        actions: cloneData(DEFAULT_ACTIONS),
         currentPrompt: DEFAULT_PROMPT,
         promptHistory: [],
         currentPromptHistoryId: null
@@ -190,11 +254,14 @@
         undo: [],
         redo: [],
         dirty: false,
+        promptBaseline: DEFAULT_PROMPT,
         lastFrame: performance.now(),
         pointerDown: null,
         resizeObserver: null,
         pendingWizardEntityId: null,
-        pendingPoseEntityId: null
+        pendingPoseEntityId: null,
+        browserAnimationParser: null,
+        animationParserInitialization: null
     };
 
     function toast(message) {
@@ -391,6 +458,7 @@
             prompt,
             patchId,
             planner: plan.planner || "unknown",
+            changes: cloneData(plan.changes || []),
             entityLinks: cloneData(entityLinks)
         };
         state.promptHistory.push(entry);
@@ -423,7 +491,7 @@
                 <strong>PROMPT ${String(entry.version).padStart(2, "0")}</strong>
                 <p>${escapeHtml(entry.prompt)}</p>
                 <span class="prompt-history-meta">
-                    <span>${(entry.entityLinks || []).length} linked phrase${(entry.entityLinks || []).length === 1 ? "" : "s"}</span>
+                    <span>${(entry.changes || []).length} change${(entry.changes || []).length === 1 ? "" : "s"} · ${(entry.entityLinks || []).length} linked</span>
                     <span class="history-entity-dots">${dots}</span>
                 </span>`;
             list.appendChild(card);
@@ -473,6 +541,8 @@
                 delete clean.imported;
                 return clean;
             })),
+            motionPlan: cloneData(state.motionPlan),
+            actions: cloneData(state.actions),
             currentPrompt: getPromptText() || state.currentPrompt || DEFAULT_PROMPT,
             promptHistory: cloneData(state.promptHistory),
             timeline: {
@@ -488,24 +558,167 @@
         return documentData;
     }
 
-    function buildTimelineTracks() {
-        const clips = {
-            entity_john: [
-                { id: "john_speak", type: "Speak", start: 1.1, duration: 2.7, text: "We need to leave." },
-                { id: "john_stand", type: "Stand", start: 4, duration: 1.6 },
-                { id: "john_walk", type: "WalkTo", start: 5.6, duration: 3.9, target: "entity_door" }
+    function motionTiming() {
+        const plan = state.motionPlan || DEFAULT_MOTION_PLAN;
+        const speakStart = 1.1;
+        const speakDuration = 2.7;
+        const standStart = 4;
+        const standDuration = 1.2;
+        let cursor = standStart + standDuration;
+        const stepStart = cursor;
+        const stepDuration = plan.stepDirection ? 0.9 : 0;
+        cursor += stepDuration;
+        const duckStart = cursor;
+        const duckDuration = plan.duck ? 1.15 : 0;
+        cursor += duckDuration;
+        const walkStart = cursor;
+        const extraDuration = stepDuration + duckDuration;
+        const walkDuration = Math.max(2.8, 4.2 - extraDuration * 0.55);
+        const walkEnd = walkStart + walkDuration;
+        const doorOpenStart = walkEnd - 0.25;
+        const doorOpenDuration = 1.2;
+        const exitStart = doorOpenStart + 1;
+        const exitDuration = Math.min(2.2, Math.max(0.8, state.duration - exitStart - 0.15));
+        return {
+            speakStart,
+            speakDuration,
+            standStart,
+            standDuration,
+            stepStart,
+            stepDuration,
+            duckStart,
+            duckDuration,
+            walkStart,
+            walkDuration,
+            walkEnd,
+            doorOpenStart,
+            doorOpenDuration,
+            exitStart,
+            exitDuration
+        };
+    }
+
+    function duckAmountAtTime(time) {
+        const timing = motionTiming();
+        if (!state.motionPlan?.duck || !timing.duckDuration) return 0;
+        const progress = clamp((time - timing.duckStart) / timing.duckDuration, 0, 1);
+        if (progress <= 0.3) return ease(progress / 0.3);
+        if (progress >= 0.7) return 1 - ease((progress - 0.7) / 0.3);
+        return 1;
+    }
+
+    function actionPresentation(action) {
+        const direction = action.direction
+            ? action.direction[0].toUpperCase() + action.direction.slice(1)
+            : "";
+        const presentations = {
+            place: ["Place", "◎", "clip-motion"],
+            moveBy: [`Move ${direction}`.trim(), "→", "clip-motion"],
+            moveTo: [
+                action.direction
+                    ? `${action.locomotion === "walk" && Number(action.duration) <= 1.5 ? "Step" : "Move"} ${direction}`
+                    : action.targetId ? "Walk to target" : "Move to target",
+                "→",
+                "clip-motion"
             ],
+            rotateBy: [`Rotate ${direction}`.trim(), "↻", "clip-motion"],
+            rotateTo: ["Rotate", "↻", "clip-motion"],
+            scaleTo: ["Scale", "◇", "clip-motion"],
+            stand: ["Stand", "◆", "clip-motion"],
+            duck: ["Duck down", "↓", "clip-motion"],
+            speak: ["Speak", "▣", "clip-dialogue"],
+            setColor: [`Turn ${action.colorName || "colour"}`, "●", "clip-dialogue"],
+            fallToGround: ["Fall to ground", "↓", "clip-motion"],
+            open: ["Open", "↱", "clip-door"],
+            close: ["Close", "↲", "clip-door"],
+            cameraFollow: ["Follow target", "◉", "clip-camera"],
+            cameraLookAt: ["Look at target", "◉", "clip-camera"],
+            wait: ["Wait", "…", "clip-idle"]
+        };
+        return presentations[action.type] || [action.type || "Action", "◆", "clip-motion"];
+    }
+
+    function actionTimelineClipDefinitions() {
+        const definitions = {};
+        (state.actions || []).forEach((action) => {
+            if (!action.entityId || !entityById(action.entityId)) return;
+            const [label, icon, className] = actionPresentation(action);
+            (definitions[action.entityId] ||= []).push({
+                ...cloneData(action),
+                label,
+                icon,
+                className,
+                duration: Math.max(Number(action.duration || 0), 0.22)
+            });
+        });
+        Object.values(definitions).forEach((actions) =>
+            actions.sort((a, b) => Number(a.start || 0) - Number(b.start || 0)));
+        return definitions;
+    }
+
+    function timelineClipDefinitions() {
+        if (Array.isArray(state.actions)) return actionTimelineClipDefinitions();
+        const plan = state.motionPlan || DEFAULT_MOTION_PLAN;
+        const timing = motionTiming();
+        const john = [];
+        if (plan.speak !== false) {
+            john.push({ id: "john_speak", type: "Speak", label: "Speak", icon: "▣", className: "clip-dialogue", start: timing.speakStart, duration: timing.speakDuration, text: plan.speakText });
+        }
+        john.push({ id: "john_stand", type: "Stand", label: "Stand", icon: "◆", className: "clip-motion", start: timing.standStart, duration: timing.standDuration });
+        if (plan.stepDirection) {
+            john.push({
+                id: "john_step",
+                type: "Step",
+                label: plan.stepDirection < 0 ? "Step left" : "Step right",
+                icon: plan.stepDirection < 0 ? "←" : "→",
+                className: "clip-motion",
+                start: timing.stepStart,
+                duration: timing.stepDuration
+            });
+        }
+        if (plan.duck) {
+            john.push({
+                id: "john_duck",
+                type: "Duck",
+                label: "Duck down",
+                icon: "↓",
+                className: "clip-motion",
+                start: timing.duckStart,
+                duration: timing.duckDuration
+            });
+        }
+        if (plan.walkToDoor) {
+            john.push({
+                id: "john_walk",
+                type: "WalkTo",
+                label: "Walk to door",
+                icon: "→",
+                className: "clip-motion",
+                start: timing.walkStart,
+                duration: timing.walkDuration,
+                target: "entity_door"
+            });
+        }
+
+        return {
+            entity_john: john,
             entity_robot: [
-                { id: "robot_idle", type: "Animation", start: 0, duration: 9.5, animation: "SeatedIdle" }
+                { id: "robot_idle", type: "Animation", label: "Seated idle", icon: "≈", className: "clip-idle", start: 0, duration: timing.walkEnd, animation: "SeatedIdle" }
             ],
-            entity_door: [
-                { id: "door_open", type: "Open", start: 9, duration: 1.4 }
-            ],
+            entity_door: plan.openDoor
+                ? [{ id: "door_open", type: "Open", label: "Open", icon: "↱", className: "clip-door", start: timing.doorOpenStart, duration: timing.doorOpenDuration }]
+                : [],
             camera_main: [
-                { id: "camera_wide", type: "CameraShot", start: 0, duration: 5.6 },
-                { id: "camera_follow", type: "CameraFollow", start: 5.6, duration: 7, target: "entity_john" }
+                { id: "camera_wide", type: "CameraShot", label: "Wide shot", icon: "◉", className: "clip-camera", start: 0, duration: timing.walkStart },
+                ...(plan.followCamera
+                    ? [{ id: "camera_follow", type: "CameraFollow", label: "Follow John", icon: "◉", className: "clip-camera", start: timing.walkStart, duration: Math.min(state.duration - timing.walkStart, timing.exitStart + timing.exitDuration - timing.walkStart), target: "entity_john" }]
+                    : [])
             ]
         };
+    }
+
+    function buildTimelineTracks() {
+        const clips = timelineClipDefinitions();
 
         return state.timelineTrackIds
             .filter((entityId, index, list) =>
@@ -533,6 +746,8 @@
             duration: state.duration,
             timelineTrackIds: state.timelineTrackIds,
             keyframes: state.keyframes,
+            motionPlan: state.motionPlan,
+            actions: state.actions,
             currentPrompt: state.currentPrompt,
             promptHistory: state.promptHistory,
             currentPromptHistoryId: state.currentPromptHistoryId
@@ -551,6 +766,8 @@
             duration: state.duration,
             timelineTrackIds: state.timelineTrackIds,
             keyframes: state.keyframes,
+            motionPlan: state.motionPlan,
+            actions: state.actions,
             currentPrompt: state.currentPrompt,
             promptHistory: state.promptHistory,
             currentPromptHistoryId: state.currentPromptHistoryId
@@ -566,6 +783,8 @@
         state.duration = value.duration || DURATION;
         state.timelineTrackIds = value.timelineTrackIds || [...DEFAULT_TRACK_IDS];
         state.keyframes = value.keyframes || {};
+        state.motionPlan = value.motionPlan || cloneData(DEFAULT_MOTION_PLAN);
+        state.actions = value.actions || cloneData(DEFAULT_ACTIONS);
         state.selectedKeyframe = null;
         state.currentPrompt = value.currentPrompt || DEFAULT_PROMPT;
         state.promptHistory = value.promptHistory || [];
@@ -721,18 +940,29 @@
         const rig = group.userData.rig;
         if (!rig) return;
         const isJohn = entityId === "entity_john";
-        const seated = isJohn ? time < 4 : true;
-        const standProgress = isJohn ? ease((time - 4) / 1.6) : 0;
-        const walking = isJohn && time >= 5.6 && time <= 10.8;
-        const walkPhase = walking ? (time - 5.6) * 5.8 : 0;
+        const timing = motionTiming();
+        const seated = isJohn ? time < timing.standStart : true;
+        const standProgress = isJohn
+            ? ease((time - timing.standStart) / timing.standDuration)
+            : 0;
+        const stepping = isJohn && Boolean(state.motionPlan?.stepDirection) &&
+            time >= timing.stepStart && time <= timing.stepStart + timing.stepDuration;
+        const walking = isJohn && (
+            stepping ||
+            (state.motionPlan?.walkToDoor &&
+                time >= timing.walkStart &&
+                time <= timing.exitStart + timing.exitDuration)
+        );
+        const walkPhase = walking ? (time - (stepping ? timing.stepStart : timing.walkStart)) * 5.8 : 0;
+        const duckAmount = isJohn ? duckAmountAtTime(time) : 0;
 
         const seatAmount = isJohn ? 1 - standProgress : 1;
-        rig.hips.position.y = lerp(1.02, 0.82, seatAmount);
-        rig.hips.rotation.x = lerp(0, -0.08, seatAmount);
+        rig.hips.position.y = lerp(1.02, 0.82, seatAmount) - duckAmount * 0.28;
+        rig.hips.rotation.x = lerp(0, -0.08, seatAmount) - duckAmount * 0.18;
 
         [rig.leftLeg, rig.rightLeg].forEach((leg) => {
-            leg.pivot.rotation.x = lerp(0, -Math.PI * 0.47, seatAmount);
-            leg.lowerPivot.rotation.x = lerp(0, Math.PI * 0.5, seatAmount);
+            leg.pivot.rotation.x = lerp(duckAmount * -0.42, -Math.PI * 0.47, seatAmount);
+            leg.lowerPivot.rotation.x = lerp(duckAmount * 0.86, Math.PI * 0.5, seatAmount);
         });
 
         rig.leftArm.pivot.rotation.z = seated ? -0.14 : -0.04;
@@ -751,8 +981,10 @@
             rig.hips.position.y = 1.02 + Math.abs(Math.sin(walkPhase * 2)) * 0.025;
         }
 
-        if (isJohn && time >= 1.1 && time <= 3.8) {
-            rig.head.rotation.y = Math.sin((time - 1.1) * 3) * 0.05;
+        if (isJohn &&
+            time >= timing.speakStart &&
+            time <= timing.speakStart + timing.speakDuration) {
+            rig.head.rotation.y = Math.sin((time - timing.speakStart) * 3) * 0.05;
             rig.rightArm.pivot.rotation.x = -0.46;
             rig.rightArm.pivot.rotation.z = 0.12;
         } else {
@@ -1093,8 +1325,329 @@
         runtime.renderer.render(runtime.scene, runtime.camera);
     }
 
-    function updateAtTime(time) {
+    function actionProgress(action, time) {
+        const start = Number(action.start || 0);
+        const duration = Math.max(Number(action.duration || 0), 0.0001);
+        const linear = clamp((time - start) / duration, 0, 1);
+        if (action.easing === "gravity") return linear * linear;
+        if (action.easing === "linear") return linear;
+        return ease(linear);
+    }
+
+    function actionsForEntity(entityId) {
+        return (state.actions || [])
+            .filter((action) => action.entityId === entityId)
+            .sort((a, b) => Number(a.start || 0) - Number(b.start || 0));
+    }
+
+    function directionVector(direction) {
+        return {
+            left: [-1, 0, 0],
+            right: [1, 0, 0],
+            up: [0, 1, 0],
+            down: [0, -1, 0],
+            forward: [0, 0, -1],
+            backward: [0, 0, 1],
+            back: [0, 0, 1]
+        }[String(direction || "").toLowerCase()] || [0, 0, 0];
+    }
+
+    function groundHeightForEntity(entity) {
+        if (entity.type === "box" || entity.type === "sphere") {
+            return 0.5 * Number(entity.scale?.[1] || 1);
+        }
+        return Number(entity.position?.[1] || 0);
+    }
+
+    function normalizeActionPlan(actions) {
+        const transforms = new Map(state.entities.map((entity) => [
+            entity.id,
+            {
+                position: [...entity.position],
+                rotation: [...entity.rotation],
+                scale: [...entity.scale]
+            }
+        ]));
+        return cloneData(actions || [])
+            .map((action, index) => ({
+                id: action.id || `action_${stableHash(JSON.stringify(action))}_${index}`,
+                start: Math.max(0, Number(action.start || 0)),
+                duration: Math.max(0, Number(action.duration || 0)),
+                ...action
+            }))
+            .sort((a, b) => a.start - b.start)
+            .map((action) => {
+                const entity = entityById(action.entityId);
+                const transform = transforms.get(action.entityId);
+                if (!entity || !transform) return action;
+                if (action.type === "place") {
+                    action.from ||= [...transform.position];
+                    action.to ||= action.position || [...transform.position];
+                    transform.position = [...action.to];
+                } else if (action.type === "moveBy") {
+                    const vector = directionVector(action.direction)
+                        .map((value) => value * Number(action.distance || 1));
+                    action.from ||= [...transform.position];
+                    action.to ||= action.from.map((value, axis) => value + vector[axis]);
+                    transform.position = [...action.to];
+                } else if (action.type === "moveTo" || action.type === "fallToGround") {
+                    action.from ||= [...transform.position];
+                    if (action.type === "fallToGround") {
+                        const groundY = entity.type === "box" || entity.type === "sphere"
+                            ? 0.5 * Number(transform.scale[1] || 1)
+                            : groundHeightForEntity(entity);
+                        action.to = [action.from[0], groundY, action.from[2]];
+                    } else {
+                        action.to ||= [...transform.position];
+                    }
+                    transform.position = [...action.to];
+                } else if (action.type === "rotateBy") {
+                    action.from ||= [...transform.rotation];
+                    const axis = { x: 0, y: 1, z: 2 }[action.axis || "y"];
+                    action.to ||= [...action.from];
+                    action.to[axis] += radians(Number(action.degrees || 0));
+                    transform.rotation = [...action.to];
+                } else if (action.type === "rotateTo") {
+                    action.from ||= [...transform.rotation];
+                    action.to ||= [...transform.rotation];
+                    transform.rotation = [...action.to];
+                } else if (action.type === "scaleTo") {
+                    action.from ||= [...transform.scale];
+                    action.to ||= Array.isArray(action.scale)
+                        ? action.scale
+                        : [Number(action.scale || 1), Number(action.scale || 1), Number(action.scale || 1)];
+                    transform.scale = [...action.to];
+                }
+                return action;
+            });
+    }
+
+    function evaluateEntityTransform(entity, time) {
+        const transform = {
+            position: [...entity.position],
+            rotation: [...entity.rotation],
+            scale: [...entity.scale]
+        };
+        actionsForEntity(entity.id).forEach((action) => {
+            if (time < Number(action.start || 0)) return;
+            const progress = actionProgress(action, time);
+            if (["place", "moveBy", "moveTo", "fallToGround"].includes(action.type) &&
+                action.from && action.to) {
+                transform.position = action.from.map((value, axis) =>
+                    lerp(value, action.to[axis], progress));
+            } else if (["rotateBy", "rotateTo"].includes(action.type) &&
+                action.from && action.to) {
+                transform.rotation = action.from.map((value, axis) =>
+                    lerpAngle(value, action.to[axis], progress));
+            } else if (action.type === "scaleTo" && action.from && action.to) {
+                transform.scale = action.from.map((value, axis) =>
+                    lerp(value, action.to[axis], progress));
+            }
+            if (action.type === "duck") {
+                const local = clamp((time - action.start) / Math.max(action.duration, 0.001), 0, 1);
+                const amount = local < 0.3
+                    ? ease(local / 0.3)
+                    : local > 0.7 ? 1 - ease((local - 0.7) / 0.3) : 1;
+                transform.position[1] -= 0.18 * amount;
+            }
+        });
+        return transform;
+    }
+
+    function activeAction(entityId, time, types = null) {
+        return actionsForEntity(entityId).findLast((action) => {
+            if (types && !types.includes(action.type)) return false;
+            const start = Number(action.start || 0);
+            const end = start + Math.max(Number(action.duration || 0), 0.22);
+            return time >= start && time <= end;
+        }) || null;
+    }
+
+    function applyActionHumanoidPose(group, time, entityId) {
+        const rig = group.userData.rig;
+        if (!rig) return;
+        const entity = entityById(entityId);
+        const stand = actionsForEntity(entityId).find((action) => action.type === "stand");
+        const seatedByDefault = entity?.type === "robot" || Boolean(stand);
+        const standProgress = stand
+            ? actionProgress(stand, time)
+            : seatedByDefault ? 0 : 1;
+        const seatAmount = seatedByDefault ? 1 - standProgress : 0;
+        const duck = activeAction(entityId, time, ["duck"]);
+        const duckProgress = duck
+            ? clamp((time - duck.start) / Math.max(duck.duration, 0.001), 0, 1)
+            : 0;
+        const duckAmount = !duck
+            ? 0
+            : duckProgress < 0.3
+                ? ease(duckProgress / 0.3)
+                : duckProgress > 0.7 ? 1 - ease((duckProgress - 0.7) / 0.3) : 1;
+        const locomotion = activeAction(entityId, time, ["moveBy", "moveTo", "fallToGround"]);
+        const locomotionClip = activeAction(entityId, time, ["walk", "run"]);
+        const walking = locomotion?.locomotion === "walk" || locomotionClip?.type === "walk";
+        const running = locomotion?.locomotion === "run" || locomotionClip?.type === "run";
+        const walkPhase = walking || running
+            ? (time - (locomotion?.start ?? locomotionClip.start)) * (running ? 9.2 : 5.8)
+            : 0;
+
+        rig.hips.position.y = lerp(1.02, 0.82, seatAmount) - duckAmount * 0.28;
+        rig.hips.rotation.x = lerp(0, -0.08, seatAmount) - duckAmount * 0.18;
+        [rig.leftLeg, rig.rightLeg].forEach((leg) => {
+            leg.pivot.rotation.x = lerp(duckAmount * -0.42, -Math.PI * 0.47, seatAmount);
+            leg.lowerPivot.rotation.x = lerp(duckAmount * 0.86, Math.PI * 0.5, seatAmount);
+        });
+        rig.leftArm.pivot.rotation.z = seatAmount > 0.5 ? -0.14 : -0.04;
+        rig.rightArm.pivot.rotation.z = seatAmount > 0.5 ? 0.14 : 0.04;
+        rig.leftArm.pivot.rotation.x = seatAmount > 0.5 ? -0.18 : 0;
+        rig.rightArm.pivot.rotation.x = seatAmount > 0.5 ? -0.18 : 0;
+
+        if (walking || running) {
+            const swing = Math.sin(walkPhase) * (running ? 0.82 : 0.58);
+            rig.leftLeg.pivot.rotation.x = swing;
+            rig.rightLeg.pivot.rotation.x = -swing;
+            rig.leftLeg.lowerPivot.rotation.x = Math.max(0, -swing) * 0.6;
+            rig.rightLeg.lowerPivot.rotation.x = Math.max(0, swing) * 0.6;
+            rig.leftArm.pivot.rotation.x = -swing * 0.72;
+            rig.rightArm.pivot.rotation.x = swing * 0.72;
+            rig.hips.position.y = 1.02 + Math.abs(Math.sin(walkPhase * 2)) * 0.025;
+        }
+
+        const jumping = activeAction(entityId, time, ["jump"]);
+        if (jumping) {
+            const jumpProgress = actionProgress(jumping, time);
+            rig.hips.position.y += Math.sin(jumpProgress * Math.PI) * 0.72;
+            rig.leftLeg.pivot.rotation.x = -0.32;
+            rig.rightLeg.pivot.rotation.x = -0.32;
+            rig.leftLeg.lowerPivot.rotation.x = 0.68;
+            rig.rightLeg.lowerPivot.rotation.x = 0.68;
+            rig.leftArm.pivot.rotation.z = -0.75;
+            rig.rightArm.pivot.rotation.z = 0.75;
+        }
+
+        const speaking = activeAction(entityId, time, ["speak"]);
+        if (speaking) {
+            rig.head.rotation.y = Math.sin((time - speaking.start) * 3) * 0.05;
+            rig.rightArm.pivot.rotation.x = -0.46;
+            rig.rightArm.pivot.rotation.z = 0.12;
+        } else {
+            rig.head.rotation.y = 0;
+        }
+    }
+
+    function applyActionMaterials(entity, object, time) {
+        const primary = object.userData.materials?.[0];
+        if (!primary?.color) return;
+        primary.color.set(entity.color || "#888888");
+        actionsForEntity(entity.id)
+            .filter((action) => action.type === "setColor" && time >= action.start)
+            .forEach((action) => {
+                if (!action.duration || !action.fromColor) {
+                    primary.color.set(action.color || "#D85A4F");
+                    return;
+                }
+                const from = new THREE.Color(action.fromColor);
+                const to = new THREE.Color(action.color || "#D85A4F");
+                primary.color.copy(from.lerp(to, actionProgress(action, time)));
+            });
+    }
+
+    function updateCameraFromActions(time) {
+        if (!runtime.camera || !runtime.controls) return;
+        const cameraEntity = entityById("camera_main");
+        const follow = activeAction("camera_main", time, ["cameraFollow"]);
+        if (follow) {
+            const targetObject = runtime.objects.get(follow.targetId);
+            if (targetObject) {
+                const offset = follow.offset || [3.7, 2.9, 4.8];
+                runtime.camera.position.set(
+                    targetObject.position.x + offset[0],
+                    targetObject.position.y + offset[1],
+                    targetObject.position.z + offset[2]
+                );
+                runtime.controls.target.set(
+                    targetObject.position.x,
+                    targetObject.position.y + 1.05,
+                    targetObject.position.z
+                );
+                return;
+            }
+        }
+        const lookAt = activeAction("camera_main", time, ["cameraLookAt"]);
+        if (lookAt) {
+            const targetObject = runtime.objects.get(lookAt.targetId);
+            if (targetObject) runtime.controls.target.copy(targetObject.position);
+        } else {
+            const movement = activeAction("camera_main", time, ["moveBy", "moveTo"]);
+            if (movement?.from && movement?.to) {
+                const progress = actionProgress(movement, time);
+                runtime.camera.position.set(
+                    lerp(movement.from[0], movement.to[0], progress),
+                    lerp(movement.from[1], movement.to[1], progress),
+                    lerp(movement.from[2], movement.to[2], progress)
+                );
+                return;
+            }
+        }
+        if (cameraEntity && time <= 0.001) {
+            runtime.camera.position.set(...cameraEntity.position);
+            runtime.controls.target.set(0, 1, 0);
+        }
+    }
+
+    function updateAtTimeFromActions(time) {
         state.time = clamp(time, 0, state.duration);
+        state.entities.forEach((entity) => {
+            if (entity.type === "camera") return;
+            const object = runtime.objects.get(entity.id);
+            if (!object) return;
+            const transform = evaluateEntityTransform(entity, state.time);
+            object.position.set(...transform.position);
+            object.rotation.set(...transform.rotation);
+            object.scale.set(...transform.scale);
+            applyActionMaterials(entity, object, state.time);
+            if (entity.type === "character" || entity.type === "robot") {
+                applyActionHumanoidPose(object, state.time, entity.id);
+            }
+            if (object.userData.doorPivot) {
+                const opening = actionsForEntity(entity.id)
+                    .filter((action) => ["open", "close"].includes(action.type))
+                    .findLast((action) => state.time >= action.start);
+                const amount = opening
+                    ? actionProgress(opening, state.time) * (opening.type === "open" ? 1 : -1)
+                    : 0;
+                object.userData.doorPivot.rotation.y =
+                    opening?.type === "close"
+                        ? -Math.PI * 0.56 * (1 - actionProgress(opening, state.time))
+                        : -amount * Math.PI * 0.56;
+            }
+        });
+
+        const speech = (state.actions || []).find((action) =>
+            action.type === "speak" &&
+            state.time >= action.start &&
+            state.time <= action.start + action.duration);
+        $("#dialogueBubble").classList.toggle("is-visible", Boolean(speech));
+        if (speech) {
+            $("#dialogueBubble span").textContent = entityById(speech.entityId)?.name.toUpperCase() || "ENTITY";
+            $("#dialogueBubble p").textContent = speech.text || "";
+        }
+
+        applyTransformKeyframes(state.time);
+        updateCameraFromActions(state.time);
+        applyCameraKeyframes(state.time);
+        $("#runtimeState").textContent = runtimeStateForSelection();
+        updateEvaluatedTransformInspector();
+        updateTimelineUI();
+    }
+
+    function updateAtTime(time) {
+        if (Array.isArray(state.actions)) {
+            updateAtTimeFromActions(time);
+            return;
+        }
+        state.time = clamp(time, 0, state.duration);
+        const plan = state.motionPlan || DEFAULT_MOTION_PLAN;
+        const timing = motionTiming();
         const johnEntity = entityById("entity_john");
         const john = runtime.objects.get("entity_john");
         const robot = runtime.objects.get("entity_robot");
@@ -1102,22 +1655,35 @@
 
         if (john && johnEntity) {
             const initial = johnEntity.position;
-            if (state.time < 5.6) {
-                john.position.set(...initial);
-                john.rotation.y = johnEntity.rotation[1];
-            } else {
-                const t = ease((state.time - 5.6) / 3.9);
+            const stepOffset = Number(plan.stepDirection || 0) * 0.65;
+            const stepProgress = timing.stepDuration
+                ? ease((state.time - timing.stepStart) / timing.stepDuration)
+                : 0;
+            const steppedX = initial[0] + stepOffset;
+            let x = initial[0] + stepOffset * stepProgress;
+            let y = initial[1] - duckAmountAtTime(state.time) * 0.18;
+            let z = initial[2];
+            let rotationY = johnEntity.rotation[1];
+
+            if (timing.stepDuration && state.time >= timing.stepStart + timing.stepDuration) {
+                x = steppedX;
+            }
+            if (plan.walkToDoor && state.time >= timing.walkStart) {
+                const t = ease((state.time - timing.walkStart) / timing.walkDuration);
                 john.position.set(
-                    lerp(initial[0], 3.5, t),
-                    initial[1],
+                    lerp(steppedX, 3.5, t),
+                    y,
                     lerp(initial[2], -1.16, t)
                 );
-                john.rotation.y = lerp(johnEntity.rotation[1], -Math.PI / 2, ease(t * 2.2));
-                if (state.time > 10.4) {
-                    const exitT = ease((state.time - 10.4) / 2.3);
+                rotationY = lerp(johnEntity.rotation[1], -Math.PI / 2, ease(t * 2.2));
+                if (state.time > timing.exitStart) {
+                    const exitT = ease((state.time - timing.exitStart) / timing.exitDuration);
                     john.position.x = lerp(3.5, 5.3, exitT);
                 }
+            } else {
+                john.position.set(x, y, z);
             }
+            john.rotation.y = rotationY;
             applyHumanoidPose(john, state.time, "entity_john");
         }
 
@@ -1128,13 +1694,19 @@
         }
 
         if (door?.userData.doorPivot) {
-            const open = ease((state.time - 9) / 1.4);
+            const open = plan.openDoor
+                ? ease((state.time - timing.doorOpenStart) / timing.doorOpenDuration)
+                : 0;
             door.userData.doorPivot.rotation.y = -open * Math.PI * 0.56;
         }
 
         applyTransformKeyframes(state.time);
 
-        const dialogueVisible = state.time >= 1.1 && state.time <= 3.8;
+        const dialogueVisible =
+            plan.speak !== false &&
+            state.time >= timing.speakStart &&
+            state.time <= timing.speakStart + timing.speakDuration;
+        $("#dialogueBubble p").textContent = plan.speakText || DEFAULT_MOTION_PLAN.speakText;
         $("#dialogueBubble").classList.toggle("is-visible", dialogueVisible);
         $("#runtimeState").textContent = runtimeStateForSelection();
 
@@ -1216,9 +1788,14 @@
         $("#scaleX").value = round(object.scale.x);
         $("#scaleY").value = round(object.scale.y);
         $("#scaleZ").value = round(object.scale.z);
+        const evaluatedMaterial = object.userData.materials?.[0];
+        if (evaluatedMaterial?.color && document.activeElement?.id !== "materialColor") {
+            $("#materialColor").value = `#${evaluatedMaterial.color.getHexString()}`;
+        }
 
         const hasAnimation = state.time > 0.001 ||
             Boolean(state.keyframes[state.selectedId]?.length) ||
+            actionsForEntity(state.selectedId).length > 0 ||
             ["entity_john", "entity_robot", "entity_door", "camera_main"].includes(state.selectedId);
         const badge = $("#animationBadge");
         badge.textContent = hasAnimation ? `EVAL ${state.time.toFixed(1)}s` : "BASE";
@@ -1230,11 +1807,12 @@
 
     function updateCameraTrack() {
         if (!runtime.camera || !runtime.controls) return;
+        const timing = motionTiming();
         let position;
         let target;
         const closeOffset = state.cameraCloser ? 0.72 : 1;
-        if (state.time < 5.6) {
-            const push = ease(state.time / 5.6);
+        if (!state.motionPlan?.followCamera || state.time < timing.walkStart) {
+            const push = ease(state.time / Math.max(timing.walkStart, 0.1));
             position = new THREE.Vector3(
                 lerp(6.4, 5.1, push) * closeOffset,
                 lerp(4.5, 3.65, push) * closeOffset,
@@ -1252,14 +1830,33 @@
     }
 
     function runtimeStateForSelection() {
+        if (Array.isArray(state.actions)) {
+            const current = activeAction(state.selectedId, state.time);
+            if (current) return actionPresentation(current)[0].toLowerCase();
+            const completed = actionsForEntity(state.selectedId)
+                .filter((action) => state.time >= action.start + Math.max(action.duration || 0, 0.22))
+                .at(-1);
+            return completed ? `${actionPresentation(completed)[0].toLowerCase()} complete` : "idle";
+        }
         if (state.selectedId === "entity_john") {
-            if (state.time < 4) return "seated";
-            if (state.time < 5.6) return "standing";
-            if (state.time < 9.5) return "walking";
-            if (state.time < 10.4) return "opening door";
+            const plan = state.motionPlan || DEFAULT_MOTION_PLAN;
+            const timing = motionTiming();
+            if (state.time < timing.standStart) return "seated";
+            if (state.time < timing.standStart + timing.standDuration) return "standing";
+            if (plan.stepDirection && state.time < timing.stepStart + timing.stepDuration) {
+                return plan.stepDirection < 0 ? "stepping left" : "stepping right";
+            }
+            if (plan.duck && state.time < timing.duckStart + timing.duckDuration) return "ducking";
+            if (plan.walkToDoor && state.time < timing.walkEnd) return "walking";
+            if (plan.openDoor && state.time < timing.exitStart) return "opening door";
             return "exiting";
         }
-        if (state.selectedId === "entity_door") return state.time >= 10.4 ? "open" : state.time >= 9 ? "opening" : "closed";
+        if (state.selectedId === "entity_door") {
+            const timing = motionTiming();
+            return state.time >= timing.doorOpenStart + timing.doorOpenDuration
+                ? "open"
+                : state.time >= timing.doorOpenStart ? "opening" : "closed";
+        }
         return "idle";
     }
 
@@ -1552,14 +2149,7 @@
     }
 
     function setupTimeline() {
-        const ruler = $("#timelineRuler");
-        for (let second = 0; second <= DURATION; second += 2) {
-            const mark = document.createElement("div");
-            mark.className = "ruler-mark";
-            mark.style.left = `${second / DURATION * 100}%`;
-            mark.innerHTML = `<span>0:${String(second).padStart(2, "0")}</span>`;
-            ruler.appendChild(mark);
-        }
+        renderTimelineRuler();
 
         const seek = (event) => {
             if (event.target.closest(".timeline-clip, .timeline-keyframe")) return;
@@ -1570,16 +2160,6 @@
             updateAtTime(t);
         };
         $("#timelineContent").addEventListener("pointerdown", seek);
-
-        $$(".timeline-clip").forEach((clip) => {
-            clip.addEventListener("click", (event) => {
-                event.stopPropagation();
-                $$(".timeline-clip").forEach((item) => item.classList.remove("selected"));
-                clip.classList.add("selected");
-                updateAtTime(Number(clip.dataset.start));
-            });
-            setupClipDrag(clip);
-        });
 
         const labels = $("#trackLabels");
         const scroll = $("#timelineScroll");
@@ -1607,6 +2187,30 @@
         });
 
         renderTimelineTracks();
+    }
+
+    function renderTimelineRuler() {
+        const ruler = $("#timelineRuler");
+        if (!ruler) return;
+        ruler.innerHTML = "";
+        const interval = state.duration > 30 ? 5 : state.duration > 15 ? 3 : 2;
+        for (let second = 0; second <= state.duration; second += interval) {
+            const mark = document.createElement("div");
+            mark.className = "ruler-mark";
+            mark.style.left = `${second / state.duration * 100}%`;
+            mark.innerHTML = `<span>0:${String(second).padStart(2, "0")}</span>`;
+            ruler.appendChild(mark);
+        }
+    }
+
+    function bindTimelineClip(clip) {
+        clip.addEventListener("click", (event) => {
+            event.stopPropagation();
+            $$(".timeline-clip").forEach((item) => item.classList.remove("selected"));
+            clip.classList.add("selected");
+            updateAtTime(Number(clip.dataset.start));
+        });
+        setupClipDrag(clip);
     }
 
     function ensureEntityTrack(entityId, shouldScroll = true) {
@@ -1660,6 +2264,30 @@
             }
         });
 
+        const clipDefinitions = timelineClipDefinitions();
+        $$(".timeline-clip", content).forEach((node) => node.remove());
+        state.timelineTrackIds.forEach((entityId) => {
+            const row = $(`.track-row[data-track="${entityId}"]`, content);
+            if (!row) return;
+            (clipDefinitions[entityId] || []).forEach((definition) => {
+                if (definition.start >= state.duration || definition.duration <= 0) return;
+                const clip = document.createElement("button");
+                clip.className = `timeline-clip ${definition.className}`;
+                clip.type = "button";
+                clip.dataset.clipId = definition.id;
+                clip.dataset.start = String(definition.start);
+                clip.dataset.duration = String(Math.min(definition.duration, state.duration - definition.start));
+                clip.style.setProperty("--start", `${definition.start / state.duration * 100}%`);
+                clip.style.setProperty("--width", `${Math.min(definition.duration, state.duration - definition.start) / state.duration * 100}%`);
+                clip.innerHTML = `<b>${escapeHtml(definition.icon)}</b> ${escapeHtml(definition.label)}`;
+                bindTimelineClip(clip);
+                row.appendChild(clip);
+            });
+            const count = (clipDefinitions[entityId] || []).length;
+            const labelMeta = $(`[data-track-label="${entityId}"] small`, labels);
+            if (labelMeta) labelMeta.textContent = `${count} clip${count === 1 ? "" : "s"}`;
+        });
+
         $$("[data-track-label]", labels).forEach((label) => {
             label.classList.toggle("is-selected", label.dataset.trackLabel === state.selectedId);
         });
@@ -1669,7 +2297,7 @@
             const row = $(`.track-row[data-track="${entityId}"]`, content);
             if (!row) return;
 
-            (GENERATED_TRANSFORM_MARKERS[entityId] || [])
+            generatedTransformMarkerTimes(entityId)
                 .filter((time) => time <= state.duration)
                 .forEach((time) => {
                 const marker = createKeyframeMarker(entityId, {
@@ -1685,6 +2313,39 @@
         });
 
         $("#deleteKeyframeButton").disabled = !state.selectedKeyframe;
+    }
+
+    function generatedTransformMarkerTimes(entityId) {
+        if (Array.isArray(state.actions)) {
+            return [...new Set(actionsForEntity(entityId).flatMap((action) => [
+                Math.round(Number(action.start || 0) * 1000) / 1000,
+                Math.round((Number(action.start || 0) + Number(action.duration || 0)) * 1000) / 1000
+            ]))].sort((a, b) => a - b);
+        }
+        if (entityId !== "entity_john") return GENERATED_TRANSFORM_MARKERS[entityId] || [];
+        const timing = motionTiming();
+        const markers = [
+            0,
+            timing.standStart,
+            timing.standStart + timing.standDuration,
+            timing.walkStart,
+            timing.walkEnd,
+            timing.exitStart,
+            timing.exitStart + timing.exitDuration
+        ];
+        if (state.motionPlan?.stepDirection) {
+            markers.push(timing.stepStart, timing.stepStart + timing.stepDuration);
+        }
+        if (state.motionPlan?.duck) {
+            markers.push(
+                timing.duckStart,
+                timing.duckStart + timing.duckDuration * 0.3,
+                timing.duckStart + timing.duckDuration * 0.7,
+                timing.duckStart + timing.duckDuration
+            );
+        }
+        return [...new Set(markers.map((time) => Math.round(time * 1000) / 1000))]
+            .sort((a, b) => a - b);
     }
 
     function trackColorClass(entity) {
@@ -2023,6 +2684,10 @@
         state.duration = documentData.scene?.duration || DURATION;
         state.environment = documentData.environment || state.environment;
         state.entities = documentData.entities;
+        state.motionPlan = documentData.motionPlan || cloneData(DEFAULT_MOTION_PLAN);
+        state.actions = Array.isArray(documentData.actions)
+            ? documentData.actions
+            : cloneData(DEFAULT_ACTIONS);
         state.promptHistory = Array.isArray(documentData.promptHistory)
             ? documentData.promptHistory
             : [];
@@ -2215,54 +2880,141 @@
         toast(`${entity.name} configured as ${classification} · ${capabilities.length} capabilities`);
     }
 
-    function fallbackPlan(prompt) {
-        const normalized = prompt.toLowerCase();
-        const inputHash = stableHash(`offline-fallback-v1\n${normalized}\n${JSON.stringify(plannerSceneDocument())}`);
-        const operations = [];
-        if (normalized.includes("camera") && (normalized.includes("closer") || normalized.includes("close"))) {
-            operations.push({ op: "updateCamera", id: "camera_main", framing: "closer" });
+    function fallbackPlan(prompt, previousPrompt = "") {
+        const normalized = prompt.replaceAll("**", "").toLowerCase();
+        const normalizedPrevious = previousPrompt.replaceAll("**", "").toLowerCase();
+        const inputHash = stableHash(`offline-action-planner-v2\n${normalizedPrevious}\n${normalized}\n${JSON.stringify(plannerSceneDocument())}`);
+        if (normalized.trim() === normalizedPrevious.trim() && normalizedPrevious.trim()) {
+            return {
+                patchId: `patch_${inputHash}`,
+                operations: [],
+                warnings: ["The prompt is unchanged from the latest applied version."],
+                changes: [],
+                planner: "offline-action-planner-v2"
+            };
         }
+
+        const operations = [];
+        const actions = [];
         if (normalized.includes("monochrome") || normalized.includes("black and white") || normalized.includes("grayscale")) {
             operations.push({ op: "updateStyle", style: "monochrome" });
         }
-        if ((normalized.includes("add") || normalized.includes("create")) &&
-            (normalized.includes("cube") || normalized.includes("box"))) {
-            operations.push({
-                op: "addPrimitive",
-                primitive: "box",
-                name: normalized.includes("box")
-                    ? `${normalized.includes("blue") ? "Blue " : ""}Box`
-                    : `${normalized.includes("blue") ? "Blue " : ""}Cube`,
-                color: normalized.includes("red") ? "#D85A4F" : normalized.includes("green") ? "#5B9A68" : "#5E80D5"
-            });
-        }
-        if ((normalized.includes("add") || normalized.includes("create")) && normalized.includes("sphere")) {
-            operations.push({ op: "addPrimitive", primitive: "sphere", name: "Sphere", color: "#D6A954" });
-        }
-        if (normalized.includes("robot") && normalized.includes("slower")) {
-            operations.push({ op: "updateClip", clipId: "john_walk", speedMultiplier: 0.7 });
-        }
-        const removeAfter = normalized.match(/remove everything after\s+(\d+(?:\.\d+)?)\s*(?:seconds?|s)?/);
-        if (removeAfter) operations.push({ op: "trimTimeline", end: clamp(Number(removeAfter[1]), 2, DURATION) });
-        if (!operations.length) {
-            operations.push(
-                { op: "updateClip", clipId: "john_speak", text: "We need to leave." },
-                { op: "addClip", type: "Stand", entityId: "entity_john", start: 4 },
-                { op: "addClip", type: "WalkTo", entityId: "entity_john", target: "entity_door", start: 5.6 },
-                { op: "addClip", type: "Open", entityId: "entity_door", start: 9 },
-                { op: "updateCamera", type: "CameraFollow", target: "entity_john" }
-            );
-        }
-        operations.forEach((operation, index) => {
-            if (operation.op === "addPrimitive") {
-                operation.entityId = `entity_generated_${inputHash}_${String(index).padStart(2, "0")}`;
+
+        if (normalized.includes("box") || normalized.includes("cube") || normalized.includes("sphere")) {
+            let entity = state.entities.find((candidate) =>
+                normalized.includes(candidate.name.toLowerCase()) ||
+                (candidate.type === "box" && (normalized.includes("box") || normalized.includes("cube"))) ||
+                (candidate.type === "sphere" && normalized.includes("sphere")));
+            const primitive = normalized.includes("sphere") ? "sphere" : "box";
+            const groundY = 0.5;
+            const startPosition = normalized.includes("left bottom") || normalized.includes("bottom left")
+                ? [-3, groundY, 0]
+                : [0, groundY, 0];
+            if (!entity) {
+                const entityId = `entity_generated_${inputHash}_00`;
+                entity = {
+                    id: entityId,
+                    name: `${normalized.includes("blue") ? "Blue " : ""}${primitive === "box" ? "Box" : "Sphere"}`,
+                    type: primitive,
+                    position: startPosition,
+                    rotation: [0, 0, 0],
+                    scale: [1, 1, 1]
+                };
+                operations.push({
+                    op: "addPrimitive",
+                    entityId,
+                    primitive,
+                    name: entity.name,
+                    color: normalized.includes("green") ? "#5B9A68" : normalized.includes("red box") ? "#D85A4F" : "#5E80D5",
+                    position: startPosition
+                });
             }
+            actions.push({ type: "place", entityId: entity.id, start: 0, duration: 0, from: entity.position, to: startPosition });
+            const duration = Number(normalized.match(/(?:over|for)\s+(\d+(?:\.\d+)?)\s*s/)?.[1] || 1);
+            let cursor = 0;
+            let position = [...startPosition];
+            if (normalized.includes("move")) {
+                const to = [...position];
+                if (normalized.includes("right")) to[0] = normalized.includes("screen") ? 3 : to[0] + 1;
+                if (normalized.includes("left")) to[0] -= 1;
+                if (normalized.includes("up")) to[1] += normalized.includes("half") ? 2.5 : 1;
+                if (normalized.includes("down")) to[1] -= 1;
+                actions.push({ type: "moveTo", entityId: entity.id, start: cursor, duration, from: position, to });
+                position = to;
+                cursor += duration;
+            }
+            const finalColor = normalized.match(/(?:turns?|turning|becomes?)\s+(red|blue|green|yellow)/)?.[1];
+            if (finalColor) {
+                const colors = { red: "#D85A4F", blue: "#5E80D5", green: "#5B9A68", yellow: "#D6A954" };
+                actions.push({ type: "setColor", entityId: entity.id, start: cursor, duration: 0, color: colors[finalColor], colorName: finalColor });
+            }
+            if (normalized.includes("fall")) {
+                actions.push({
+                    type: "fallToGround",
+                    entityId: entity.id,
+                    start: cursor,
+                    duration: 1.25,
+                    from: position,
+                    to: [position[0], groundY, position[2]],
+                    easing: "gravity"
+                });
+            }
+        } else if (normalized.includes("john")) {
+            const john = entityById("entity_john");
+            const door = state.entities.find((entity) => entity.type === "door");
+            let cursor = 1.1;
+            let position = [...john.position];
+            const dialogue = prompt.match(/(?:says?|speaks?)\s+[“"']([^”"']+)[”"']/i);
+            if (dialogue || normalized.includes("say")) {
+                actions.push({ type: "speak", entityId: john.id, start: cursor, duration: 2.7, text: dialogue?.[1] || "We need to leave." });
+                cursor = 4;
+            }
+            if (normalized.includes("stand")) {
+                actions.push({ type: "stand", entityId: john.id, start: cursor, duration: 1.2 });
+                cursor += 1.2;
+            }
+            if ((normalized.includes("step") || normalized.includes("move")) && (normalized.includes("left") || normalized.includes("right"))) {
+                const to = [...position];
+                to[0] += normalized.includes("left") ? -0.65 : 0.65;
+                actions.push({ type: "moveTo", entityId: john.id, start: cursor, duration: 0.9, from: position, to, locomotion: "walk" });
+                position = to;
+                cursor += 0.9;
+            }
+            if (normalized.includes("duck") || normalized.includes("crouch")) {
+                actions.push({ type: "duck", entityId: john.id, start: cursor, duration: 1.15 });
+                cursor += 1.15;
+            }
+            let walkStart = cursor;
+            if (normalized.includes("walk") && door) {
+                const to = [door.position[0] - 0.7, position[1], door.position[2] + 0.14];
+                actions.push({ type: "moveTo", entityId: john.id, start: cursor, duration: 3.2, from: position, to, locomotion: "walk", targetId: door.id });
+                position = to;
+                cursor += 3.2;
+            }
+            if (normalized.includes("open") && door) {
+                actions.push({ type: "open", entityId: door.id, start: cursor - 0.25, duration: 1.2, actorId: john.id });
+                cursor += 0.75;
+            }
+            if ((normalized.includes("exit") || normalized.includes("leave")) && door) {
+                const to = [door.position[0] + 1.1, position[1], door.position[2] + 0.14];
+                actions.push({ type: "moveTo", entityId: john.id, start: cursor, duration: 2.2, from: position, to, locomotion: "walk" });
+                cursor += 2.2;
+            }
+            if (normalized.includes("camera") && normalized.includes("follow")) {
+                actions.push({ type: "cameraFollow", entityId: "camera_main", targetId: john.id, start: walkStart, duration: Math.max(1, cursor - walkStart) });
+            }
+        }
+
+        actions.forEach((action, index) => {
+            action.id = `action_${inputHash}_${String(index).padStart(2, "0")}`;
         });
+        if (actions.length) operations.push({ op: "setActionPlan", actions });
         return {
             patchId: `patch_${inputHash}`,
             operations,
-            warnings: [],
-            planner: "offline-fallback-v1"
+            warnings: actions.length || operations.length ? [] : ["No supported action could be compiled."],
+            changes: [{ changeType: "updated", text: prompt, verbs: [], nouns: [], intent: "action-plan" }],
+            planner: "offline-action-planner-v2"
         };
     }
 
@@ -2290,9 +3042,35 @@
                         id: operation.entityId,
                         name: operation.name,
                         color: operation.color,
-                        position: [0.25, 0, 2.1]
+                        position: operation.position || [0.25, 0.5, 2.1]
                     }, false);
                     break;
+                case "removeEntity": {
+                    const index = state.entities.findIndex((entity) => entity.id === operation.entityId);
+                    if (index < 0 || ["camera_main", "light_key"].includes(operation.entityId)) break;
+                    const [removed] = state.entities.splice(index, 1);
+                    const object = runtime.objects.get(removed.id);
+                    if (object) runtime.scene.remove(object);
+                    runtime.objects.delete(removed.id);
+                    state.timelineTrackIds = state.timelineTrackIds.filter((entityId) => entityId !== removed.id);
+                    delete state.keyframes[removed.id];
+                    if (state.selectedId === removed.id) state.selectedId = state.entities[0]?.id || null;
+                    renderSceneTree();
+                    break;
+                }
+                case "updateEntity": {
+                    const entity = entityById(operation.entityId);
+                    if (!entity || !operation.properties) break;
+                    Object.assign(entity, cloneData(operation.properties));
+                    const object = runtime.objects.get(entity.id);
+                    if (object) {
+                        if (entity.position) object.position.set(...entity.position);
+                        if (entity.rotation) object.rotation.set(...entity.rotation);
+                        if (entity.scale) object.scale.set(...entity.scale);
+                    }
+                    renderSceneTree();
+                    break;
+                }
                 case "updateClip": {
                     if (operation.clipId === "john_walk" && operation.speedMultiplier) {
                         const clip = $('.timeline-clip[data-start="5.6"]');
@@ -2304,6 +3082,32 @@
                     }
                     break;
                 }
+                case "configureCharacterSequence":
+                    state.motionPlan = {
+                        entityId: operation.entityId || "entity_john",
+                        speak: operation.speak !== false,
+                        speakText: operation.speakText || DEFAULT_MOTION_PLAN.speakText,
+                        stepDirection: clamp(Number(operation.stepDirection || 0), -1, 1),
+                        duck: Boolean(operation.duck),
+                        walkToDoor: Boolean(operation.walkToDoor),
+                        openDoor: Boolean(operation.openDoor),
+                        followCamera: Boolean(operation.followCamera)
+                    };
+                    ensureEntityTrack(state.motionPlan.entityId, false);
+                    break;
+                case "setActionPlan": {
+                    state.actions = normalizeActionPlan(operation.actions || []);
+                    state.timelineTrackIds = [...new Set([
+                        ...DEFAULT_TRACK_IDS,
+                        ...state.actions.map((action) => action.entityId).filter(Boolean)
+                    ])].filter((entityId) => Boolean(entityById(entityId)));
+                    const planEnd = state.actions.reduce((end, action) =>
+                        Math.max(end, Number(action.start || 0) + Number(action.duration || 0)), 0);
+                    state.duration = clamp(Math.max(DURATION, planEnd + 0.5), 2, 120);
+                    state.time = Math.min(state.time, state.duration);
+                    renderTimelineRuler();
+                    break;
+                }
                 case "trimTimeline":
                     state.duration = clamp(Number(operation.end), 2, DURATION);
                     state.time = Math.min(state.time, state.duration);
@@ -2312,9 +3116,57 @@
                     // The prototype timeline already exposes the vertical-slice clips.
                     // The operation remains persisted in the canonical scene document.
                     break;
+                case "setKeyframe": {
+                    const entity = entityById(operation.entityId);
+                    if (!entity) break;
+                    const frames = state.keyframes[entity.id] || (state.keyframes[entity.id] = []);
+                    frames.push({
+                        id: operation.keyframeId || uniqueId("keyframe"),
+                        time: clamp(Number(operation.time) || 0, 0, state.duration),
+                        interpolation: operation.interpolation || "smooth",
+                        transform: cloneData(operation.transform || {
+                            position: entity.position,
+                            rotation: entity.rotation,
+                            scale: entity.scale
+                        })
+                    });
+                    frames.sort((a, b) => a.time - b.time);
+                    break;
+                }
             }
         });
+        renderTimelineTracks();
         updateAtTime(state.time);
+    }
+
+    async function initializeBrowserAnimationParser() {
+        if (runtime.browserAnimationParser) return runtime.browserAnimationParser;
+        if (runtime.animationParserInitialization) return runtime.animationParserInitialization;
+
+        const modelStatus = $("#animationModelStatus");
+        runtime.animationParserInitialization = (async () => {
+            const parserModule = await import("/animation-parser/index.js");
+            const parser = new parserModule.PlannerAnimationParser(
+                new parserModule.BrowserAnimationParser({ baseUrl: "/animation-parser/" })
+            );
+            await parser.initialize();
+            runtime.browserAnimationParser = parser;
+            const progress = parser.getLoadProgress();
+            if (modelStatus) {
+                const backend = String(progress.backend || "local").toUpperCase();
+                modelStatus.textContent = `ONNX intent model · ${backend}`;
+                modelStatus.title = `${parser.getModelVersion()} running locally in this browser`;
+            }
+            return parser;
+        })().catch((error) => {
+            runtime.animationParserInitialization = null;
+            if (modelStatus) {
+                modelStatus.textContent = "Deterministic planner fallback";
+                modelStatus.title = error instanceof Error ? error.message : String(error);
+            }
+            throw error;
+        });
+        return runtime.animationParserInitialization;
     }
 
     async function generatePatch() {
@@ -2324,6 +3176,10 @@
             setPromptText(prompt);
         }
         state.currentPrompt = prompt;
+        const previousPrompt =
+            state.promptHistory.at(-1)?.prompt ||
+            runtime.promptBaseline ||
+            "";
         const status = $("#patchStatus");
         const button = $("#generateButton");
         status.classList.add("is-working");
@@ -2333,22 +3189,39 @@
         try {
             let plan;
             try {
-                const response = await fetch("/api/3d-animation/plan", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt, scene: plannerSceneDocument() })
+                const animationParser = await initializeBrowserAnimationParser();
+                plan = await animationParser.parseToPlanner({
+                    currentPrompt: prompt,
+                    previousPrompt,
+                    scene: plannerSceneDocument(),
+                    selectedEntityId: state.selectedId,
+                    actionCatalog: [
+                        "place", "moveTo", "rotateBy", "scaleTo", "setColor",
+                        "stand", "duck", "walk", "run", "jump", "idle",
+                        "cameraFollow", "cameraLookAt", "open", "close",
+                        "fallToGround", "keyframe"
+                    ].map((type) => ({ type }))
                 });
-                if (!response.ok) {
-                    const error = await response.json().catch(() => ({}));
-                    throw new Error(error.message || `Planner failed (${response.status})`);
-                }
-                plan = await response.json();
             } catch (error) {
-                plan = fallbackPlan(prompt);
-                toast(`Using the offline planner · ${error.message}`);
+                plan = fallbackPlan(prompt, previousPrompt);
+                toast(`Using deterministic fallback · ${error.message}`);
             }
 
             const operations = plan.operations || [];
+            const actionPlanOperation = operations.find((operation) =>
+                operation.op === "setActionPlan");
+            if (!operations.length) {
+                const warnings = plan.warnings || [];
+                status.classList.remove("is-working");
+                status.innerHTML = `<i></i> ${plan.changes?.length ? "No executable actions found" : "Prompt is unchanged"}`;
+                setPromptText(prompt, resolvePromptEntityLinks(prompt));
+                if (!plan.changes?.length && state.actions?.length) {
+                    updateAtTime(0);
+                    setPlaying(true);
+                }
+                toast(warnings[0] || "No scene changes were generated");
+                return;
+            }
             pushHistory();
             applyScenePatch(operations);
             const entityLinks = resolvePromptEntityLinks(prompt, operations);
@@ -2363,9 +3236,15 @@
 
             status.classList.remove("is-working");
             const warnings = plan.warnings?.length || 0;
-            status.innerHTML = `<i></i> Animated ${operations.length} scene operation${operations.length === 1 ? "" : "s"}`;
+            const changeCount = plan.changes?.length || 0;
+            const actionCount = actionPlanOperation?.actions?.length || operations.length;
+            status.innerHTML = `<i></i> Compiled ${actionCount} action${actionCount === 1 ? "" : "s"} from ${changeCount} prompt change${changeCount === 1 ? "" : "s"}`;
             markDirty();
             updateHistoryButtons();
+            if (actionPlanOperation?.actions?.length) {
+                updateAtTime(0);
+                setPlaying(true);
+            }
             toast(`Animation applied · ${entityLinks.length} entity phrase${entityLinks.length === 1 ? "" : "s"} linked · ${warnings} warning${warnings === 1 ? "" : "s"}`);
         } finally {
             button.disabled = false;
@@ -2763,6 +3642,7 @@
 
     async function init() {
         await loadSavedProject();
+        runtime.promptBaseline = state.currentPrompt || DEFAULT_PROMPT;
         setupEvents();
         const promptVersion =
             state.promptHistory.find((entry) => entry.id === state.currentPromptHistoryId) ||
@@ -2775,6 +3655,7 @@
         initThree();
         selectEntity(state.selectedId, false);
         updateAtTime(0);
+        void initializeBrowserAnimationParser().catch(() => undefined);
     }
 
     init();
