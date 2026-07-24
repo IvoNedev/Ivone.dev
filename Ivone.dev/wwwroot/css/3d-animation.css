@@ -1039,6 +1039,7 @@ summary:focus-visible {
 .timeline-tool {
     height: 25px;
     min-width: 25px;
+    padding: 0 6px;
     border-radius: 4px;
     font-size: 9px;
 }
@@ -1050,6 +1051,31 @@ summary:focus-visible {
 .timeline-tool.is-active {
     color: var(--accent);
     background: rgba(215, 243, 107, 0.08);
+}
+
+.timeline-tool.authoring-tool {
+    border: 1px solid #343a36;
+    color: #a8b0aa;
+}
+
+.timeline-tool.authoring-tool:hover {
+    border-color: #59634f;
+    color: var(--accent);
+}
+
+.timeline-tool.keyframe-tool {
+    color: var(--accent);
+}
+
+.timeline-tool.keyframe-tool.is-attention {
+    background: rgba(215, 243, 107, 0.14);
+    box-shadow: 0 0 0 1px rgba(215, 243, 107, 0.3);
+    animation: pulse 700ms ease infinite alternate;
+}
+
+.timeline-tool:disabled {
+    opacity: 0.3;
+    cursor: default;
 }
 
 .zoom-range {
@@ -1071,19 +1097,44 @@ summary:focus-visible {
     z-index: 3;
     display: grid;
     grid-template-rows: 26px repeat(4, 34px);
+    grid-auto-rows: 34px;
+    align-content: start;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
     border-right: 1px solid var(--line-soft);
     background: #171a18;
 }
 
+.track-labels::-webkit-scrollbar {
+    display: none;
+}
+
 .track-label {
+    width: 100%;
     min-width: 0;
     padding: 0 9px;
+    border: 0;
     border-bottom: 1px solid #222623;
     display: grid;
     grid-template-columns: 13px minmax(0, 1fr) auto;
     align-items: center;
     gap: 4px;
     font-size: 8px;
+    color: inherit;
+    background: transparent;
+    text-align: left;
+}
+
+button.track-label:hover,
+button.track-label.is-selected {
+    background: #202421;
+    color: #f1f3ef;
+}
+
+button.track-label.is-selected {
+    box-shadow: inset 2px 0 var(--accent);
 }
 
 .track-label strong {
@@ -1108,17 +1159,21 @@ summary:focus-visible {
 .track-icon.yellow { color: var(--yellow); }
 
 .ruler-corner {
+    position: sticky;
+    z-index: 7;
+    top: 0;
     display: flex;
     align-items: center;
     color: #515852;
     font-size: 6px;
     letter-spacing: 0.1em;
+    background: #171a18;
 }
 
 .timeline-scroll {
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    min-height: 0;
+    overflow: auto;
     scrollbar-width: thin;
     scrollbar-color: #343a36 transparent;
 }
@@ -1132,8 +1187,11 @@ summary:focus-visible {
 
 .timeline-ruler {
     height: 26px;
-    position: relative;
+    position: sticky;
+    z-index: 6;
+    top: 0;
     border-bottom: 1px solid #222623;
+    background: #171a18;
 }
 
 .ruler-mark {
@@ -1156,6 +1214,36 @@ summary:focus-visible {
     position: relative;
     height: 34px;
     border-bottom: 1px solid #222623;
+}
+
+.timeline-keyframe {
+    --keyframe-color: var(--accent);
+    position: absolute;
+    z-index: 4;
+    left: var(--keyframe-left);
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: 1px solid #161916;
+    background: var(--keyframe-color);
+    transform: translate(-50%, -50%) rotate(45deg);
+    box-shadow: 0 0 0 1px rgba(215, 243, 107, 0.2);
+}
+
+.timeline-keyframe:hover,
+.timeline-keyframe.is-selected {
+    z-index: 8;
+    transform: translate(-50%, -50%) rotate(45deg) scale(1.35);
+    box-shadow: 0 0 0 2px #fff;
+}
+
+.timeline-keyframe.is-generated {
+    --keyframe-color: #d5b962;
+    width: 7px;
+    height: 7px;
+    opacity: 0.78;
+    cursor: pointer;
 }
 
 .timeline-clip {
@@ -1494,6 +1582,23 @@ summary:focus-visible {
 
 .inspector-section:not([open]) summary span {
     transform: rotate(180deg);
+}
+
+.animation-badge {
+    margin-left: auto;
+    margin-right: 8px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: #2a2f2b;
+    color: #68716a;
+    font-family: var(--mono);
+    font-size: 6px;
+    font-weight: 500;
+}
+
+.animation-badge.is-evaluated {
+    background: rgba(215, 243, 107, 0.1);
+    color: var(--accent);
 }
 
 .section-content {
@@ -2098,6 +2203,15 @@ summary:focus-visible {
     }
 
     .timeline-tools {
+        gap: 2px;
+    }
+
+    .timeline-tools .utility-tool,
+    .timeline-tools .zoom-range {
+        display: none;
+    }
+
+    .timeline-tools .authoring-tool span {
         display: none;
     }
 
@@ -2126,6 +2240,7 @@ summary:focus-visible {
 
     .track-labels {
         grid-template-rows: 24px repeat(4, 31px);
+        grid-auto-rows: 31px;
     }
 
     .timeline-ruler {

@@ -17,6 +17,12 @@
     const DURATION = 14;
     const STORAGE_KEY = "scenescript.office-departure.v1";
     const PROJECT_ID = "office-departure";
+    const DEFAULT_TRACK_IDS = ["entity_john", "entity_robot", "entity_door", "camera_main"];
+    const GENERATED_TRANSFORM_MARKERS = {
+        entity_john: [0, 5.6, 9.5, 12.7],
+        entity_door: [9, 10.4],
+        camera_main: [0, 5.6, 12.6]
+    };
     const defaultEntities = [
         {
             id: "entity_john",
@@ -159,7 +165,10 @@
         selectedId: "entity_john",
         currentTool: "select",
         cameraCloser: false,
-        snap: true
+        snap: true,
+        timelineTrackIds: [...DEFAULT_TRACK_IDS],
+        keyframes: {},
+        selectedKeyframe: null
     };
 
     const runtime = {
@@ -180,7 +189,8 @@
         lastFrame: performance.now(),
         pointerDown: null,
         resizeObserver: null,
-        pendingWizardEntityId: null
+        pendingWizardEntityId: null,
+        pendingPoseEntityId: null
     };
 
     function toast(message) {
@@ -230,32 +240,45 @@
                 return clean;
             })),
             timeline: {
-                tracks: [
-                    {
-                        id: "track_john",
-                        entityId: "entity_john",
-                        clips: [
-                            { id: "john_speak", type: "Speak", start: 1.1, duration: 2.7, text: "We need to leave." },
-                            { id: "john_stand", type: "Stand", start: 4, duration: 1.6 },
-                            { id: "john_walk", type: "WalkTo", start: 5.6, duration: 3.9, target: "entity_door" }
-                        ]
-                    },
-                    {
-                        id: "track_door",
-                        entityId: "entity_door",
-                        clips: [{ id: "door_open", type: "Open", start: 9, duration: 1.4 }]
-                    },
-                    {
-                        id: "track_camera",
-                        entityId: "camera_main",
-                        clips: [
-                            { id: "camera_wide", type: "CameraShot", start: 0, duration: 5.6 },
-                            { id: "camera_follow", type: "CameraFollow", start: 5.6, duration: 7, target: "entity_john" }
-                        ]
-                    }
-                ]
+                tracks: buildTimelineTracks()
             }
         };
+    }
+
+    function buildTimelineTracks() {
+        const clips = {
+            entity_john: [
+                { id: "john_speak", type: "Speak", start: 1.1, duration: 2.7, text: "We need to leave." },
+                { id: "john_stand", type: "Stand", start: 4, duration: 1.6 },
+                { id: "john_walk", type: "WalkTo", start: 5.6, duration: 3.9, target: "entity_door" }
+            ],
+            entity_robot: [
+                { id: "robot_idle", type: "Animation", start: 0, duration: 9.5, animation: "SeatedIdle" }
+            ],
+            entity_door: [
+                { id: "door_open", type: "Open", start: 9, duration: 1.4 }
+            ],
+            camera_main: [
+                { id: "camera_wide", type: "CameraShot", start: 0, duration: 5.6 },
+                { id: "camera_follow", type: "CameraFollow", start: 5.6, duration: 7, target: "entity_john" }
+            ]
+        };
+
+        return state.timelineTrackIds
+            .filter((entityId, index, list) =>
+                list.indexOf(entityId) === index &&
+                state.entities.some((entity) => entity.id === entityId))
+            .map((entityId) => ({
+                id: `track_${entityId}`,
+                entityId,
+                clips: cloneData(clips[entityId] || []),
+                keyframes: cloneData((state.keyframes[entityId] || []).map((keyframe) => ({
+                    id: keyframe.id,
+                    time: keyframe.time,
+                    interpolation: keyframe.interpolation || "smooth",
+                    transform: keyframe.transform
+                })))
+            }));
     }
 
     function pushHistory() {
@@ -264,7 +287,9 @@
             environment: state.environment,
             entities: state.entities,
             cameraCloser: state.cameraCloser,
-            duration: state.duration
+            duration: state.duration,
+            timelineTrackIds: state.timelineTrackIds,
+            keyframes: state.keyframes
         }));
         if (runtime.undo.length > 40) runtime.undo.shift();
         runtime.redo.length = 0;
@@ -277,7 +302,9 @@
             environment: state.environment,
             entities: state.entities,
             cameraCloser: state.cameraCloser,
-            duration: state.duration
+            duration: state.duration,
+            timelineTrackIds: state.timelineTrackIds,
+            keyframes: state.keyframes
         });
     }
 
@@ -288,12 +315,16 @@
         state.entities = value.entities;
         state.cameraCloser = Boolean(value.cameraCloser);
         state.duration = value.duration || DURATION;
+        state.timelineTrackIds = value.timelineTrackIds || [...DEFAULT_TRACK_IDS];
+        state.keyframes = value.keyframes || {};
+        state.selectedKeyframe = null;
         if (!state.entities.some((entity) => entity.id === state.selectedId)) {
             state.selectedId = state.entities[0]?.id || null;
         }
         $("#projectName").value = state.projectName;
         rebuildEntityObjects();
         renderSceneTree();
+        renderTimelineTracks();
         selectEntity(state.selectedId, false);
         updateAtTime(state.time);
         markDirty();
@@ -846,12 +877,100 @@
             door.userData.doorPivot.rotation.y = -open * Math.PI * 0.56;
         }
 
+        applyTransformKeyframes(state.time);
+
         const dialogueVisible = state.time >= 1.1 && state.time <= 3.8;
         $("#dialogueBubble").classList.toggle("is-visible", dialogueVisible);
         $("#runtimeState").textContent = runtimeStateForSelection();
 
         if (state.isPlaying) updateCameraTrack();
+        applyCameraKeyframes(state.time);
+        updateEvaluatedTransformInspector();
         updateTimelineUI();
+    }
+
+    function evaluateTransformKeyframes(entityId, time) {
+        const frames = [...(state.keyframes[entityId] || [])].sort((a, b) => a.time - b.time);
+        if (!frames.length) return null;
+        if (frames.length === 1 || time <= frames[0].time) return cloneData(frames[0].transform);
+        if (time >= frames[frames.length - 1].time) return cloneData(frames[frames.length - 1].transform);
+
+        const nextIndex = frames.findIndex((frame) => frame.time >= time);
+        const previous = frames[nextIndex - 1];
+        const next = frames[nextIndex];
+        const span = Math.max(next.time - previous.time, 0.0001);
+        const alpha = previous.interpolation === "linear"
+            ? clamp((time - previous.time) / span, 0, 1)
+            : ease((time - previous.time) / span);
+
+        return {
+            position: previous.transform.position.map((value, index) =>
+                lerp(value, next.transform.position[index], alpha)),
+            rotation: previous.transform.rotation.map((value, index) =>
+                lerpAngle(value, next.transform.rotation[index], alpha)),
+            scale: previous.transform.scale.map((value, index) =>
+                lerp(value, next.transform.scale[index], alpha))
+        };
+    }
+
+    function lerpAngle(from, to, amount) {
+        let delta = (to - from) % (Math.PI * 2);
+        if (delta > Math.PI) delta -= Math.PI * 2;
+        if (delta < -Math.PI) delta += Math.PI * 2;
+        return from + delta * amount;
+    }
+
+    function applyTransformKeyframes(time) {
+        Object.keys(state.keyframes).forEach((entityId) => {
+            if (entityId === "camera_main") return;
+            const transform = evaluateTransformKeyframes(entityId, time);
+            const object = runtime.objects.get(entityId);
+            if (!transform || !object) return;
+            object.position.set(...transform.position);
+            object.rotation.set(...transform.rotation);
+            object.scale.set(...transform.scale);
+        });
+    }
+
+    function applyCameraKeyframes(time) {
+        const transform = evaluateTransformKeyframes("camera_main", time);
+        if (!transform || !runtime.camera) return;
+        runtime.camera.position.set(...transform.position);
+        runtime.camera.rotation.set(...transform.rotation);
+        if (runtime.controls) {
+            const direction = new THREE.Vector3(0, 0, -1).applyEuler(runtime.camera.rotation);
+            runtime.controls.target.copy(runtime.camera.position).add(direction.multiplyScalar(4));
+        }
+    }
+
+    function evaluatedObjectForEntity(entityId) {
+        return entityId === "camera_main" ? runtime.camera : runtime.objects.get(entityId);
+    }
+
+    function updateEvaluatedTransformInspector() {
+        const entity = entityById(state.selectedId);
+        const object = evaluatedObjectForEntity(state.selectedId);
+        if (!entity || !object || document.activeElement?.closest(".property-row")) return;
+
+        $("#positionX").value = round(object.position.x);
+        $("#positionY").value = round(object.position.y);
+        $("#positionZ").value = round(object.position.z);
+        $("#rotationX").value = degrees(object.rotation.x);
+        $("#rotationY").value = degrees(object.rotation.y);
+        $("#rotationZ").value = degrees(object.rotation.z);
+        $("#scaleX").value = round(object.scale.x);
+        $("#scaleY").value = round(object.scale.y);
+        $("#scaleZ").value = round(object.scale.z);
+
+        const hasAnimation = state.time > 0.001 ||
+            Boolean(state.keyframes[state.selectedId]?.length) ||
+            ["entity_john", "entity_robot", "entity_door", "camera_main"].includes(state.selectedId);
+        const badge = $("#animationBadge");
+        badge.textContent = hasAnimation ? `EVAL ${state.time.toFixed(1)}s` : "BASE";
+        badge.classList.toggle("is-evaluated", hasAnimation);
+        badge.title = hasAnimation
+            ? "Showing the transform evaluated at the current playhead time"
+            : "Showing the authored base transform";
     }
 
     function updateCameraTrack() {
@@ -987,6 +1106,10 @@
             runtime.selectionBox.visible = entity.visible !== false && !object.userData.editorHelper;
         }
         updateTransformGizmo();
+        updateEvaluatedTransformInspector();
+        $$("[data-track-label]").forEach((label) => {
+            label.classList.toggle("is-selected", label.dataset.trackLabel === id);
+        });
         if (announce) {
             const label = $("#selectionLabel");
             label.textContent = `${entity.name} · ${entity.subtype}`;
@@ -1064,30 +1187,46 @@
     function applyEntityTransformFromInspector() {
         const entity = entityById(state.selectedId);
         if (!entity) return;
-        entity.position = [Number($("#positionX").value), Number($("#positionY").value), Number($("#positionZ").value)];
-        entity.rotation = [radians($("#rotationX").value), radians($("#rotationY").value), radians($("#rotationZ").value)];
-        entity.scale = [Number($("#scaleX").value), Number($("#scaleY").value), Number($("#scaleZ").value)];
-        const object = runtime.objects.get(entity.id);
-        if (object) {
-            object.position.set(...entity.position);
-            object.rotation.set(...entity.rotation);
-            object.scale.set(...entity.scale);
+        const position = [Number($("#positionX").value), Number($("#positionY").value), Number($("#positionZ").value)];
+        const rotation = [radians($("#rotationX").value), radians($("#rotationY").value), radians($("#rotationZ").value)];
+        const scale = [Number($("#scaleX").value), Number($("#scaleY").value), Number($("#scaleZ").value)];
+        const editingEvaluatedPose = state.time > 0.001 || Boolean(state.keyframes[entity.id]?.length);
+        if (!editingEvaluatedPose) {
+            entity.position = position;
+            entity.rotation = rotation;
+            entity.scale = scale;
         }
-        updateAtTime(state.time);
+        const object = evaluatedObjectForEntity(entity.id);
+        if (object) {
+            object.position.set(...position);
+            object.rotation.set(...rotation);
+            object.scale.set(...scale);
+        }
+        if (editingEvaluatedPose) {
+            runtime.pendingPoseEntityId = entity.id;
+            $("#addKeyframeButton").classList.add("is-attention");
+        }
         runtime.selectionBox?.update();
-        markDirty();
+        if (!editingEvaluatedPose) markDirty();
     }
 
     function syncSelectedFromGizmo() {
         const entity = entityById(state.selectedId);
         const object = runtime.objects.get(state.selectedId);
         if (!entity || !object) return;
-        entity.position = object.position.toArray();
-        entity.rotation = [object.rotation.x, object.rotation.y, object.rotation.z];
-        entity.scale = object.scale.toArray();
+        const editingEvaluatedPose = state.time > 0.001 || Boolean(state.keyframes[entity.id]?.length);
+        if (!editingEvaluatedPose) {
+            entity.position = object.position.toArray();
+            entity.rotation = [object.rotation.x, object.rotation.y, object.rotation.z];
+            entity.scale = object.scale.toArray();
+            markDirty();
+        } else {
+            runtime.pendingPoseEntityId = entity.id;
+            $("#addKeyframeButton").classList.add("is-attention");
+        }
         updateInspector(entity);
+        updateEvaluatedTransformInspector();
         runtime.selectionBox?.update();
-        markDirty();
     }
 
     function updateTransformGizmo() {
@@ -1168,7 +1307,7 @@
         }
 
         const seek = (event) => {
-            if (event.target.closest(".timeline-clip")) return;
+            if (event.target.closest(".timeline-clip, .timeline-keyframe")) return;
             const content = $("#timelineContent");
             const rect = content.getBoundingClientRect();
             const t = clamp((event.clientX - rect.left) / rect.width, 0, 1) * state.duration;
@@ -1186,6 +1325,211 @@
             });
             setupClipDrag(clip);
         });
+
+        const labels = $("#trackLabels");
+        const scroll = $("#timelineScroll");
+        let syncingScroll = false;
+        scroll.addEventListener("scroll", () => {
+            if (syncingScroll) return;
+            syncingScroll = true;
+            labels.scrollTop = scroll.scrollTop;
+            syncingScroll = false;
+        });
+        labels.addEventListener("scroll", () => {
+            if (syncingScroll) return;
+            syncingScroll = true;
+            scroll.scrollTop = labels.scrollTop;
+            syncingScroll = false;
+        });
+        labels.addEventListener("click", (event) => {
+            const label = event.target.closest("[data-track-label]");
+            if (!label) return;
+            selectEntity(label.dataset.trackLabel);
+            $(`.track-row[data-track="${label.dataset.trackLabel}"]`)?.scrollIntoView({
+                block: "nearest",
+                inline: "nearest"
+            });
+        });
+
+        renderTimelineTracks();
+    }
+
+    function ensureEntityTrack(entityId, shouldScroll = true) {
+        const entity = entityById(entityId);
+        if (!entity) return false;
+        const exists = state.timelineTrackIds.includes(entityId);
+        if (!exists) state.timelineTrackIds.push(entityId);
+        renderTimelineTracks();
+        if (shouldScroll) {
+            requestAnimationFrame(() => {
+                $(`.track-row[data-track="${entityId}"]`)?.scrollIntoView({
+                    block: "nearest",
+                    inline: "nearest"
+                });
+            });
+        }
+        return !exists;
+    }
+
+    function renderTimelineTracks() {
+        const labels = $("#trackLabels");
+        const content = $("#timelineContent");
+        if (!labels || !content) return;
+
+        $$("[data-dynamic-track]", labels).forEach((node) => node.remove());
+        $$(".track-row[data-dynamic-track]", content).forEach((node) => node.remove());
+
+        state.timelineTrackIds = state.timelineTrackIds.filter((entityId, index, list) =>
+            list.indexOf(entityId) === index && Boolean(entityById(entityId)));
+
+        state.timelineTrackIds.forEach((entityId) => {
+            const entity = entityById(entityId);
+            if (!entity) return;
+            if (!DEFAULT_TRACK_IDS.includes(entityId)) {
+                const label = document.createElement("button");
+                label.className = "track-label";
+                label.type = "button";
+                label.dataset.trackLabel = entityId;
+                label.dataset.dynamicTrack = "true";
+                label.innerHTML = `
+                    <span class="track-icon ${trackColorClass(entity)}">${entityIcon(entity.type)}</span>
+                    <strong>${escapeHtml(entity.name)}</strong>
+                    <small>Transform</small>`;
+                labels.appendChild(label);
+
+                const row = document.createElement("div");
+                row.className = "track-row";
+                row.dataset.track = entityId;
+                row.dataset.dynamicTrack = "true";
+                content.appendChild(row);
+            }
+        });
+
+        $$("[data-track-label]", labels).forEach((label) => {
+            label.classList.toggle("is-selected", label.dataset.trackLabel === state.selectedId);
+        });
+
+        $$(".timeline-keyframe", content).forEach((node) => node.remove());
+        state.timelineTrackIds.forEach((entityId) => {
+            const row = $(`.track-row[data-track="${entityId}"]`, content);
+            if (!row) return;
+
+            (GENERATED_TRANSFORM_MARKERS[entityId] || [])
+                .filter((time) => time <= state.duration)
+                .forEach((time) => {
+                const marker = createKeyframeMarker(entityId, {
+                    id: `generated_${entityId}_${time}`,
+                    time
+                }, true);
+                row.appendChild(marker);
+            });
+
+            (state.keyframes[entityId] || []).forEach((keyframe) => {
+                row.appendChild(createKeyframeMarker(entityId, keyframe, false));
+            });
+        });
+
+        $("#deleteKeyframeButton").disabled = !state.selectedKeyframe;
+    }
+
+    function trackColorClass(entity) {
+        if (entity.type === "camera") return "yellow";
+        if (entity.type === "door") return "green";
+        if (entity.type === "robot") return "blue";
+        return "red";
+    }
+
+    function createKeyframeMarker(entityId, keyframe, generated) {
+        const marker = document.createElement("button");
+        marker.className = `timeline-keyframe${generated ? " is-generated" : ""}`;
+        marker.type = "button";
+        marker.style.setProperty("--keyframe-left", `${keyframe.time / state.duration * 100}%`);
+        marker.dataset.entityId = entityId;
+        marker.dataset.keyframeId = keyframe.id;
+        marker.dataset.time = keyframe.time;
+        marker.title = generated
+            ? `Generated motion point · ${keyframe.time.toFixed(2)}s`
+            : `Transform keyframe · ${keyframe.time.toFixed(2)}s`;
+        if (!generated &&
+            state.selectedKeyframe?.entityId === entityId &&
+            state.selectedKeyframe?.keyframeId === keyframe.id) {
+            marker.classList.add("is-selected");
+        }
+        marker.addEventListener("pointerdown", (event) => event.stopPropagation());
+        marker.addEventListener("click", (event) => {
+            event.stopPropagation();
+            setPlaying(false);
+            selectEntity(entityId, false);
+            updateAtTime(Number(keyframe.time));
+            state.selectedKeyframe = generated
+                ? null
+                : { entityId, keyframeId: keyframe.id };
+            renderTimelineTracks();
+        });
+        return marker;
+    }
+
+    function addTransformKeyframe() {
+        const entity = entityById(state.selectedId);
+        const object = evaluatedObjectForEntity(state.selectedId);
+        if (!entity || !object) {
+            toast("Select an entity before adding a keyframe");
+            return;
+        }
+
+        pushHistory();
+        ensureEntityTrack(entity.id, true);
+        const snappedTime = state.snap ? Math.round(state.time * 4) / 4 : state.time;
+        const frames = state.keyframes[entity.id] || [];
+        const existing = frames.find((frame) => Math.abs(frame.time - snappedTime) < 0.02);
+        const transform = {
+            position: object.position.toArray(),
+            rotation: [object.rotation.x, object.rotation.y, object.rotation.z],
+            scale: object.scale.toArray()
+        };
+
+        if (existing) {
+            existing.transform = transform;
+            existing.interpolation = existing.interpolation || "smooth";
+            state.selectedKeyframe = { entityId: entity.id, keyframeId: existing.id };
+            toast(`Updated ${entity.name} keyframe at ${snappedTime.toFixed(2)}s`);
+        } else {
+            const keyframe = {
+                id: uniqueId("keyframe"),
+                time: snappedTime,
+                interpolation: "smooth",
+                transform
+            };
+            frames.push(keyframe);
+            frames.sort((a, b) => a.time - b.time);
+            state.keyframes[entity.id] = frames;
+            state.selectedKeyframe = { entityId: entity.id, keyframeId: keyframe.id };
+            toast(`Added ${entity.name} keyframe at ${snappedTime.toFixed(2)}s`);
+        }
+
+        renderTimelineTracks();
+        runtime.pendingPoseEntityId = null;
+        $("#addKeyframeButton").classList.remove("is-attention");
+        markDirty();
+        updateAtTime(state.time);
+    }
+
+    function deleteSelectedKeyframe() {
+        const selected = state.selectedKeyframe;
+        if (!selected) {
+            toast("Select a keyframe diamond first");
+            return;
+        }
+        const frames = state.keyframes[selected.entityId] || [];
+        const keyframe = frames.find((frame) => frame.id === selected.keyframeId);
+        if (!keyframe) return;
+        pushHistory();
+        state.keyframes[selected.entityId] = frames.filter((frame) => frame.id !== selected.keyframeId);
+        state.selectedKeyframe = null;
+        renderTimelineTracks();
+        updateAtTime(state.time);
+        markDirty();
+        toast(`Deleted keyframe at ${keyframe.time.toFixed(2)}s`);
     }
 
     function setupClipDrag(clip) {
@@ -1367,8 +1711,12 @@
         const object = runtime.objects.get(removed.id);
         if (object) runtime.scene.remove(object);
         runtime.objects.delete(removed.id);
+        state.timelineTrackIds = state.timelineTrackIds.filter((entityId) => entityId !== removed.id);
+        delete state.keyframes[removed.id];
+        if (state.selectedKeyframe?.entityId === removed.id) state.selectedKeyframe = null;
         state.selectedId = state.entities[0]?.id || null;
         renderSceneTree();
+        renderTimelineTracks();
         if (state.selectedId) selectEntity(state.selectedId, false);
         else runtime.selectionBox.visible = false;
         $("#objectCount").textContent = `${state.entities.length} objects`;
@@ -1409,6 +1757,27 @@
         state.duration = documentData.scene?.duration || DURATION;
         state.environment = documentData.environment || state.environment;
         state.entities = documentData.entities;
+        const storedTracks = Array.isArray(documentData.timeline?.tracks)
+            ? documentData.timeline.tracks
+            : [];
+        state.timelineTrackIds = [...new Set([
+            ...DEFAULT_TRACK_IDS,
+            ...storedTracks.map((track) => track.entityId).filter(Boolean)
+        ])].filter((entityId) => state.entities.some((entity) => entity.id === entityId));
+        state.keyframes = {};
+        storedTracks.forEach((track) => {
+            if (!track.entityId || !Array.isArray(track.keyframes) || !track.keyframes.length) return;
+            state.keyframes[track.entityId] = track.keyframes
+                .filter((keyframe) => keyframe?.transform)
+                .map((keyframe) => ({
+                    id: keyframe.id || uniqueId("keyframe"),
+                    time: Number(keyframe.time) || 0,
+                    interpolation: keyframe.interpolation || "smooth",
+                    transform: keyframe.transform
+                }))
+                .sort((a, b) => a.time - b.time);
+        });
+        state.selectedKeyframe = null;
         $("#projectName").value = state.projectName;
         return true;
     }
@@ -1816,6 +2185,24 @@
         $("#playButton").addEventListener("click", () => setPlaying(!state.isPlaying));
         $("#jumpStartButton").addEventListener("click", () => { setPlaying(false); updateAtTime(0); });
         $("#jumpEndButton").addEventListener("click", () => { setPlaying(false); updateAtTime(state.duration); });
+        $("#addTrackButton").addEventListener("click", () => {
+            const entity = entityById(state.selectedId);
+            if (!entity) {
+                toast("Select an entity before adding a track");
+                return;
+            }
+            if (state.timelineTrackIds.includes(entity.id)) {
+                ensureEntityTrack(entity.id, true);
+                toast(`${entity.name} already has a timeline track`);
+                return;
+            }
+            pushHistory();
+            ensureEntityTrack(entity.id, true);
+            markDirty();
+            toast(`Added a transform track for ${entity.name}`);
+        });
+        $("#addKeyframeButton").addEventListener("click", addTransformKeyframe);
+        $("#deleteKeyframeButton").addEventListener("click", deleteSelectedKeyframe);
         $("#gridButton").addEventListener("click", (event) => {
             if (!runtime.grid) return;
             runtime.grid.visible = !runtime.grid.visible;
@@ -2011,6 +2398,9 @@
             } else if (!editing && event.code === "Space") {
                 event.preventDefault();
                 setPlaying(!state.isPlaying);
+            } else if (!editing && event.key.toLowerCase() === "k") {
+                event.preventDefault();
+                addTransformKeyframe();
             } else if (!editing && ["v", "g", "r", "s"].includes(event.key.toLowerCase())) {
                 const map = { v: "select", g: "move", r: "rotate", s: "scale" };
                 $(`.viewport-tool[data-tool="${map[event.key.toLowerCase()]}"]`)?.click();

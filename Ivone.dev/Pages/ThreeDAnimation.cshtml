@@ -157,37 +157,40 @@
                             <div class="timecode"><span id="currentTimecode">00:00:00</span><i>/</i><span id="durationTimecode">00:14:00</span></div>
                         </div>
                         <div class="timeline-tools">
-                            <button id="snapButton" class="timeline-tool is-active" title="Snap clips" type="button">⌁ <span>Snap</span></button>
-                            <button id="timelineZoomOut" class="timeline-tool" title="Zoom out" type="button">−</button>
+                            <button id="addTrackButton" class="timeline-tool authoring-tool" title="Add a transform track for the selected entity" type="button">＋ <span>Track</span></button>
+                            <button id="addKeyframeButton" class="timeline-tool authoring-tool keyframe-tool" title="Add or update a transform keyframe at the playhead (K)" type="button">◆ <span>Keyframe</span></button>
+                            <button id="deleteKeyframeButton" class="timeline-tool authoring-tool" title="Delete selected keyframe" type="button" disabled>◇−</button>
+                            <button id="snapButton" class="timeline-tool utility-tool is-active" title="Snap clips" type="button">⌁ <span>Snap</span></button>
+                            <button id="timelineZoomOut" class="timeline-tool utility-tool" title="Zoom out" type="button">−</button>
                             <input id="timelineZoom" class="zoom-range" type="range" min="80" max="180" value="100" aria-label="Timeline zoom" />
-                            <button id="timelineZoomIn" class="timeline-tool" title="Zoom in" type="button">＋</button>
+                            <button id="timelineZoomIn" class="timeline-tool utility-tool" title="Zoom in" type="button">＋</button>
                         </div>
                     </div>
 
                     <div class="timeline-body">
-                        <div class="track-labels">
+                        <div class="track-labels" id="trackLabels">
                             <div class="track-label ruler-corner">TRACKS</div>
-                            <div class="track-label"><span class="track-icon red">●</span><strong>John</strong><small>3 clips</small></div>
-                            <div class="track-label"><span class="track-icon blue">●</span><strong>Robot</strong><small>1 clip</small></div>
-                            <div class="track-label"><span class="track-icon green">◆</span><strong>Door</strong><small>1 clip</small></div>
-                            <div class="track-label"><span class="track-icon yellow">◉</span><strong>Camera</strong><small>2 clips</small></div>
+                            <button class="track-label" data-track-label="entity_john" type="button"><span class="track-icon red">●</span><strong>John</strong><small>3 clips</small></button>
+                            <button class="track-label" data-track-label="entity_robot" type="button"><span class="track-icon blue">●</span><strong>Robot</strong><small>1 clip</small></button>
+                            <button class="track-label" data-track-label="entity_door" type="button"><span class="track-icon green">◆</span><strong>Door</strong><small>1 clip</small></button>
+                            <button class="track-label" data-track-label="camera_main" type="button"><span class="track-icon yellow">◉</span><strong>Camera</strong><small>2 clips</small></button>
                         </div>
                         <div class="timeline-scroll" id="timelineScroll">
                             <div class="timeline-content" id="timelineContent">
                                 <div class="timeline-ruler" id="timelineRuler"></div>
                                 <div class="playhead" id="playhead"><span></span></div>
-                                <div class="track-row" data-track="john">
+                                <div class="track-row" data-track="entity_john">
                                     <button class="timeline-clip clip-dialogue" style="--start: 8%; --width: 19%" data-start="1.1" data-duration="2.7" type="button"><b>▣</b> Speak</button>
                                     <button class="timeline-clip clip-motion" style="--start: 29%; --width: 12%" data-start="4" data-duration="1.6" type="button"><b>◆</b> Stand</button>
                                     <button class="timeline-clip clip-motion selected" style="--start: 40%; --width: 28%" data-start="5.6" data-duration="3.9" type="button"><b>→</b> Walk to door</button>
                                 </div>
-                                <div class="track-row" data-track="robot">
+                                <div class="track-row" data-track="entity_robot">
                                     <button class="timeline-clip clip-idle" style="--start: 0%; --width: 68%" data-start="0" data-duration="9.5" type="button"><b>≈</b> Seated idle</button>
                                 </div>
-                                <div class="track-row" data-track="door">
+                                <div class="track-row" data-track="entity_door">
                                     <button class="timeline-clip clip-door" style="--start: 64%; --width: 10%" data-start="9" data-duration="1.4" type="button"><b>↱</b> Open</button>
                                 </div>
-                                <div class="track-row" data-track="camera">
+                                <div class="track-row" data-track="camera_main">
                                     <button class="timeline-clip clip-camera" style="--start: 0%; --width: 40%" data-start="0" data-duration="5.6" type="button"><b>◉</b> Wide shot</button>
                                     <button class="timeline-clip clip-camera" style="--start: 40%; --width: 50%" data-start="5.6" data-duration="7" type="button"><b>◉</b> Follow John</button>
                                 </div>
@@ -234,7 +237,7 @@
 
                 <div class="inspector-scroll">
                     <details class="inspector-section" open>
-                        <summary>Transform <span>⌃</span></summary>
+                        <summary>Transform <b class="animation-badge" id="animationBadge">BASE</b><span>⌃</span></summary>
                         <div class="section-content">
                             <label class="property-row"><span>Position</span>
                                 <i class="axis-tag x">X</i><input id="positionX" type="number" step="0.1" value="-1.35" />
