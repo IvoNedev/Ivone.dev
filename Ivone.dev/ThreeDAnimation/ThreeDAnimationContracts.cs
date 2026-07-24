@@ -9,8 +9,7 @@ public sealed record ScenePlanResponse(
     string PatchId,
     IReadOnlyList<JsonObject> Operations,
     IReadOnlyList<string> Warnings,
-    string Planner,
-    DateTimeOffset CreatedAt);
+    string Planner);
 
 public sealed record SceneValidationResponse(
     bool IsValid,

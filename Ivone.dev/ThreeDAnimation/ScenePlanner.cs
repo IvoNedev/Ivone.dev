@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -34,16 +36,18 @@ public sealed partial class ScenePlanner
         }
 
         if ((normalized.Contains("add") || normalized.Contains("create")) &&
-            normalized.Contains("cube"))
+            (normalized.Contains("cube") || normalized.Contains("box")))
         {
             var color = normalized.Contains("red")
                 ? "#D85A4F"
                 : normalized.Contains("green")
                     ? "#5B9A68"
                     : "#5E80D5";
+            var shapeName = normalized.Contains("box") ? "Box" : "Cube";
+            var colorName = color == "#5E80D5" ? "Blue " : string.Empty;
             operations.Add(Operation("addPrimitive",
                 ("primitive", "box"),
-                ("name", color == "#5E80D5" ? "Blue Cube" : "Cube"),
+                ("name", $"{colorName}{shapeName}"),
                 ("color", color)));
         }
 
@@ -103,12 +107,23 @@ public sealed partial class ScenePlanner
             }
         }
 
+        var inputHash = BuildInputHash(normalized, request.Scene.GetRawText());
+        for (var index = 0; index < operations.Count; index++)
+        {
+            if (string.Equals(
+                operations[index]["op"]?.GetValue<string>(),
+                "addPrimitive",
+                StringComparison.Ordinal))
+            {
+                operations[index]["entityId"] = $"entity_generated_{inputHash[..16]}_{index:D2}";
+            }
+        }
+
         return new ScenePlanResponse(
-            $"patch_{Guid.NewGuid():N}",
+            $"patch_{inputHash[..24]}",
             operations,
             warnings,
-            "deterministic-rule-planner-v1",
-            DateTimeOffset.UtcNow);
+            "deterministic-rule-planner-v1");
     }
 
     private static JsonObject Operation(string op, params (string Name, object? Value)[] values)
@@ -120,6 +135,18 @@ public sealed partial class ScenePlanner
         }
 
         return operation;
+    }
+
+    private static string BuildInputHash(string normalizedPrompt, string sceneJson)
+    {
+        var scene = JsonNode.Parse(sceneJson) as JsonObject;
+        scene?.Remove("currentPrompt");
+        scene?.Remove("promptHistory");
+        var plannerSceneJson = scene?.ToJsonString() ?? sceneJson;
+        var input = $"deterministic-rule-planner-v1\n{normalizedPrompt}\n{plannerSceneJson}";
+        return Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(input)))
+            .ToLowerInvariant();
     }
 
     [GeneratedRegex(@"remove everything after\s+(\d+(?:\.\d+)?)\s*(?:seconds?|s)?", RegexOptions.CultureInvariant)]

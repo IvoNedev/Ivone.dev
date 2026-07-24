@@ -17,6 +17,7 @@
     const DURATION = 14;
     const STORAGE_KEY = "scenescript.office-departure.v1";
     const PROJECT_ID = "office-departure";
+    const DEFAULT_PROMPT = "Two characters sit across a desk. John says “We need to leave”, stands, walks to the door, opens it and exits while the camera follows.";
     const DEFAULT_TRACK_IDS = ["entity_john", "entity_robot", "entity_door", "camera_main"];
     const GENERATED_TRANSFORM_MARKERS = {
         entity_john: [0, 5.6, 9.5, 12.7],
@@ -168,7 +169,10 @@
         snap: true,
         timelineTrackIds: [...DEFAULT_TRACK_IDS],
         keyframes: {},
-        selectedKeyframe: null
+        selectedKeyframe: null,
+        currentPrompt: DEFAULT_PROMPT,
+        promptHistory: [],
+        currentPromptHistoryId: null
     };
 
     const runtime = {
@@ -213,6 +217,236 @@
             .replaceAll('"', "&quot;");
     }
 
+    function getPromptText() {
+        const input = $("#promptInput");
+        if (!input) return state.currentPrompt || DEFAULT_PROMPT;
+        return (input.innerText || input.textContent || "")
+            .replaceAll("\u00a0", " ")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim();
+    }
+
+    function setPromptText(text, entityLinks = [], glow = false) {
+        const input = $("#promptInput");
+        if (!input) return;
+        const prompt = String(text || "");
+        const links = [...entityLinks]
+            .filter((link) =>
+                entityById(link.entityId) &&
+                Number.isInteger(link.start) &&
+                Number.isInteger(link.end) &&
+                link.start >= 0 &&
+                link.end > link.start &&
+                link.end <= prompt.length)
+            .sort((a, b) => a.start - b.start || b.end - a.end);
+
+        input.replaceChildren();
+        let cursor = 0;
+        links.forEach((link) => {
+            if (link.start < cursor) return;
+            if (link.start > cursor) {
+                input.appendChild(document.createTextNode(prompt.slice(cursor, link.start)));
+            }
+            const entity = entityById(link.entityId);
+            const token = document.createElement("span");
+            token.className = "prompt-entity-link";
+            token.dataset.entityId = link.entityId;
+            token.contentEditable = "false";
+            token.style.setProperty("--entity-link-color", entity?.color || "#D7F36B");
+            token.textContent = prompt.slice(link.start, link.end);
+            token.title = `Focus ${entity?.name || "entity"}`;
+            input.appendChild(token);
+            cursor = link.end;
+        });
+        if (cursor < prompt.length) {
+            input.appendChild(document.createTextNode(prompt.slice(cursor)));
+        }
+
+        state.currentPrompt = prompt;
+        if (glow) flashPromptInput();
+    }
+
+    function flashPromptInput() {
+        const input = $("#promptInput");
+        input.classList.remove("is-history-paste");
+        void input.offsetWidth;
+        input.classList.add("is-history-paste");
+        setTimeout(() => input.classList.remove("is-history-paste"), 850);
+    }
+
+    function placeCaretAtPromptEnd() {
+        const input = $("#promptInput");
+        input.focus();
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(input);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    function activateLeftTab(name) {
+        $$(".panel-tab").forEach((item) => {
+            item.classList.toggle("is-active", item.dataset.leftTab === name);
+        });
+        $$(".left-tab-view").forEach((view) => {
+            view.classList.toggle("is-active", view.dataset.leftView === name);
+        });
+    }
+
+    function promptEntityCandidates(entity) {
+        const candidates = new Set([entity.name]);
+        const colorName = semanticColorName(entity);
+        const aliases = {
+            box: ["box", "cube"],
+            sphere: ["sphere", "ball"],
+            robot: ["robot"],
+            character: ["character", "person"],
+            door: ["door"],
+            desk: ["desk"],
+            chair: ["chair"],
+            camera: ["camera"],
+            light: ["light"]
+        }[entity.type] || [];
+
+        aliases.forEach((alias) => {
+            if (colorName) candidates.add(`${colorName} ${alias}`);
+            const matchingTypeCount = state.entities.filter((candidate) => candidate.type === entity.type).length;
+            if (matchingTypeCount === 1) candidates.add(alias);
+        });
+        return [...candidates]
+            .map((candidate) => candidate.trim())
+            .filter((candidate) => candidate.length >= 3)
+            .sort((a, b) => b.length - a.length);
+    }
+
+    function semanticColorName(entity) {
+        const source = `${entity.name || ""} ${entity.color || ""}`.toLowerCase();
+        if (source.includes("blue") || /#(?:5579cf|5e80d5|718ddb|6f8fe7)/i.test(source)) return "blue";
+        if (source.includes("red") || /#(?:d85a4f|df665d)/i.test(source)) return "red";
+        if (source.includes("green") || /#(?:5b9a68|79aa7d|4a7151)/i.test(source)) return "green";
+        if (source.includes("yellow") || /#(?:d6a954|d5b962)/i.test(source)) return "yellow";
+        if (source.includes("orange")) return "orange";
+        if (source.includes("purple")) return "purple";
+        if (source.includes("white")) return "white";
+        if (source.includes("black")) return "black";
+        return "";
+    }
+
+    function resolvePromptEntityLinks(prompt, operations = []) {
+        const normalized = prompt.toLocaleLowerCase();
+        const operationEntityIds = new Set();
+        operations.forEach((operation) => {
+            ["entityId", "target", "id"].forEach((property) => {
+                if (entityById(operation[property])) operationEntityIds.add(operation[property]);
+            });
+        });
+
+        const matches = [];
+        state.entities.forEach((entity) => {
+            promptEntityCandidates(entity).forEach((phrase) => {
+                const needle = phrase.toLocaleLowerCase();
+                let from = 0;
+                while (from < normalized.length) {
+                    const start = normalized.indexOf(needle, from);
+                    if (start < 0) break;
+                    const end = start + needle.length;
+                    const before = start === 0 ? "" : normalized[start - 1];
+                    const after = end === normalized.length ? "" : normalized[end];
+                    if ((!before || !/[\p{L}\p{N}_]/u.test(before)) &&
+                        (!after || !/[\p{L}\p{N}_]/u.test(after))) {
+                        matches.push({
+                            entityId: entity.id,
+                            start,
+                            end,
+                            phrase: prompt.slice(start, end),
+                            score: needle.length + (operationEntityIds.has(entity.id) ? 1000 : 0)
+                        });
+                    }
+                    from = Math.max(end, start + 1);
+                }
+            });
+        });
+
+        const selected = [];
+        matches
+            .sort((a, b) => b.score - a.score || a.start - b.start)
+            .forEach((match) => {
+                const overlaps = selected.some((existing) =>
+                    match.start < existing.end && match.end > existing.start);
+                if (!overlaps) selected.push(match);
+            });
+
+        return selected
+            .sort((a, b) => a.start - b.start)
+            .map(({ entityId, start, end, phrase }) => ({ entityId, start, end, phrase }));
+    }
+
+    function addPromptHistoryVersion(prompt, plan, entityLinks) {
+        const version = (state.promptHistory.at(-1)?.version || 0) + 1;
+        const patchId = plan.patchId || `patch_${stableHash(`${prompt}\n${JSON.stringify(entityLinks)}`)}`;
+        const entry = {
+            id: `prompt_${String(version).padStart(3, "0")}_${stableHash(`${patchId}\n${prompt}`).slice(0, 8)}`,
+            version,
+            prompt,
+            patchId,
+            planner: plan.planner || "unknown",
+            entityLinks: cloneData(entityLinks)
+        };
+        state.promptHistory.push(entry);
+        if (state.promptHistory.length > 100) state.promptHistory.shift();
+        state.currentPromptHistoryId = entry.id;
+        state.currentPrompt = prompt;
+        renderPromptHistory();
+        return entry;
+    }
+
+    function renderPromptHistory() {
+        const list = $("#promptHistoryList");
+        if (!list) return;
+        list.innerHTML = "";
+        $("#promptHistoryCount").textContent = state.promptHistory.length;
+        $("#promptHistoryEmpty").hidden = state.promptHistory.length > 0;
+
+        [...state.promptHistory].reverse().forEach((entry) => {
+            const card = document.createElement("button");
+            card.type = "button";
+            card.className = `prompt-history-card${entry.id === state.currentPromptHistoryId ? " is-current" : ""}`;
+            card.dataset.promptHistoryId = entry.id;
+            const entityIds = [...new Set((entry.entityLinks || []).map((link) => link.entityId))];
+            const dots = entityIds
+                .map((entityId) => entityById(entityId))
+                .filter(Boolean)
+                .map((entity) => `<i style="background:${escapeHtml(entity.color || "#D7F36B")}" title="${escapeHtml(entity.name)}"></i>`)
+                .join("");
+            card.innerHTML = `
+                <strong>PROMPT ${String(entry.version).padStart(2, "0")}</strong>
+                <p>${escapeHtml(entry.prompt)}</p>
+                <span class="prompt-history-meta">
+                    <span>${(entry.entityLinks || []).length} linked phrase${(entry.entityLinks || []).length === 1 ? "" : "s"}</span>
+                    <span class="history-entity-dots">${dots}</span>
+                </span>`;
+            list.appendChild(card);
+        });
+    }
+
+    function focusPromptEntity(entityId, token) {
+        const entity = entityById(entityId);
+        if (!entity) return;
+        selectEntity(entityId);
+        focusSelected();
+        activateLeftTab("scene");
+        token?.classList.add("is-link-pulse");
+        setTimeout(() => token?.classList.remove("is-link-pulse"), 650);
+        const inspector = $("#rightPanel");
+        inspector.classList.remove("is-entity-focus-flash");
+        void inspector.offsetWidth;
+        inspector.classList.add("is-entity-focus-flash");
+        if (window.matchMedia("(max-width: 850px)").matches) {
+            inspector.classList.add("is-open");
+        }
+    }
+
     function markDirty() {
         runtime.dirty = true;
         $(".save-state").classList.add("is-dirty");
@@ -239,10 +473,19 @@
                 delete clean.imported;
                 return clean;
             })),
+            currentPrompt: getPromptText() || state.currentPrompt || DEFAULT_PROMPT,
+            promptHistory: cloneData(state.promptHistory),
             timeline: {
                 tracks: buildTimelineTracks()
             }
         };
+    }
+
+    function plannerSceneDocument() {
+        const documentData = sceneDocument();
+        delete documentData.currentPrompt;
+        delete documentData.promptHistory;
+        return documentData;
     }
 
     function buildTimelineTracks() {
@@ -289,7 +532,10 @@
             cameraCloser: state.cameraCloser,
             duration: state.duration,
             timelineTrackIds: state.timelineTrackIds,
-            keyframes: state.keyframes
+            keyframes: state.keyframes,
+            currentPrompt: state.currentPrompt,
+            promptHistory: state.promptHistory,
+            currentPromptHistoryId: state.currentPromptHistoryId
         }));
         if (runtime.undo.length > 40) runtime.undo.shift();
         runtime.redo.length = 0;
@@ -304,7 +550,10 @@
             cameraCloser: state.cameraCloser,
             duration: state.duration,
             timelineTrackIds: state.timelineTrackIds,
-            keyframes: state.keyframes
+            keyframes: state.keyframes,
+            currentPrompt: state.currentPrompt,
+            promptHistory: state.promptHistory,
+            currentPromptHistoryId: state.currentPromptHistoryId
         });
     }
 
@@ -318,6 +567,9 @@
         state.timelineTrackIds = value.timelineTrackIds || [...DEFAULT_TRACK_IDS];
         state.keyframes = value.keyframes || {};
         state.selectedKeyframe = null;
+        state.currentPrompt = value.currentPrompt || DEFAULT_PROMPT;
+        state.promptHistory = value.promptHistory || [];
+        state.currentPromptHistoryId = value.currentPromptHistoryId || null;
         if (!state.entities.some((entity) => entity.id === state.selectedId)) {
             state.selectedId = state.entities[0]?.id || null;
         }
@@ -325,6 +577,9 @@
         rebuildEntityObjects();
         renderSceneTree();
         renderTimelineTracks();
+        const promptVersion = state.promptHistory.find((entry) => entry.id === state.currentPromptHistoryId);
+        setPromptText(state.currentPrompt, promptVersion?.entityLinks || []);
+        renderPromptHistory();
         selectEntity(state.selectedId, false);
         updateAtTime(state.time);
         markDirty();
@@ -1616,10 +1871,21 @@
         return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
     }
 
+    function stableHash(value) {
+        let first = 0x811c9dc5;
+        let second = 0x9e3779b9;
+        for (let index = 0; index < value.length; index++) {
+            const code = value.charCodeAt(index);
+            first = Math.imul(first ^ code, 0x01000193);
+            second = Math.imul(second ^ code, 0x85ebca6b);
+        }
+        return `${(first >>> 0).toString(16).padStart(8, "0")}${(second >>> 0).toString(16).padStart(8, "0")}`;
+    }
+
     function addPrimitive(kind = "box", options = {}, recordHistory = true) {
         if (recordHistory) pushHistory();
         const entity = {
-            id: uniqueId(`entity_${kind}`),
+            id: options.id || uniqueId(`entity_${kind}`),
             name: options.name || (kind === "sphere" ? "New Sphere" : "New Cube"),
             type: kind,
             subtype: "Procedural primitive",
@@ -1757,6 +2023,15 @@
         state.duration = documentData.scene?.duration || DURATION;
         state.environment = documentData.environment || state.environment;
         state.entities = documentData.entities;
+        state.promptHistory = Array.isArray(documentData.promptHistory)
+            ? documentData.promptHistory
+            : [];
+        state.currentPrompt = documentData.currentPrompt ||
+            state.promptHistory[state.promptHistory.length - 1]?.prompt ||
+            DEFAULT_PROMPT;
+        state.currentPromptHistoryId = [...state.promptHistory]
+            .reverse()
+            .find((entry) => entry.prompt === state.currentPrompt)?.id || null;
         const storedTracks = Array.isArray(documentData.timeline?.tracks)
             ? documentData.timeline.tracks
             : [];
@@ -1942,6 +2217,7 @@
 
     function fallbackPlan(prompt) {
         const normalized = prompt.toLowerCase();
+        const inputHash = stableHash(`offline-fallback-v1\n${normalized}\n${JSON.stringify(plannerSceneDocument())}`);
         const operations = [];
         if (normalized.includes("camera") && (normalized.includes("closer") || normalized.includes("close"))) {
             operations.push({ op: "updateCamera", id: "camera_main", framing: "closer" });
@@ -1949,11 +2225,14 @@
         if (normalized.includes("monochrome") || normalized.includes("black and white") || normalized.includes("grayscale")) {
             operations.push({ op: "updateStyle", style: "monochrome" });
         }
-        if ((normalized.includes("add") || normalized.includes("create")) && normalized.includes("cube")) {
+        if ((normalized.includes("add") || normalized.includes("create")) &&
+            (normalized.includes("cube") || normalized.includes("box"))) {
             operations.push({
                 op: "addPrimitive",
                 primitive: "box",
-                name: normalized.includes("blue") ? "Blue Cube" : "Cube",
+                name: normalized.includes("box")
+                    ? `${normalized.includes("blue") ? "Blue " : ""}Box`
+                    : `${normalized.includes("blue") ? "Blue " : ""}Cube`,
                 color: normalized.includes("red") ? "#D85A4F" : normalized.includes("green") ? "#5B9A68" : "#5E80D5"
             });
         }
@@ -1974,7 +2253,17 @@
                 { op: "updateCamera", type: "CameraFollow", target: "entity_john" }
             );
         }
-        return { operations, warnings: [], planner: "offline-fallback" };
+        operations.forEach((operation, index) => {
+            if (operation.op === "addPrimitive") {
+                operation.entityId = `entity_generated_${inputHash}_${String(index).padStart(2, "0")}`;
+            }
+        });
+        return {
+            patchId: `patch_${inputHash}`,
+            operations,
+            warnings: [],
+            planner: "offline-fallback-v1"
+        };
     }
 
     function applyScenePatch(operations) {
@@ -1993,7 +2282,12 @@
                     updateEnvironmentColors();
                     break;
                 case "addPrimitive":
+                    if (operation.entityId && entityById(operation.entityId)) {
+                        selectEntity(operation.entityId);
+                        break;
+                    }
                     addPrimitive(operation.primitive || "box", {
+                        id: operation.entityId,
                         name: operation.name,
                         color: operation.color,
                         position: [0.25, 0, 2.1]
@@ -2024,17 +2318,16 @@
     }
 
     async function generatePatch() {
-        const input = $("#promptInput");
-        let prompt = input.value.trim();
+        let prompt = getPromptText();
         if (!prompt) {
-            prompt = "Two characters sit across a desk. John says we need to leave, stands, walks to the door, opens it and exits while the camera follows.";
-            input.value = prompt;
+            prompt = DEFAULT_PROMPT;
+            setPromptText(prompt);
         }
-        const normalized = prompt.toLowerCase();
+        state.currentPrompt = prompt;
         const status = $("#patchStatus");
         const button = $("#generateButton");
         status.classList.add("is-working");
-        status.innerHTML = "<i></i> Validating commands…";
+        status.innerHTML = "<i></i> Translating prompt into motion…";
         button.disabled = true;
 
         try {
@@ -2043,7 +2336,7 @@
                 const response = await fetch("/api/3d-animation/plan", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt, scene: sceneDocument() })
+                    body: JSON.stringify({ prompt, scene: plannerSceneDocument() })
                 });
                 if (!response.ok) {
                     const error = await response.json().catch(() => ({}));
@@ -2058,14 +2351,22 @@
             const operations = plan.operations || [];
             pushHistory();
             applyScenePatch(operations);
+            const entityLinks = resolvePromptEntityLinks(prompt, operations);
+            addPromptHistoryVersion(prompt, plan, entityLinks);
+            setPromptText(prompt, entityLinks);
+            $$(".prompt-entity-link", $("#promptInput")).forEach((token, index) => {
+                window.setTimeout(() => {
+                    token.classList.add("is-link-pulse");
+                    window.setTimeout(() => token.classList.remove("is-link-pulse"), 650);
+                }, index * 80);
+            });
 
             status.classList.remove("is-working");
             const warnings = plan.warnings?.length || 0;
-            status.innerHTML = `<i></i> Applied ${operations.length} valid operation${operations.length === 1 ? "" : "s"}`;
-            input.value = "";
+            status.innerHTML = `<i></i> Animated ${operations.length} scene operation${operations.length === 1 ? "" : "s"}`;
             markDirty();
             updateHistoryButtons();
-            toast(`ScenePatch applied · ${operations.length} operation${operations.length === 1 ? "" : "s"} · ${warnings} warning${warnings === 1 ? "" : "s"}`);
+            toast(`Animation applied · ${entityLinks.length} entity phrase${entityLinks.length === 1 ? "" : "s"} linked · ${warnings} warning${warnings === 1 ? "" : "s"}`);
         } finally {
             button.disabled = false;
             status.classList.remove("is-working");
@@ -2230,10 +2531,7 @@
         });
 
         $$(".panel-tab").forEach((tab) => {
-            tab.addEventListener("click", () => {
-                $$(".panel-tab").forEach((item) => item.classList.toggle("is-active", item === tab));
-                $$(".left-tab-view").forEach((view) => view.classList.toggle("is-active", view.dataset.leftView === tab.dataset.leftTab));
-            });
+            tab.addEventListener("click", () => activateLeftTab(tab.dataset.leftTab));
         });
 
         $("#addPrimitiveButton").addEventListener("click", () => addPrimitive("box"));
@@ -2339,16 +2637,56 @@
         $("#generateButton").addEventListener("click", generatePatch);
         $$(".prompt-suggestions button").forEach((button) => {
             button.addEventListener("click", () => {
-                $("#promptInput").value = button.dataset.prompt;
-                $("#promptInput").focus();
+                state.currentPromptHistoryId = null;
+                setPromptText(button.dataset.prompt, [], true);
+                renderPromptHistory();
+                placeCaretAtPromptEnd();
             });
         });
 
-        $("#promptInput").addEventListener("keydown", (event) => {
+        const promptInput = $("#promptInput");
+        promptInput.addEventListener("input", () => {
+            state.currentPrompt = getPromptText();
+            state.currentPromptHistoryId = null;
+            renderPromptHistory();
+            markDirty();
+        });
+        promptInput.addEventListener("click", (event) => {
+            const token = event.target.closest(".prompt-entity-link");
+            if (!token) return;
+            event.preventDefault();
+            focusPromptEntity(token.dataset.entityId, token);
+        });
+        promptInput.addEventListener("paste", (event) => {
+            event.preventDefault();
+            const text = event.clipboardData?.getData("text/plain") || "";
+            document.execCommand("insertText", false, text);
+        });
+        promptInput.addEventListener("keydown", (event) => {
             if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
                 event.preventDefault();
                 generatePatch();
             }
+        });
+        $("#promptHistoryList").addEventListener("click", (event) => {
+            const card = event.target.closest("[data-prompt-history-id]");
+            if (!card) return;
+            const entry = state.promptHistory.find((item) => item.id === card.dataset.promptHistoryId);
+            if (!entry) return;
+            state.currentPromptHistoryId = entry.id;
+            setPromptText(entry.prompt, entry.entityLinks || [], true);
+            renderPromptHistory();
+            placeCaretAtPromptEnd();
+            toast(`Prompt ${String(entry.version).padStart(2, "0")} pasted into the composer`);
+        });
+        $("#clearPromptHistoryButton").addEventListener("click", () => {
+            if (!state.promptHistory.length) return;
+            pushHistory();
+            state.promptHistory = [];
+            state.currentPromptHistoryId = null;
+            renderPromptHistory();
+            markDirty();
+            toast("Prompt history cleared");
         });
 
         $("#timelineZoom").addEventListener("input", (event) => {
@@ -2422,6 +2760,11 @@
     async function init() {
         await loadSavedProject();
         setupEvents();
+        const promptVersion =
+            state.promptHistory.find((entry) => entry.id === state.currentPromptHistoryId) ||
+            [...state.promptHistory].reverse().find((entry) => entry.prompt === state.currentPrompt);
+        setPromptText(state.currentPrompt || DEFAULT_PROMPT, promptVersion?.entityLinks || []);
+        renderPromptHistory();
         setupTimeline();
         renderSceneTree();
         updateHistoryButtons();

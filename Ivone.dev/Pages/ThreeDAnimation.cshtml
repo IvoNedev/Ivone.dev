@@ -56,8 +56,9 @@
         <main class="editor-shell">
             <aside class="side-panel left-panel" id="leftPanel">
                 <div class="panel-tabs" role="tablist">
-                    <button class="panel-tab is-active" data-left-tab="scene" type="button">Scene</button>
+                    <button class="panel-tab is-active" data-left-tab="scene" type="button">Scenes</button>
                     <button class="panel-tab" data-left-tab="assets" type="button">Assets</button>
+                    <button class="panel-tab" data-left-tab="history" type="button">History <b id="promptHistoryCount">0</b></button>
                 </div>
 
                 <section class="left-tab-view is-active" data-left-view="scene">
@@ -97,6 +98,15 @@
                         <strong>Import a 3D asset</strong>
                         <small>Drop a GLB or glTF here</small>
                     </label>
+                </section>
+
+                <section class="left-tab-view prompt-history-view" data-left-view="history">
+                    <div class="panel-section-heading">
+                        <span>Prompt versions</span>
+                        <button class="small-icon-button" id="clearPromptHistoryButton" title="Clear prompt history" type="button">⌫</button>
+                    </div>
+                    <p class="history-empty" id="promptHistoryEmpty">Applied prompts will appear here.</p>
+                    <div class="prompt-history-list" id="promptHistoryList"></div>
                 </section>
 
                 <div class="left-footer">
@@ -203,12 +213,18 @@
                     <div class="prompt-topline">
                         <div class="assistant-identity">
                             <span class="assistant-mark">✦</span>
-                            <div><strong>Scene Assistant</strong><small>Structured patch planner</small></div>
+                            <div><strong>Scene Assistant</strong><small>Prompt-to-motion planner</small></div>
                         </div>
                         <div class="patch-status" id="patchStatus"><i></i> Scene is valid</div>
                     </div>
                     <div class="prompt-composer">
-                        <textarea id="promptInput" rows="1" aria-label="Describe a scene change" placeholder="Describe what should happen next…"></textarea>
+                        <div id="promptInput"
+                             class="prompt-input"
+                             role="textbox"
+                             contenteditable="true"
+                             spellcheck="true"
+                             aria-label="Describe a scene change"
+                             data-placeholder="Describe what should happen next…">Two characters sit across a desk. John says “We need to leave”, stands, walks to the door, opens it and exits while the camera follows.</div>
                         <div class="prompt-footer">
                             <div class="prompt-suggestions">
                                 <button type="button" data-prompt="Move the camera closer to John">Move camera closer</button>
@@ -216,7 +232,7 @@
                                 <button type="button" data-prompt="Add a blue cube beside the desk">Add a blue cube</button>
                             </div>
                             <button class="generate-button" id="generateButton" type="button">
-                                <span>Generate patch</span><b>⌘ ↵</b>
+                                <span>Animate</span><b>⌘ ↵</b>
                             </button>
                         </div>
                     </div>
