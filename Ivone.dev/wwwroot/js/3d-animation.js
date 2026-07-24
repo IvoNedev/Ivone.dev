@@ -2726,11 +2726,15 @@
         });
 
         window.addEventListener("keydown", (event) => {
-            const editing = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
+            const target = event.target instanceof Element ? event.target : document.activeElement;
+            const editing = Boolean(
+                target?.closest("input, textarea, select, [contenteditable='true'], [role='textbox']") ||
+                document.activeElement?.isContentEditable
+            );
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
                 event.preventDefault();
                 saveProject();
-            } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
+            } else if (!editing && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
                 event.preventDefault();
                 if (event.shiftKey) redo(); else undo();
             } else if (!editing && event.code === "Space") {
