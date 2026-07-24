@@ -7,7 +7,25 @@
     var CLOUD_POLL_INTERVAL = 10000;
     var CALENDAR_GROUP_ID = "calendar";
     var GOALS_COLOR = "#6d4cc7";
+    var MEASUREMENTS_COLOR = "#167d89";
     var CALENDAR_HOUR_HEIGHT = 72;
+    var MEASUREMENT_FIELDS = [
+        { key: "weightKg", label: "Weight", kind: "weight" },
+        { key: "bodyFatPercent", label: "Body fat", kind: "percent" },
+        { key: "neckCm", label: "Neck", kind: "length" },
+        { key: "shouldersCm", label: "Shoulders", kind: "length" },
+        { key: "chestCm", label: "Chest", kind: "length" },
+        { key: "waistCm", label: "Waist", kind: "length" },
+        { key: "hipsCm", label: "Hips", kind: "length" },
+        { key: "leftUpperArmCm", label: "Left upper arm", kind: "length" },
+        { key: "rightUpperArmCm", label: "Right upper arm", kind: "length" },
+        { key: "leftForearmCm", label: "Left forearm", kind: "length" },
+        { key: "rightForearmCm", label: "Right forearm", kind: "length" },
+        { key: "leftThighCm", label: "Left thigh", kind: "length" },
+        { key: "rightThighCm", label: "Right thigh", kind: "length" },
+        { key: "leftCalfCm", label: "Left calf", kind: "length" },
+        { key: "rightCalfCm", label: "Right calf", kind: "length" }
+    ];
     var STATUS_ORDER = ["open", "done", "kept", "blocked"];
     var STATUS_LABELS = {
         open: "Open",
@@ -28,6 +46,7 @@
         editorView: document.getElementById("editorView"),
         calendarView: document.getElementById("calendarView"),
         goalsView: document.getElementById("goalsView"),
+        measurementsView: document.getElementById("measurementsView"),
         homeGrid: document.getElementById("homeGrid"),
         recentSection: document.getElementById("recentSection"),
         recentGrid: document.getElementById("recentGrid"),
@@ -67,17 +86,28 @@
         goalIsMain: document.getElementById("goalIsMain"),
         goalsSummary: document.getElementById("goalsSummary"),
         goalsList: document.getElementById("goalsList"),
+        measurementForm: document.getElementById("measurementForm"),
+        measurementFormTitle: document.getElementById("measurementFormTitle"),
+        measurementDate: document.getElementById("measurementDate"),
+        measurementUnit: document.getElementById("measurementUnit"),
+        measurementNotes: document.getElementById("measurementNotes"),
+        measurementCancelEdit: document.getElementById("measurementCancelEdit"),
+        measurementLatest: document.getElementById("measurementLatest"),
+        measurementHistorySummary: document.getElementById("measurementHistorySummary"),
+        measurementHistory: document.getElementById("measurementHistory"),
         settingsModal: document.getElementById("settingsModal"),
         syncConflictModal: document.getElementById("syncConflictModal"),
         localSyncNotes: document.getElementById("localSyncNotes"),
         localSyncItems: document.getElementById("localSyncItems"),
         localSyncEvents: document.getElementById("localSyncEvents"),
         localSyncGoals: document.getElementById("localSyncGoals"),
+        localSyncMeasurements: document.getElementById("localSyncMeasurements"),
         localSyncUpdated: document.getElementById("localSyncUpdated"),
         serverSyncNotes: document.getElementById("serverSyncNotes"),
         serverSyncItems: document.getElementById("serverSyncItems"),
         serverSyncEvents: document.getElementById("serverSyncEvents"),
         serverSyncGoals: document.getElementById("serverSyncGoals"),
+        serverSyncMeasurements: document.getElementById("serverSyncMeasurements"),
         serverSyncUpdated: document.getElementById("serverSyncUpdated"),
         useLocalSyncButton: document.getElementById("useLocalSyncButton"),
         useServerSyncButton: document.getElementById("useServerSyncButton"),
@@ -120,6 +150,7 @@
     var focusHandleAfterRender = null;
     var selectedCalendarDate = localDateKey(new Date());
     var activeCalendarEventId = null;
+    var activeMeasurementId = null;
     var currentTimeTimer = 0;
     var pendingSyncConflict = null;
     var syncConflictResolving = false;
@@ -170,7 +201,7 @@
     function defaultDocument() {
         var now = new Date().toISOString();
         return {
-            version: 4,
+            version: 5,
             updatedAt: now,
             groups: [
                 { id: CALENDAR_GROUP_ID, name: "Calendar", color: "#c74363", createdAt: now, manualOrder: 0, orderUpdatedAt: now },
@@ -185,7 +216,10 @@
             calendarEvents: [],
             deletedCalendarEvents: {},
             goals: [],
-            deletedGoals: {}
+            deletedGoals: {},
+            measurementUnit: "metric",
+            measurementEntries: [],
+            deletedMeasurementEntries: {}
         };
     }
 
@@ -332,8 +366,34 @@
             goals.forEach(function (goal) { goal.isMain = goal.id === mainGoals[0].id; });
         }
 
+        var deletedMeasurementEntries = {};
+        if (value.deletedMeasurementEntries && typeof value.deletedMeasurementEntries === "object" && !Array.isArray(value.deletedMeasurementEntries)) {
+            Object.keys(value.deletedMeasurementEntries).sort().forEach(function (entryId) {
+                if (value.deletedMeasurementEntries[entryId]) {
+                    deletedMeasurementEntries[String(entryId)] = String(value.deletedMeasurementEntries[entryId]);
+                }
+            });
+        }
+
+        var measurementEntries = Array.isArray(value.measurementEntries) ? value.measurementEntries.filter(Boolean).map(function (entry) {
+            var normalized = {
+                id: String(entry.id || createId("measurement")),
+                date: /^\d{4}-\d{2}-\d{2}$/.test(entry.date || "") ? entry.date : localDateKey(new Date()),
+                note: String(entry.note || "").slice(0, 500),
+                createdAt: entry.createdAt || now,
+                updatedAt: entry.updatedAt || now
+            };
+            MEASUREMENT_FIELDS.forEach(function (field) {
+                normalized[field.key] = normalizeMeasurementNumber(entry[field.key], field.kind);
+            });
+            return normalized;
+        }).filter(function (entry) {
+            return !deletedMeasurementEntries[entry.id] && measurementHasValues(entry);
+        }) : [];
+        measurementEntries.sort(function (a, b) { return a.id.localeCompare(b.id); });
+
         return {
-            version: 4,
+            version: 5,
             updatedAt: value.updatedAt || now,
             groups: groups,
             notes: notes.filter(function (note) { return !deletedNotes[note.id]; }),
@@ -341,8 +401,29 @@
             calendarEvents: calendarEvents,
             deletedCalendarEvents: deletedCalendarEvents,
             goals: goals,
-            deletedGoals: deletedGoals
+            deletedGoals: deletedGoals,
+            measurementUnit: value.measurementUnit === "imperial" ? "imperial" : "metric",
+            measurementEntries: measurementEntries,
+            deletedMeasurementEntries: deletedMeasurementEntries
         };
+    }
+
+    function normalizeMeasurementNumber(value, kind) {
+        if (value === null || value === "" || typeof value === "undefined") {
+            return null;
+        }
+        var number = Number(value);
+        var maximum = kind === "percent" ? 80 : (kind === "weight" ? 500 : 400);
+        if (!Number.isFinite(number) || number <= 0 || number > maximum) {
+            return null;
+        }
+        return Math.round(number * 100) / 100;
+    }
+
+    function measurementHasValues(entry) {
+        return MEASUREMENT_FIELDS.some(function (field) {
+            return Number.isFinite(entry[field.key]);
+        });
     }
 
     function normalizeItems(items) {
@@ -491,8 +572,32 @@
         }).concat(Array.from(remoteGoalsById.values()));
         goals = goals.filter(function (goal) { return !deletedGoals[goal.id]; });
 
+        var deletedMeasurementEntries = {};
+        Array.from(new Set(Object.keys(local.deletedMeasurementEntries).concat(Object.keys(remote.deletedMeasurementEntries))))
+            .sort()
+            .forEach(function (entryId) {
+                deletedMeasurementEntries[entryId] = latestIso(
+                    local.deletedMeasurementEntries[entryId],
+                    remote.deletedMeasurementEntries[entryId]);
+            });
+        var remoteMeasurementsById = new Map(remote.measurementEntries.map(function (entry) { return [entry.id, entry]; }));
+        var measurementEntries = local.measurementEntries.map(function (entry) {
+            var remoteEntry = remoteMeasurementsById.get(entry.id);
+            remoteMeasurementsById.delete(entry.id);
+            if (!remoteEntry) {
+                return entry;
+            }
+            return (Date.parse(entry.updatedAt) || 0) >= (Date.parse(remoteEntry.updatedAt) || 0) ? entry : remoteEntry;
+        }).concat(Array.from(remoteMeasurementsById.values()));
+        measurementEntries = measurementEntries.filter(function (entry) {
+            return !deletedMeasurementEntries[entry.id];
+        });
+        var measurementUnit = (Date.parse(local.updatedAt) || 0) >= (Date.parse(remote.updatedAt) || 0)
+            ? local.measurementUnit
+            : remote.measurementUnit;
+
         return normalizeDocument({
-            version: 4,
+            version: 5,
             updatedAt: latestIso(local.updatedAt, remote.updatedAt),
             groups: groups,
             notes: notes,
@@ -500,7 +605,10 @@
             calendarEvents: calendarEvents,
             deletedCalendarEvents: deletedCalendarEvents,
             goals: goals,
-            deletedGoals: deletedGoals
+            deletedGoals: deletedGoals,
+            measurementUnit: measurementUnit,
+            measurementEntries: measurementEntries,
+            deletedMeasurementEntries: deletedMeasurementEntries
         });
     }
 
@@ -844,6 +952,7 @@
         elements.editorView.hidden = name !== "editor";
         elements.calendarView.hidden = name !== "calendar";
         elements.goalsView.hidden = name !== "goals";
+        elements.measurementsView.hidden = name !== "measurements";
         elements.editorMenu.hidden = true;
         elements.editorMenuButton.setAttribute("aria-expanded", "false");
         window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
@@ -867,6 +976,11 @@
 
         if (activeView === "goals") {
             renderGoals();
+            return;
+        }
+
+        if (activeView === "measurements") {
+            renderMeasurements();
             return;
         }
 
@@ -915,6 +1029,7 @@
             elements.homeGrid.appendChild(buildGroupTile(group));
             if (group.id === CALENDAR_GROUP_ID) {
                 elements.homeGrid.appendChild(buildGoalsTile());
+                elements.homeGrid.appendChild(buildMeasurementsTile());
             }
         });
 
@@ -1044,6 +1159,48 @@
         copy.append(title, countdown);
         button.append(iconWrap, label, copy);
         button.addEventListener("click", openGoals);
+        return button;
+    }
+
+    function measurementsByDate() {
+        return state.measurementEntries.slice().sort(function (a, b) {
+            return b.date.localeCompare(a.date) || byUpdatedDescending(a, b) || a.id.localeCompare(b.id);
+        });
+    }
+
+    function buildMeasurementsTile() {
+        var latest = measurementsByDate()[0] || null;
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "todo-group-tile todo-measurements-tile";
+        button.style.setProperty("--group-color", MEASUREMENTS_COLOR);
+        button.setAttribute("aria-label", latest
+            ? "Open Measurements. Latest check-in " + formatMeasurementDate(latest.date)
+            : "Open Measurements and add your first check-in");
+
+        var iconWrap = document.createElement("span");
+        iconWrap.className = "todo-measurements-tile__icon";
+        iconWrap.innerHTML = icon("ruler");
+        var label = document.createElement("span");
+        label.className = "todo-measurements-tile__label";
+        label.textContent = "Measurements";
+        var copy = document.createElement("span");
+        copy.className = "todo-measurements-tile__copy";
+        var title = document.createElement("strong");
+        var detail = document.createElement("small");
+        if (latest) {
+            var headline = Number.isFinite(latest.weightKg)
+                ? formatMeasurementValue(latest.weightKg, "weight")
+                : (Number.isFinite(latest.waistCm) ? "Waist " + formatMeasurementValue(latest.waistCm, "length") : "Check-in saved");
+            title.textContent = headline;
+            detail.textContent = formatMeasurementDate(latest.date) + " · " + plural(state.measurementEntries.length, "check-in");
+        } else {
+            title.textContent = "Track your progress";
+            detail.textContent = "Weight, body fat and body measurements";
+        }
+        copy.append(title, detail);
+        button.append(iconWrap, label, copy);
+        button.addEventListener("click", openMeasurements);
         return button;
     }
 
@@ -1225,6 +1382,336 @@
         persist({ touchActiveNote: false });
         elements.goalIsMain.checked = !getMainGoal();
         renderGoals();
+    }
+
+    function openMeasurements() {
+        activeMeasurementId = null;
+        resetMeasurementForm();
+        renderMeasurements();
+    }
+
+    function renderMeasurements() {
+        showView("measurements");
+        elements.measurementUnit.value = state.measurementUnit;
+        updateMeasurementUnitLabels();
+        renderMeasurementLatest();
+        renderMeasurementHistory();
+    }
+
+    function renderMeasurementLatest() {
+        clear(elements.measurementLatest);
+        var entries = measurementsByDate();
+        if (!entries.length) {
+            var empty = document.createElement("div");
+            empty.className = "todo-measurement-latest__empty";
+            empty.innerHTML = "<strong>Your baseline starts here.</strong><span>Add any measurements you want to track. You can leave the rest blank.</span>";
+            elements.measurementLatest.appendChild(empty);
+            return;
+        }
+
+        var latest = entries[0];
+        var previous = entries[1] || null;
+        var heading = document.createElement("div");
+        heading.className = "todo-measurement-latest__heading";
+        heading.innerHTML = '<div><p class="todo-eyebrow">Latest check-in</p><h2>' +
+            escapeHtml(formatMeasurementDate(latest.date)) +
+            '</h2></div><small>' + plural(entries.length, "check-in") + " recorded</small>";
+        elements.measurementLatest.appendChild(heading);
+
+        var cards = document.createElement("div");
+        cards.className = "todo-measurement-summary-grid";
+        var preferredKeys = ["weightKg", "bodyFatPercent", "waistCm", "chestCm", "leftUpperArmCm", "leftThighCm"];
+        preferredKeys.forEach(function (key) {
+            var field = measurementField(key);
+            if (!field || !Number.isFinite(latest[key])) {
+                return;
+            }
+            var card = document.createElement("article");
+            card.className = "todo-measurement-summary-card";
+            var label = document.createElement("span");
+            label.textContent = field.label;
+            var value = document.createElement("strong");
+            value.textContent = formatMeasurementValue(latest[key], field.kind);
+            var delta = document.createElement("small");
+            if (previous && Number.isFinite(previous[key])) {
+                var change = latest[key] - previous[key];
+                delta.textContent = formatMeasurementDelta(change, field.kind) + " since previous";
+                if (Math.abs(change) < 0.005) {
+                    delta.className = "is-steady";
+                } else {
+                    delta.className = change < 0 ? "is-down" : "is-up";
+                }
+            } else {
+                delta.textContent = "Baseline";
+                delta.className = "is-steady";
+            }
+            card.append(label, value, delta);
+            cards.appendChild(card);
+        });
+        elements.measurementLatest.appendChild(cards);
+    }
+
+    function renderMeasurementHistory() {
+        clear(elements.measurementHistory);
+        var entries = measurementsByDate();
+        elements.measurementHistorySummary.textContent = entries.length
+            ? plural(entries.length, "check-in")
+            : "No check-ins yet";
+
+        if (!entries.length) {
+            var empty = document.createElement("div");
+            empty.className = "todo-group-empty todo-measurements-empty";
+            empty.innerHTML = "<strong>No history yet.</strong><br>Your saved check-ins will appear here, newest first.";
+            elements.measurementHistory.appendChild(empty);
+            return;
+        }
+
+        entries.forEach(function (entry, index) {
+            var previous = entries[index + 1] || null;
+            elements.measurementHistory.appendChild(buildMeasurementRow(entry, previous));
+        });
+    }
+
+    function buildMeasurementRow(entry, previous) {
+        var row = document.createElement("article");
+        row.className = "todo-measurement-row" + (entry.id === activeMeasurementId ? " is-editing" : "");
+
+        var heading = document.createElement("div");
+        heading.className = "todo-measurement-row__heading";
+        var date = document.createElement("div");
+        date.innerHTML = "<strong>" + escapeHtml(formatMeasurementDate(entry.date)) + "</strong>" +
+            (entry.note ? "<small>" + escapeHtml(entry.note) + "</small>" : "<small>Progress check-in</small>");
+        var actions = document.createElement("div");
+        actions.className = "todo-measurement-row__actions";
+        var edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "todo-text-button";
+        edit.textContent = "Edit";
+        edit.addEventListener("click", function () { editMeasurement(entry.id); });
+        var remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "todo-icon-button todo-measurement-delete";
+        remove.innerHTML = icon("trash");
+        remove.setAttribute("aria-label", "Delete measurements from " + formatMeasurementDate(entry.date));
+        remove.addEventListener("click", function () { deleteMeasurement(entry.id); });
+        actions.append(edit, remove);
+        heading.append(date, actions);
+
+        var values = document.createElement("div");
+        values.className = "todo-measurement-row__values";
+        MEASUREMENT_FIELDS.forEach(function (field) {
+            if (!Number.isFinite(entry[field.key])) {
+                return;
+            }
+            var item = document.createElement("span");
+            var changeText = "";
+            if (previous && Number.isFinite(previous[field.key])) {
+                changeText = " " + formatMeasurementDelta(entry[field.key] - previous[field.key], field.kind);
+            }
+            item.innerHTML = "<small>" + escapeHtml(field.label) + "</small><strong>" +
+                escapeHtml(formatMeasurementValue(entry[field.key], field.kind)) +
+                (changeText ? '<em class="' + ((entry[field.key] - previous[field.key]) < 0 ? "is-down" : "is-up") + '">' + escapeHtml(changeText) + "</em>" : "") +
+                "</strong>";
+            values.appendChild(item);
+        });
+        row.append(heading, values);
+        return row;
+    }
+
+    function saveMeasurement(event) {
+        event.preventDefault();
+        var date = elements.measurementDate.value;
+        var values = readMeasurementFormValues(state.measurementUnit);
+        if (!date || !measurementHasValues(values)) {
+            showToast("Add a date and at least one measurement.");
+            return;
+        }
+
+        var now = new Date().toISOString();
+        var entry = activeMeasurementId
+            ? state.measurementEntries.find(function (candidate) { return candidate.id === activeMeasurementId; })
+            : state.measurementEntries.find(function (candidate) { return candidate.date === date; });
+        var created = !entry;
+        if (!entry) {
+            entry = {
+                id: createId("measurement"),
+                createdAt: now
+            };
+            state.measurementEntries.push(entry);
+        }
+        entry.date = date;
+        entry.note = elements.measurementNotes.value.trim().slice(0, 500);
+        entry.updatedAt = now;
+        MEASUREMENT_FIELDS.forEach(function (field) {
+            entry[field.key] = values[field.key];
+        });
+
+        activeMeasurementId = null;
+        persist({ touchActiveNote: false });
+        resetMeasurementForm();
+        renderMeasurements();
+        showToast(created ? "Measurements saved." : "Check-in updated.");
+    }
+
+    function editMeasurement(entryId) {
+        var entry = state.measurementEntries.find(function (candidate) { return candidate.id === entryId; });
+        if (!entry) {
+            return;
+        }
+        activeMeasurementId = entryId;
+        elements.measurementFormTitle.textContent = "Edit measurements";
+        elements.measurementDate.value = entry.date;
+        elements.measurementNotes.value = entry.note || "";
+        elements.measurementCancelEdit.hidden = false;
+        writeMeasurementFormValues(entry, state.measurementUnit);
+        renderMeasurementHistory();
+        elements.measurementForm.scrollIntoView({
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+            block: "start"
+        });
+    }
+
+    function cancelMeasurementEdit() {
+        activeMeasurementId = null;
+        resetMeasurementForm();
+        renderMeasurementHistory();
+    }
+
+    function deleteMeasurement(entryId) {
+        var entry = state.measurementEntries.find(function (candidate) { return candidate.id === entryId; });
+        if (!entry || !window.confirm("Delete the check-in from " + formatMeasurementDate(entry.date) + "?")) {
+            return;
+        }
+        state.deletedMeasurementEntries[entryId] = new Date().toISOString();
+        state.measurementEntries = state.measurementEntries.filter(function (candidate) { return candidate.id !== entryId; });
+        if (activeMeasurementId === entryId) {
+            activeMeasurementId = null;
+            resetMeasurementForm();
+        }
+        persist({ touchActiveNote: false });
+        renderMeasurements();
+        showToast("Check-in deleted.");
+    }
+
+    function resetMeasurementForm() {
+        elements.measurementForm.reset();
+        elements.measurementUnit.value = state.measurementUnit;
+        elements.measurementDate.value = localDateKey(new Date());
+        elements.measurementFormTitle.textContent = "Add measurements";
+        elements.measurementCancelEdit.hidden = true;
+        updateMeasurementUnitLabels();
+    }
+
+    function measurementField(key) {
+        return MEASUREMENT_FIELDS.find(function (field) { return field.key === key; }) || null;
+    }
+
+    function readMeasurementFormValues(unit) {
+        var values = {};
+        elements.measurementForm.querySelectorAll("[data-measurement-field]").forEach(function (input) {
+            var raw = input.value.trim();
+            var kind = input.dataset.measurementKind;
+            var number = raw === "" ? null : Number(raw);
+            if (Number.isFinite(number)) {
+                if (unit === "imperial" && kind === "weight") {
+                    number /= 2.2046226218;
+                } else if (unit === "imperial" && kind === "length") {
+                    number *= 2.54;
+                }
+            }
+            values[input.dataset.measurementField] = normalizeMeasurementNumber(number, kind);
+        });
+        return values;
+    }
+
+    function writeMeasurementFormValues(entry, unit) {
+        elements.measurementForm.querySelectorAll("[data-measurement-field]").forEach(function (input) {
+            var value = entry[input.dataset.measurementField];
+            if (!Number.isFinite(value)) {
+                input.value = "";
+                return;
+            }
+            if (unit === "imperial" && input.dataset.measurementKind === "weight") {
+                value *= 2.2046226218;
+            } else if (unit === "imperial" && input.dataset.measurementKind === "length") {
+                value /= 2.54;
+            }
+            input.value = String(Math.round(value * 10) / 10);
+        });
+    }
+
+    function changeMeasurementUnit() {
+        var nextUnit = elements.measurementUnit.value === "imperial" ? "imperial" : "metric";
+        if (nextUnit === state.measurementUnit) {
+            return;
+        }
+        var currentValues = readMeasurementFormValues(state.measurementUnit);
+        state.measurementUnit = nextUnit;
+        writeMeasurementFormValues(currentValues, nextUnit);
+        updateMeasurementUnitLabels();
+        persist({ touchActiveNote: false });
+        renderMeasurementLatest();
+        renderMeasurementHistory();
+    }
+
+    function updateMeasurementUnitLabels() {
+        var isImperial = state.measurementUnit === "imperial";
+        document.querySelectorAll('[data-measurement-unit="weight"]').forEach(function (label) {
+            label.textContent = isImperial ? "lb" : "kg";
+        });
+        document.querySelectorAll('[data-measurement-unit="length"]').forEach(function (label) {
+            label.textContent = isImperial ? "in" : "cm";
+        });
+    }
+
+    function formatMeasurementValue(value, kind) {
+        var converted = value;
+        var suffix = "%";
+        if (kind === "weight") {
+            if (state.measurementUnit === "imperial") {
+                converted *= 2.2046226218;
+            }
+            suffix = state.measurementUnit === "imperial" ? " lb" : " kg";
+        } else if (kind === "length") {
+            if (state.measurementUnit === "imperial") {
+                converted /= 2.54;
+            }
+            suffix = state.measurementUnit === "imperial" ? " in" : " cm";
+        }
+        return formatMeasurementNumber(converted) + suffix;
+    }
+
+    function formatMeasurementDelta(value, kind) {
+        var converted = value;
+        var suffix = " pp";
+        if (kind === "weight") {
+            if (state.measurementUnit === "imperial") {
+                converted *= 2.2046226218;
+            }
+            suffix = state.measurementUnit === "imperial" ? " lb" : " kg";
+        } else if (kind === "length") {
+            if (state.measurementUnit === "imperial") {
+                converted /= 2.54;
+            }
+            suffix = state.measurementUnit === "imperial" ? " in" : " cm";
+        }
+        var prefix = converted > 0.004 ? "+" : "";
+        return prefix + formatMeasurementNumber(converted) + suffix;
+    }
+
+    function formatMeasurementNumber(value) {
+        return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(Math.round(value * 10) / 10);
+    }
+
+    function formatMeasurementDate(dateKey) {
+        return new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" })
+            .format(parseLocalDate(dateKey));
+    }
+
+    function escapeHtml(value) {
+        var span = document.createElement("span");
+        span.textContent = String(value || "");
+        return span.innerHTML;
     }
 
     function openGroup(groupId) {
@@ -2655,6 +3142,7 @@
             items: documentCopy.notes.reduce(function (total, note) { return total + countItems(note.items); }, 0),
             events: documentCopy.calendarEvents.length,
             goals: documentCopy.goals.length,
+            measurements: documentCopy.measurementEntries.length,
             updatedAt: documentCopy.updatedAt
         };
     }
@@ -2676,6 +3164,7 @@
         elements[prefix + "SyncItems"].textContent = plural(stats.items, "checklist item");
         elements[prefix + "SyncEvents"].textContent = plural(stats.events, "calendar event");
         elements[prefix + "SyncGoals"].textContent = plural(stats.goals, "goal");
+        elements[prefix + "SyncMeasurements"].textContent = plural(stats.measurements, "measurement check-in");
         elements[prefix + "SyncUpdated"].textContent = syncSaveTime(stats.updatedAt);
     }
 
@@ -2995,6 +3484,9 @@
         }
     });
     elements.goalForm.addEventListener("submit", addGoal);
+    elements.measurementForm.addEventListener("submit", saveMeasurement);
+    elements.measurementUnit.addEventListener("change", changeMeasurementUnit);
+    elements.measurementCancelEdit.addEventListener("click", cancelMeasurementEdit);
     elements.groupForm.addEventListener("submit", createGroup);
     document.getElementById("copySyncKeyButton").addEventListener("click", async function () {
         try {
@@ -3050,6 +3542,8 @@
             } else if (activeView === "calendar") {
                 renderHome();
             } else if (activeView === "goals") {
+                renderHome();
+            } else if (activeView === "measurements") {
                 renderHome();
             }
         }

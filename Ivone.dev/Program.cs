@@ -158,10 +158,14 @@ browserModelContentTypes.Mappings[".onnx"] = "application/octet-stream";
 browserModelContentTypes.Mappings[".wasm"] = "application/wasm";
 browserModelContentTypes.Mappings[".mjs"] = "text/javascript";
 
-app.UseStaticFiles(new StaticFileOptions
-{
-    ContentTypeProvider = browserModelContentTypes
-});
+app.UseWhen(
+    context => context.Request.Path.StartsWithSegments("/animation-parser"),
+    animationParserApp => animationParserApp.UseStaticFiles(new StaticFileOptions
+    {
+        ContentTypeProvider = browserModelContentTypes
+    }));
+
+app.UseStaticFiles();
 
 app.UseRouting();
 app.UseCors(); // Enable CORS
