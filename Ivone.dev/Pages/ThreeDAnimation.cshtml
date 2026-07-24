@@ -152,9 +152,20 @@
                     </div>
 
                     <div class="selection-label" id="selectionLabel">John · Humanoid</div>
-                    <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
                         <div class="loader-mark"><i></i><i></i><i></i></div>
-                        <span>Building deterministic scene…</span>
+                        <div class="loading-copy">
+                            <strong id="loadingTitle">Starting SceneScript…</strong>
+                            <span id="loadingDetail">Checking browser resources</span>
+                        </div>
+                        <div class="loading-progress-row">
+                            <div class="loading-progress-track" aria-hidden="true">
+                                <i id="loadingProgressBar"></i>
+                            </div>
+                            <b id="loadingPercent">1%</b>
+                        </div>
+                        <small id="loadingCacheNote">The local animation model is downloaded once and cached by this browser.</small>
+                        <button id="loadingContinueButton" type="button" hidden>Open editor while model finishes</button>
                     </div>
                 </div>
 
@@ -377,10 +388,66 @@
 
     <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        (() => {
+            const state = { value: 1, ceiling: 8, timer: null };
+            const render = () => {
+                const percent = Math.max(1, Math.min(100, Math.round(state.value)));
+                const bar = document.getElementById("loadingProgressBar");
+                const label = document.getElementById("loadingPercent");
+                if (bar) bar.style.width = `${percent}%`;
+                if (label) label.textContent = `${percent}%`;
+            };
+            const set = (value, title, detail, ceiling = value) => {
+                state.value = Math.max(state.value, value);
+                state.ceiling = Math.max(state.value, ceiling);
+                if (title) document.getElementById("loadingTitle").textContent = title;
+                if (detail) document.getElementById("loadingDetail").textContent = detail;
+                render();
+            };
+            state.timer = window.setInterval(() => {
+                if (state.value < state.ceiling) {
+                    state.value = Math.min(state.ceiling, state.value + Math.max(0.15, (state.ceiling - state.value) * 0.035));
+                    render();
+                }
+            }, 240);
+            window.SceneScriptLoading = {
+                set,
+                note(message) {
+                    const note = document.getElementById("loadingCacheNote");
+                    if (note) note.textContent = message;
+                },
+                fail(message) {
+                    window.clearInterval(state.timer);
+                    set(state.value, "Loading stopped", message, state.value);
+                    document.getElementById("loadingOverlay")?.classList.add("has-error");
+                    document.getElementById("loadingContinueButton")?.removeAttribute("hidden");
+                },
+                complete(title = "Scene ready", detail = "Everything is running locally") {
+                    window.clearInterval(state.timer);
+                    set(100, title, detail, 100);
+                    window.setTimeout(() => document.getElementById("loadingOverlay")?.classList.add("is-hidden"), 420);
+                }
+            };
+            set(1, "Loading 3D engine…", "Downloading Three.js core", 16);
+            window.setTimeout(() => document.getElementById("loadingContinueButton")?.removeAttribute("hidden"), 12000);
+            document.getElementById("loadingContinueButton")?.addEventListener("click", () => {
+                document.getElementById("loadingOverlay")?.classList.add("is-hidden");
+            });
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"
+            onload="SceneScriptLoading.set(18, 'Loading editor controls…', 'Three.js core ready', 28)"
+            onerror="SceneScriptLoading.fail('Three.js could not be downloaded. Check your connection and retry.')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"
+            onload="SceneScriptLoading.set(30, 'Loading editor controls…', 'Orbit controls ready', 37)"
+            onerror="SceneScriptLoading.set(30, 'Loading editor controls…', 'Orbit controls unavailable; continuing', 37)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"
+            onload="SceneScriptLoading.set(39, 'Loading asset support…', 'Transform controls ready', 45)"
+            onerror="SceneScriptLoading.set(39, 'Loading asset support…', 'Transform controls unavailable; continuing', 45)"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"
+            onload="SceneScriptLoading.set(47, 'Starting SceneScript…', '3D dependencies ready', 51)"
+            onerror="SceneScriptLoading.set(47, 'Starting SceneScript…', 'GLTF import unavailable; continuing', 51)"></script>
     <script src="~/js/3d-animation.js" asp-append-version="true"></script>
 </body>
 </html>

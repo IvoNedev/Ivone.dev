@@ -6,6 +6,7 @@ import { safeRepairParseResult } from "./validator";
 interface RuntimeOptions {
   baseUrl?: string;
   workerUrl?: string;
+  onProgress?: (progress: LoadProgress) => void;
 }
 
 export class BrowserAnimationParser implements AnimationParser {
@@ -16,10 +17,17 @@ export class BrowserAnimationParser implements AnimationParser {
   private initialization: Promise<void> | null = null;
   private readonly baseUrl: string;
   private readonly workerUrl: string;
+  private readonly onProgress?: (progress: LoadProgress) => void;
 
   constructor(options: RuntimeOptions = {}) {
     this.baseUrl = options.baseUrl ?? "/animation-parser/";
     this.workerUrl = options.workerUrl ?? `${this.baseUrl.replace(/\/?$/, "/")}worker.js`;
+    this.onProgress = options.onProgress;
+  }
+
+  private updateProgress(progress: LoadProgress): void {
+    this.progress = progress;
+    this.onProgress?.({ ...progress });
   }
 
   initialize(): Promise<void> {
@@ -35,13 +43,13 @@ export class BrowserAnimationParser implements AnimationParser {
       }).catch(() => undefined);
     }
     if (typeof Worker === "undefined") {
-      this.progress = { phase: "ready", loaded: 0, message: "Worker unavailable; deterministic fallback ready", backend: "deterministic" };
+      this.updateProgress({ phase: "ready", loaded: 0, message: "Worker unavailable; deterministic fallback ready", backend: "deterministic" });
       return;
     }
     this.worker = new Worker(this.workerUrl, { name: "ivone-animation-parser", type: "module" });
     this.worker.onmessage = (event: MessageEvent) => {
       if (event.data.type === "progress") {
-        this.progress = event.data.payload;
+        this.updateProgress(event.data.payload);
         return;
       }
       const request = this.pending.get(event.data.id);
@@ -79,7 +87,7 @@ export class BrowserAnimationParser implements AnimationParser {
       });
     }
     this.initialization = null;
-    this.progress = { phase: "idle", loaded: 0, message: "Disposed" };
+    this.updateProgress({ phase: "idle", loaded: 0, message: "Disposed" });
   }
 
   getModelVersion(): string {

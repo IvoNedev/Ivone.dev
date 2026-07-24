@@ -1020,8 +1020,11 @@ summary:focus-visible {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 11px;
-    background: #202420;
+    gap: 13px;
+    padding: 24px;
+    background:
+        radial-gradient(circle at 50% 46%, rgba(215, 243, 107, 0.055), transparent 30%),
+        #202420;
     color: #8e968f;
     font-size: 9px;
     transition: opacity 350ms ease, visibility 350ms ease;
@@ -1037,6 +1040,86 @@ summary:focus-visible {
     width: 34px;
     height: 34px;
     animation: spin 2.5s linear infinite;
+}
+
+.loading-copy {
+    display: grid;
+    gap: 4px;
+    text-align: center;
+}
+
+.loading-copy strong {
+    color: #e4e8e1;
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.loading-copy span {
+    color: #89928b;
+    font-family: var(--mono);
+    font-size: 8px;
+}
+
+.loading-progress-row {
+    display: grid;
+    grid-template-columns: minmax(150px, 260px) 32px;
+    align-items: center;
+    gap: 9px;
+    width: min(330px, 80%);
+}
+
+.loading-progress-track {
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #343a35;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.loading-progress-track i {
+    display: block;
+    width: 1%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #8fa943, var(--accent));
+    box-shadow: 0 0 12px rgba(215, 243, 107, 0.32);
+    transition: width 180ms linear;
+}
+
+.loading-progress-row b {
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 500;
+    text-align: right;
+}
+
+.loading-overlay small {
+    max-width: 330px;
+    color: #6f7771;
+    font-size: 7px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.loading-overlay button {
+    min-height: 27px;
+    padding: 0 11px;
+    border: 1px solid #465047;
+    border-radius: 5px;
+    background: #292e2a;
+    color: #cbd0ca;
+    font-size: 8px;
+}
+
+.loading-overlay button:hover {
+    border-color: #687768;
+    color: #fff;
+}
+
+.loading-overlay.has-error .loader-mark {
+    animation-play-state: paused;
+    opacity: 0.45;
 }
 
 .loader-mark i {

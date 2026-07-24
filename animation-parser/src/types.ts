@@ -184,11 +184,12 @@ export interface PlannerPatch {
 }
 
 export interface LoadProgress {
-  phase: "idle" | "loading-runtime" | "loading-model" | "ready" | "error";
+  phase: "idle" | "loading-runtime" | "loading-model" | "initializing-model" | "ready" | "error";
   loaded: number;
   total?: number;
   message: string;
   backend?: "webgpu" | "wasm" | "deterministic";
+  cached?: boolean;
 }
 
 export interface AnimationParser {

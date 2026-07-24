@@ -8435,9 +8435,15 @@ var BrowserAnimationParser = class {
   initialization = null;
   baseUrl;
   workerUrl;
+  onProgress;
   constructor(options = {}) {
     this.baseUrl = options.baseUrl ?? "/animation-parser/";
     this.workerUrl = options.workerUrl ?? `${this.baseUrl.replace(/\/?$/, "/")}worker.js`;
+    this.onProgress = options.onProgress;
+  }
+  updateProgress(progress) {
+    this.progress = progress;
+    this.onProgress?.({ ...progress });
   }
   initialize() {
     if (this.initialization) return this.initialization;
@@ -8451,13 +8457,13 @@ var BrowserAnimationParser = class {
       }).catch(() => void 0);
     }
     if (typeof Worker === "undefined") {
-      this.progress = { phase: "ready", loaded: 0, message: "Worker unavailable; deterministic fallback ready", backend: "deterministic" };
+      this.updateProgress({ phase: "ready", loaded: 0, message: "Worker unavailable; deterministic fallback ready", backend: "deterministic" });
       return;
     }
     this.worker = new Worker(this.workerUrl, { name: "ivone-animation-parser", type: "module" });
     this.worker.onmessage = (event) => {
       if (event.data.type === "progress") {
-        this.progress = event.data.payload;
+        this.updateProgress(event.data.payload);
         return;
       }
       const request = this.pending.get(event.data.id);
@@ -8490,7 +8496,7 @@ var BrowserAnimationParser = class {
       });
     }
     this.initialization = null;
-    this.progress = { phase: "idle", loaded: 0, message: "Disposed" };
+    this.updateProgress({ phase: "idle", loaded: 0, message: "Disposed" });
   }
   getModelVersion() {
     return MODEL_VERSION;

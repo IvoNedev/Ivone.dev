@@ -44,21 +44,18 @@ for (const directory of ["models", "schema"]) {
 }
 const ortDist = path.join(root, "node_modules", "onnxruntime-web", "dist");
 for (const filename of [
-  "ort-wasm-simd-threaded.asyncify.mjs",
-  "ort-wasm-simd-threaded.asyncify.wasm",
-  "ort-wasm-simd-threaded.jsep.mjs",
-  "ort-wasm-simd-threaded.jsep.wasm"
+  "ort-wasm-simd-threaded.mjs",
+  "ort-wasm-simd-threaded.wasm"
 ]) {
   await copyFile(path.join(ortDist, filename), path.join(browser, filename));
 }
 await copyFile(path.join(root, "semantic-defaults.json"), path.join(browser, "semantic-defaults.json"));
-const cacheVersion = "ivone-animation-parser-1.0.1";
+const cacheVersion = "ivone-animation-parser-1.0.2";
 const cachedAssets = [
   "./index.js", "./worker.js", "./models/intent-classifier.int8.onnx",
   "./models/tokenizer.json", "./models/model-config.json",
   "./schema/animation-ir.schema.json", "./semantic-defaults.json",
-  "./ort-wasm-simd-threaded.asyncify.mjs", "./ort-wasm-simd-threaded.asyncify.wasm",
-  "./ort-wasm-simd-threaded.jsep.mjs", "./ort-wasm-simd-threaded.jsep.wasm"
+  "./ort-wasm-simd-threaded.mjs"
 ];
 await writeFile(path.join(browser, "sw.js"), `
 const CACHE = ${JSON.stringify(cacheVersion)};

@@ -26,7 +26,7 @@ The standalone linear classifier reaches only the held-out accuracy recorded in 
 
 ## Runtime
 
-The browser worker uses ONNX Runtime Web. It attempts WebGPU, catches unsupported graph/provider failures, and recreates the session with WASM. Official ONNX Runtime documentation describes the WebGPU/WASM providers and recommends WASM for very lightweight models:
+The browser worker uses ONNX Runtime Web's WASM provider. WASM was selected deliberately because the classifier is extremely small and does not benefit enough from WebGPU to justify shipping the larger WebGPU/JSEP runtime. Official ONNX Runtime documentation describes the providers and recommends WASM for very lightweight models:
 
 - https://onnxruntime.ai/docs/tutorials/web/
 - https://onnxruntime.ai/docs/tutorials/web/ep-webgpu.html

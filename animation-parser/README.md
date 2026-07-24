@@ -82,7 +82,7 @@ npm audit --omit=dev
 
 ## Runtime behavior
 
-The worker attempts ONNX Runtime Web's WebGPU execution provider first and then WASM. The neural model only supplies intent evidence; deterministic code owns entity matching, temporal structure, validation, safe repair, and planner conversion. Unresolved references are warned and skipped, never invented.
+The worker uses ONNX Runtime Web's WASM execution provider. For this 5 KB linear classifier, WASM avoids shipping the much larger WebGPU/JSEP runtime and has negligible inference cost. The first load downloads roughly 13.5 MB of runtime files with byte-level progress; the worker caches them for later visits. The neural model only supplies intent evidence; deterministic code owns entity matching, temporal structure, validation, safe repair, and planner conversion. Unresolved references are warned and skipped, never invented.
 
 Product-specific numbers live in `semantic-defaults.json` and `src/config.ts`. Keep these synchronized or load the JSON into a custom `PlannerAnimationParser` configuration.
 
@@ -90,9 +90,9 @@ Product-specific numbers live in `semantic-defaults.json` and `src/config.ts`. K
 
 | Component | Status | Notes |
 |---|---|---|
-| Chromium/Edge with WebGPU | Supported | WebGPU attempted first |
-| Current Firefox/Safari | Supported through WASM fallback | WebGPU availability varies |
-| Offline parser after first cache | Supported | Service worker caches runtime/model/schema |
+| Current Chromium/Edge | Supported | Local WASM inference |
+| Current Firefox/Safari | Supported | Local WASM inference |
+| Offline parser after first cache | Supported | Runtime and model are cached on demand |
 | Existing ASP.NET Core editor | Integrated | Lazy browser import; no prompt API request |
 | Existing canonical planner actions | Supported | `moveTo`, `rotateBy`, `scaleTo`, `setColor`, clips, camera, door, fall |
 | Whole editor offline | Not yet | The editor still loads Three.js controls/loaders from jsDelivr |

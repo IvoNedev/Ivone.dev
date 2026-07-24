@@ -4,7 +4,7 @@ Production direct dependencies:
 
 | Package | Pinned version | License | Purpose |
 |---|---:|---|---|
-| `onnxruntime-web` | 1.27.0 | MIT | Browser WebGPU/WASM inference |
+| `onnxruntime-web` | 1.27.0 | MIT | Browser WASM inference |
 | `ajv` | 8.20.0 | MIT | JSON Schema validation |
 
 Build/test direct dependencies:

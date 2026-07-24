@@ -16,6 +16,7 @@
 
     const DURATION = 14;
     const STORAGE_KEY = "scenescript.office-departure.v1";
+    const MODEL_CACHE_KEY = "scenescript.animation-parser.runtime-1.0.2";
     const PROJECT_ID = "office-departure";
     const DEFAULT_PROMPT = "Two characters sit across a desk. John says “We need to leave”, stands, walks to the door, opens it and exits while the camera follows.";
     const DEFAULT_TRACK_IDS = ["entity_john", "entity_robot", "entity_door", "camera_main"];
@@ -1124,11 +1125,12 @@
 
     function initThree() {
         if (!window.THREE) {
-            $("#loadingOverlay span").textContent = "The 3D runtime could not be loaded.";
+            window.SceneScriptLoading?.fail("The 3D runtime could not be loaded. Check your connection and retry.");
             toast("Three.js failed to load. Check your internet connection.");
-            return;
+            return false;
         }
 
+        window.SceneScriptLoading?.set(63, "Building deterministic scene…", "Creating WebGL renderer", 67);
         const canvas = $("#sceneCanvas");
         runtime.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
         runtime.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -1165,6 +1167,7 @@
             runtime.scene.add(runtime.transformControls);
         }
 
+        window.SceneScriptLoading?.set(68, "Building deterministic scene…", "Constructing lights and environment", 71);
         buildEnvironment();
         rebuildEntityObjects();
         hydratePersistedAssets();
@@ -1189,7 +1192,8 @@
         canvas.addEventListener("dblclick", () => focusSelected());
 
         runtime.renderer.setAnimationLoop(renderLoop);
-        $("#loadingOverlay").classList.add("is-hidden");
+        window.SceneScriptLoading?.set(74, "Preparing local prompt model…", "3D scene ready", 76);
+        return true;
     }
 
     function hydratePersistedAssets() {
@@ -3139,6 +3143,31 @@
         updateAtTime(state.time);
     }
 
+    function updateModelLoadingProgress(progress) {
+        const loading = window.SceneScriptLoading;
+        if (!loading) return;
+        const ratio = progress.total ? clamp(progress.loaded / progress.total, 0, 1) : 0;
+        const megabytes = (value) => `${(Number(value || 0) / 1024 / 1024).toFixed(1)} MB`;
+
+        if (progress.phase === "loading-runtime") {
+            const detail = progress.total
+                ? `${progress.cached ? "Reading cached engine" : "Downloading inference engine"} · ${megabytes(progress.loaded)} / ${megabytes(progress.total)}`
+                : "Starting the local inference worker";
+            loading.set(76 + ratio * 17, "Preparing local prompt model…", detail, progress.total ? 93 : 79);
+            loading.note(progress.cached
+                ? "The inference engine was found in this browser's cache; no server processing is used."
+                : "First load only: about 13.5 MB is downloaded and cached in this browser. Future visits should be much faster.");
+        } else if (progress.phase === "loading-model") {
+            loading.set(94 + ratio * 2, "Loading animation vocabulary…", progress.cached ? "Reading the model from browser cache" : "Downloading the 5 KB intent model", 96);
+        } else if (progress.phase === "initializing-model") {
+            loading.set(97, "Starting local inference…", "Validating the ONNX model and action vocabulary", 98);
+        } else if (progress.phase === "ready") {
+            loading.set(99, "Finalizing editor…", `Local ${String(progress.backend || "WASM").toUpperCase()} parser ready`, 99);
+        } else if (progress.phase === "error") {
+            loading.note("The local model could not start; the deterministic command parser will remain available.");
+        }
+    }
+
     async function initializeBrowserAnimationParser() {
         if (runtime.browserAnimationParser) return runtime.browserAnimationParser;
         if (runtime.animationParserInitialization) return runtime.animationParserInitialization;
@@ -3147,7 +3176,10 @@
         runtime.animationParserInitialization = (async () => {
             const parserModule = await import("/animation-parser/index.js");
             const parser = new parserModule.PlannerAnimationParser(
-                new parserModule.BrowserAnimationParser({ baseUrl: "/animation-parser/" })
+                new parserModule.BrowserAnimationParser({
+                    baseUrl: "/animation-parser/",
+                    onProgress: updateModelLoadingProgress
+                })
             );
             await parser.initialize();
             runtime.browserAnimationParser = parser;
@@ -3157,6 +3189,7 @@
                 modelStatus.textContent = `ONNX intent model · ${backend}`;
                 modelStatus.title = `${parser.getModelVersion()} running locally in this browser`;
             }
+            localStorage.setItem(MODEL_CACHE_KEY, parser.getModelVersion());
             return parser;
         })().catch((error) => {
             runtime.animationParserInitialization = null;
@@ -3641,8 +3674,14 @@
     }
 
     async function init() {
+        const previouslyLoadedModel = localStorage.getItem(MODEL_CACHE_KEY);
+        window.SceneScriptLoading?.note(previouslyLoadedModel
+            ? "The local model has been loaded before; the browser will reuse its cached files when available."
+            : "First load only: the local inference engine will be downloaded once and cached by this browser.");
+        window.SceneScriptLoading?.set(52, "Restoring workspace…", "Loading your saved scene", 56);
         await loadSavedProject();
         runtime.promptBaseline = state.currentPrompt || DEFAULT_PROMPT;
+        window.SceneScriptLoading?.set(57, "Preparing editor…", "Connecting controls and timeline", 61);
         setupEvents();
         const promptVersion =
             state.promptHistory.find((entry) => entry.id === state.currentPromptHistoryId) ||
@@ -3652,11 +3691,18 @@
         setupTimeline();
         renderSceneTree();
         updateHistoryButtons();
-        initThree();
+        if (!initThree()) return;
         selectEntity(state.selectedId, false);
         updateAtTime(0);
-        void initializeBrowserAnimationParser().catch(() => undefined);
+        try {
+            await initializeBrowserAnimationParser();
+            window.SceneScriptLoading?.complete("Scene ready", "3D editor and local prompt model are ready");
+        } catch {
+            window.SceneScriptLoading?.complete("Scene ready", "Local model unavailable; deterministic planner is active");
+        }
     }
 
-    init();
+    init().catch((error) => {
+        window.SceneScriptLoading?.fail(error instanceof Error ? error.message : String(error));
+    });
 })();

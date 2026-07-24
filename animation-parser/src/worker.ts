@@ -1,4 +1,4 @@
-import * as ort from "onnxruntime-web/webgpu";
+import * as ort from "onnxruntime-web/wasm";
 import { MODEL_VERSION } from "./config";
 import { extractFeatures, INTENT_LABELS } from "./features";
 import { parseAnimationPrompt, splitPromptSegments } from "./parser";
@@ -18,8 +18,9 @@ type Request =
   | { id: number; type: "dispose" };
 
 let session: ort.InferenceSession | null = null;
-let backend: LoadProgress["backend"] = "deterministic";
+let backend: LoadProgress["backend"] = "wasm";
 let baseUrl = "/animation-parser/";
+const ASSET_CACHE = "ivone-animation-runtime-1.0.2";
 
 function post(id: number, type: string, payload: unknown): void {
   workerSelf.postMessage({ id, type, payload });
@@ -29,11 +30,23 @@ function progress(value: LoadProgress): void {
   workerSelf.postMessage({ type: "progress", payload: value });
 }
 
-async function fetchWithProgress(url: string): Promise<Uint8Array> {
-  const response = await fetch(url, { cache: "force-cache" });
-  if (!response.ok) throw new Error(`Model fetch failed (${response.status})`);
+async function fetchWithProgress(
+  url: string,
+  phase: LoadProgress["phase"],
+  message: string
+): Promise<{ bytes: Uint8Array; cached: boolean }> {
+  const cache = "caches" in globalThis ? await caches.open(ASSET_CACHE) : null;
+  const cachedResponse = await cache?.match(url);
+  const cached = Boolean(cachedResponse);
+  const response = cachedResponse ?? await fetch(url, { cache: "force-cache" });
+  if (!response.ok) throw new Error(`Parser asset fetch failed (${response.status})`);
+  if (!cachedResponse && cache) void cache.put(url, response.clone());
   const total = Number(response.headers.get("content-length")) || undefined;
-  if (!response.body) return new Uint8Array(await response.arrayBuffer());
+  if (!response.body) {
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    progress({ phase, loaded: bytes.byteLength, total: bytes.byteLength, message, backend, cached });
+    return { bytes, cached };
+  }
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let loaded = 0;
@@ -42,7 +55,7 @@ async function fetchWithProgress(url: string): Promise<Uint8Array> {
     if (value.done) break;
     chunks.push(value.value);
     loaded += value.value.byteLength;
-    progress({ phase: "loading-model", loaded, total, message: "Loading intent model", backend });
+    progress({ phase, loaded, total, message, backend, cached });
   }
   const bytes = new Uint8Array(loaded);
   let offset = 0;
@@ -50,38 +63,47 @@ async function fetchWithProgress(url: string): Promise<Uint8Array> {
     bytes.set(chunk, offset);
     offset += chunk.length;
   }
-  return bytes;
+  return { bytes, cached };
 }
 
 async function initialize(url: string): Promise<void> {
   baseUrl = url.endsWith("/") ? url : `${url}/`;
-  progress({ phase: "loading-runtime", loaded: 0, message: "Loading browser inference runtime" });
+  progress({ phase: "loading-runtime", loaded: 0, message: "Loading browser inference runtime", backend });
   ort.env.wasm.wasmPaths = baseUrl;
   ort.env.wasm.numThreads = globalThis.crossOriginIsolated
     ? Math.max(1, Math.min(4, workerSelf.navigator.hardwareConcurrency || 1))
     : 1;
-  const model = await fetchWithProgress(`${baseUrl}models/intent-classifier.int8.onnx`);
-  const gpu = (workerSelf.navigator as Navigator & { gpu?: { requestAdapter(): Promise<unknown> } }).gpu;
-  const canWebGPU = Boolean(gpu && await gpu.requestAdapter().catch(() => null));
-  if (canWebGPU) {
-    try {
-      session = await ort.InferenceSession.create(model, {
-        executionProviders: ["webgpu"],
-        graphOptimizationLevel: "all"
-      });
-      backend = "webgpu";
-    } catch {
-      session = null;
-    }
-  }
-  if (!session) {
-    session = await ort.InferenceSession.create(model, {
-      executionProviders: ["wasm"],
-      graphOptimizationLevel: "all"
-    });
-    backend = "wasm";
-  }
-  progress({ phase: "ready", loaded: model.byteLength, total: model.byteLength, message: "Animation parser ready", backend });
+  const runtime = await fetchWithProgress(
+    `${baseUrl}ort-wasm-simd-threaded.wasm`,
+    "loading-runtime",
+    "Loading local inference engine"
+  );
+  ort.env.wasm.wasmBinary = runtime.bytes;
+  const model = await fetchWithProgress(
+    `${baseUrl}models/intent-classifier.int8.onnx`,
+    "loading-model",
+    "Loading intent model"
+  );
+  progress({
+    phase: "initializing-model",
+    loaded: model.bytes.byteLength,
+    total: model.bytes.byteLength,
+    message: "Preparing deterministic language model",
+    backend,
+    cached: runtime.cached && model.cached
+  });
+  session = await ort.InferenceSession.create(model.bytes, {
+    executionProviders: ["wasm"],
+    graphOptimizationLevel: "all"
+  });
+  progress({
+    phase: "ready",
+    loaded: model.bytes.byteLength,
+    total: model.bytes.byteLength,
+    message: "Animation parser ready",
+    backend,
+    cached: runtime.cached && model.cached
+  });
 }
 
 async function classify(prompt: string): Promise<{ label: string; confidence: number } | null> {

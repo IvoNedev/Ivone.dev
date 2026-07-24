@@ -29,7 +29,7 @@ ASP.NET static-file serving handles the `.js`, `.mjs`, `.wasm`, `.onnx`, and JSO
 - `.onnx` → `application/octet-stream`
 - `.mjs` → `text/javascript`
 
-Serve over HTTPS (or localhost) for service workers and WebGPU. Cross-origin isolation is optional; without it ONNX Runtime reduces WASM threading.
+Serve over HTTPS (or localhost) for service-worker caching. Cross-origin isolation is optional; without it ONNX Runtime reduces WASM threading. The editor shows real runtime/model download progress, identifies cached loads, and offers entry to the editor after 12 seconds while initialization continues.
 
 ## Editable semantics
 
