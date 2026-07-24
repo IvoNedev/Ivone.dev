@@ -3145,26 +3145,36 @@
 
     function updateModelLoadingProgress(progress) {
         const loading = window.SceneScriptLoading;
-        if (!loading) return;
         const ratio = progress.total ? clamp(progress.loaded / progress.total, 0, 1) : 0;
         const megabytes = (value) => `${(Number(value || 0) / 1024 / 1024).toFixed(1)} MB`;
+        const modelStatus = $("#animationModelStatus");
+        const previouslyLoaded = Boolean(localStorage.getItem(MODEL_CACHE_KEY));
 
         if (progress.phase === "loading-runtime") {
             const detail = progress.total
                 ? `${progress.cached ? "Reading cached engine" : "Downloading inference engine"} · ${megabytes(progress.loaded)} / ${megabytes(progress.total)}`
                 : "Starting the local inference worker";
-            loading.set(76 + ratio * 17, "Preparing local prompt model…", detail, progress.total ? 93 : 79);
-            loading.note(progress.cached
+            if (modelStatus) {
+                const percent = progress.total ? Math.round(ratio * 100) : 0;
+                modelStatus.textContent = progress.cached
+                    ? `Loading cached model · ${percent}%`
+                    : progress.total
+                        ? `Downloading local model · ${percent}%`
+                        : "Starting local model…";
+                modelStatus.title = `${detail}. The editor remains usable while this finishes.`;
+            }
+            loading?.note(progress.cached || previouslyLoaded
                 ? "The inference engine was found in this browser's cache; no server processing is used."
                 : "First load only: about 13.5 MB is downloaded and cached in this browser. Future visits should be much faster.");
         } else if (progress.phase === "loading-model") {
-            loading.set(94 + ratio * 2, "Loading animation vocabulary…", progress.cached ? "Reading the model from browser cache" : "Downloading the 5 KB intent model", 96);
+            if (modelStatus) modelStatus.textContent = progress.cached ? "Loading cached vocabulary…" : "Loading animation vocabulary…";
         } else if (progress.phase === "initializing-model") {
-            loading.set(97, "Starting local inference…", "Validating the ONNX model and action vocabulary", 98);
+            if (modelStatus) modelStatus.textContent = "Starting local inference…";
         } else if (progress.phase === "ready") {
-            loading.set(99, "Finalizing editor…", `Local ${String(progress.backend || "WASM").toUpperCase()} parser ready`, 99);
+            if (modelStatus) modelStatus.textContent = `ONNX intent model · ${String(progress.backend || "WASM").toUpperCase()}`;
         } else if (progress.phase === "error") {
-            loading.note("The local model could not start; the deterministic command parser will remain available.");
+            if (modelStatus) modelStatus.textContent = "Deterministic planner fallback";
+            loading?.note("The local model could not start; the deterministic command parser will remain available.");
         }
     }
 
@@ -3181,7 +3191,23 @@
                     onProgress: updateModelLoadingProgress
                 })
             );
-            await parser.initialize();
+            let timeoutId;
+            try {
+                await Promise.race([
+                    parser.initialize(),
+                    new Promise((_, reject) => {
+                        timeoutId = window.setTimeout(
+                            () => reject(new Error("Local model initialization timed out after 45 seconds")),
+                            45000
+                        );
+                    })
+                ]);
+            } catch (error) {
+                parser.dispose();
+                throw error;
+            } finally {
+                if (timeoutId) window.clearTimeout(timeoutId);
+            }
             runtime.browserAnimationParser = parser;
             const progress = parser.getLoadProgress();
             if (modelStatus) {
@@ -3220,24 +3246,35 @@
         button.disabled = true;
 
         try {
+            const parserInput = {
+                currentPrompt: prompt,
+                previousPrompt,
+                scene: plannerSceneDocument(),
+                selectedEntityId: state.selectedId,
+                actionCatalog: [
+                    "place", "moveTo", "rotateBy", "scaleTo", "setColor",
+                    "stand", "duck", "walk", "run", "jump", "idle",
+                    "cameraFollow", "cameraLookAt", "open", "close",
+                    "fallToGround", "keyframe"
+                ].map((type) => ({ type }))
+            };
             let plan;
             try {
-                const animationParser = await initializeBrowserAnimationParser();
-                plan = await animationParser.parseToPlanner({
-                    currentPrompt: prompt,
-                    previousPrompt,
-                    scene: plannerSceneDocument(),
-                    selectedEntityId: state.selectedId,
-                    actionCatalog: [
-                        "place", "moveTo", "rotateBy", "scaleTo", "setColor",
-                        "stand", "duck", "walk", "run", "jump", "idle",
-                        "cameraFollow", "cameraLookAt", "open", "close",
-                        "fallToGround", "keyframe"
-                    ].map((type) => ({ type }))
-                });
+                if (!runtime.browserAnimationParser) {
+                    void initializeBrowserAnimationParser().catch(() => undefined);
+                    throw new Error("Local model is still loading");
+                }
+                plan = await runtime.browserAnimationParser.parseToPlanner(parserInput);
             } catch (error) {
-                plan = fallbackPlan(prompt, previousPrompt);
-                toast(`Using deterministic fallback · ${error.message}`);
+                try {
+                    const parserModule = await import("/animation-parser/index.js");
+                    const result = parserModule.parseAnimationPrompt(parserInput);
+                    plan = parserModule.resolveToPlanner(result, parserInput.scene);
+                    toast("Local model is still loading · deterministic parser used");
+                } catch {
+                    plan = fallbackPlan(prompt, previousPrompt);
+                    toast(`Using deterministic fallback · ${error.message}`);
+                }
             }
 
             const operations = plan.operations || [];
@@ -3694,12 +3731,8 @@
         if (!initThree()) return;
         selectEntity(state.selectedId, false);
         updateAtTime(0);
-        try {
-            await initializeBrowserAnimationParser();
-            window.SceneScriptLoading?.complete("Scene ready", "3D editor and local prompt model are ready");
-        } catch {
-            window.SceneScriptLoading?.complete("Scene ready", "Local model unavailable; deterministic planner is active");
-        }
+        window.SceneScriptLoading?.complete("Scene ready", "Local prompt model is starting in the background");
+        void initializeBrowserAnimationParser().catch(() => undefined);
     }
 
     init().catch((error) => {

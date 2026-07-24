@@ -21,7 +21,7 @@ export class BrowserAnimationParser implements AnimationParser {
 
   constructor(options: RuntimeOptions = {}) {
     this.baseUrl = options.baseUrl ?? "/animation-parser/";
-    this.workerUrl = options.workerUrl ?? `${this.baseUrl.replace(/\/?$/, "/")}worker.js`;
+    this.workerUrl = options.workerUrl ?? `${this.baseUrl.replace(/\/?$/, "/")}worker.js?v=1.0.3`;
     this.onProgress = options.onProgress;
   }
 

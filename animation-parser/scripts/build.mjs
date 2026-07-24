@@ -50,7 +50,7 @@ for (const filename of [
   await copyFile(path.join(ortDist, filename), path.join(browser, filename));
 }
 await copyFile(path.join(root, "semantic-defaults.json"), path.join(browser, "semantic-defaults.json"));
-const cacheVersion = "ivone-animation-parser-1.0.2";
+const cacheVersion = "ivone-animation-parser-1.0.3";
 const cachedAssets = [
   "./index.js", "./worker.js", "./models/intent-classifier.int8.onnx",
   "./models/tokenizer.json", "./models/model-config.json",

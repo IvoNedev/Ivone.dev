@@ -1,9 +1,9 @@
 {
-  "initializationMs": 1284,
+  "initializationMs": 1133,
   "backend": "wasm",
   "samples": 30,
-  "medianParseMs": 1,
-  "p95ParseMs": 2.5999999940395355,
+  "medianParseMs": 0.5999999940395355,
+  "p95ParseMs": 1.7000000178813934,
   "usedJSHeapBytes": 10000000,
-  "totalJSHeapBytes": 11200000
+  "totalJSHeapBytes": 11900000
 }

@@ -12,7 +12,11 @@
     <title>SceneScript — 3D Animation Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preload"
+          href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap"
+          as="style"
+          onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" /></noscript>
     <link rel="stylesheet" href="~/css/3d-animation.css" asp-append-version="true" />
 </head>
 <body>
@@ -434,20 +438,52 @@
             document.getElementById("loadingContinueButton")?.addEventListener("click", () => {
                 document.getElementById("loadingOverlay")?.classList.add("is-hidden");
             });
+
+            const loadScript = (src) => new Promise((resolve, reject) => {
+                const script = document.createElement("script");
+                script.src = src;
+                script.async = false;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Could not load ${src}`));
+                document.body.appendChild(script);
+            });
+            const loadOptionalScript = async (src, successProgress, successTitle, successDetail, failureDetail, ceiling) => {
+                try {
+                    await loadScript(src);
+                    set(successProgress, successTitle, successDetail, ceiling);
+                } catch {
+                    set(successProgress, successTitle, failureDetail, ceiling);
+                }
+            };
+            const bootAfterFirstPaint = async () => {
+                await loadScript("https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js");
+                set(18, "Loading editor controls…", "Three.js core ready", 28);
+                await loadOptionalScript(
+                    "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js",
+                    30, "Loading editor controls…", "Orbit controls ready", "Orbit controls unavailable; continuing", 37
+                );
+                await loadOptionalScript(
+                    "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js",
+                    39, "Loading asset support…", "Transform controls ready", "Transform controls unavailable; continuing", 45
+                );
+                await loadOptionalScript(
+                    "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js",
+                    47, "Starting SceneScript…", "3D dependencies ready", "GLTF import unavailable; continuing", 51
+                );
+                await loadScript("/js/3d-animation.js?v=scene-loader-20260724-3");
+            };
+            window.requestAnimationFrame(() => {
+                window.requestAnimationFrame(() => {
+                    void bootAfterFirstPaint().catch((error) => {
+                        window.SceneScriptLoading.fail(
+                            error instanceof Error
+                                ? `${error.message}. Check your connection and retry.`
+                                : "The 3D runtime could not be loaded."
+                        );
+                    });
+                });
+            });
         })();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"
-            onload="SceneScriptLoading.set(18, 'Loading editor controls…', 'Three.js core ready', 28)"
-            onerror="SceneScriptLoading.fail('Three.js could not be downloaded. Check your connection and retry.')"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"
-            onload="SceneScriptLoading.set(30, 'Loading editor controls…', 'Orbit controls ready', 37)"
-            onerror="SceneScriptLoading.set(30, 'Loading editor controls…', 'Orbit controls unavailable; continuing', 37)"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"
-            onload="SceneScriptLoading.set(39, 'Loading asset support…', 'Transform controls ready', 45)"
-            onerror="SceneScriptLoading.set(39, 'Loading asset support…', 'Transform controls unavailable; continuing', 45)"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"
-            onload="SceneScriptLoading.set(47, 'Starting SceneScript…', '3D dependencies ready', 51)"
-            onerror="SceneScriptLoading.set(47, 'Starting SceneScript…', 'GLTF import unavailable; continuing', 51)"></script>
-    <script src="~/js/3d-animation.js" asp-append-version="true"></script>
 </body>
 </html>

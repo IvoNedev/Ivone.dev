@@ -20,7 +20,8 @@ type Request =
 let session: ort.InferenceSession | null = null;
 let backend: LoadProgress["backend"] = "wasm";
 let baseUrl = "/animation-parser/";
-const ASSET_CACHE = "ivone-animation-runtime-1.0.2";
+const ASSET_VERSION = "1.0.3";
+const STALL_TIMEOUT_MS = 12_000;
 
 function post(id: number, type: string, payload: unknown): void {
   workerSelf.postMessage({ id, type, payload });
@@ -35,35 +36,48 @@ async function fetchWithProgress(
   phase: LoadProgress["phase"],
   message: string
 ): Promise<{ bytes: Uint8Array; cached: boolean }> {
-  const cache = "caches" in globalThis ? await caches.open(ASSET_CACHE) : null;
-  const cachedResponse = await cache?.match(url);
-  const cached = Boolean(cachedResponse);
-  const response = cachedResponse ?? await fetch(url, { cache: "force-cache" });
-  if (!response.ok) throw new Error(`Parser asset fetch failed (${response.status})`);
-  if (!cachedResponse && cache) void cache.put(url, response.clone());
-  const total = Number(response.headers.get("content-length")) || undefined;
-  if (!response.body) {
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    progress({ phase, loaded: bytes.byteLength, total: bytes.byteLength, message, backend, cached });
-    return { bytes, cached };
+  const controller = new AbortController();
+  let stallTimer: ReturnType<typeof setTimeout> | undefined;
+  const resetStallTimer = () => {
+    if (stallTimer) clearTimeout(stallTimer);
+    stallTimer = setTimeout(() => controller.abort("Parser asset download stalled"), STALL_TIMEOUT_MS);
+  };
+  resetStallTimer();
+  try {
+    const response = await fetch(url, { cache: "force-cache", signal: controller.signal });
+    if (!response.ok) throw new Error(`Parser asset fetch failed (${response.status})`);
+    const total = Number(response.headers.get("content-length")) || undefined;
+    if (!response.body) {
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      progress({ phase, loaded: bytes.byteLength, total: bytes.byteLength, message, backend });
+      return { bytes, cached: false };
+    }
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let loaded = 0;
+    while (true) {
+      const value = await reader.read();
+      if (value.done) break;
+      resetStallTimer();
+      chunks.push(value.value);
+      loaded += value.value.byteLength;
+      progress({ phase, loaded, total, message, backend });
+    }
+    const bytes = new Uint8Array(loaded);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return { bytes, cached: false };
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error("Local inference download received no data for 12 seconds");
+    }
+    throw error;
+  } finally {
+    if (stallTimer) clearTimeout(stallTimer);
   }
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let loaded = 0;
-  while (true) {
-    const value = await reader.read();
-    if (value.done) break;
-    chunks.push(value.value);
-    loaded += value.value.byteLength;
-    progress({ phase, loaded, total, message, backend, cached });
-  }
-  const bytes = new Uint8Array(loaded);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return { bytes, cached };
 }
 
 async function initialize(url: string): Promise<void> {
@@ -74,13 +88,13 @@ async function initialize(url: string): Promise<void> {
     ? Math.max(1, Math.min(4, workerSelf.navigator.hardwareConcurrency || 1))
     : 1;
   const runtime = await fetchWithProgress(
-    `${baseUrl}ort-wasm-simd-threaded.wasm`,
+    `${baseUrl}ort-wasm-simd-threaded.wasm?v=${ASSET_VERSION}`,
     "loading-runtime",
     "Loading local inference engine"
   );
   ort.env.wasm.wasmBinary = runtime.bytes;
   const model = await fetchWithProgress(
-    `${baseUrl}models/intent-classifier.int8.onnx`,
+    `${baseUrl}models/intent-classifier.int8.onnx?v=${ASSET_VERSION}`,
     "loading-model",
     "Loading intent model"
   );
