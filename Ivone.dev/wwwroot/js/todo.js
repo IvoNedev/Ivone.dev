@@ -16,7 +16,9 @@
         { key: "shouldersCm", label: "Shoulders", kind: "length" },
         { key: "chestCm", label: "Chest", kind: "length" },
         { key: "waistCm", label: "Waist", kind: "length" },
-        { key: "hipsCm", label: "Hips", kind: "length" },
+        { key: "hipsCm", label: "Hips (widest)", kind: "length" },
+        { key: "upperArmRelaxedCm", label: "Arm relaxed", kind: "length" },
+        { key: "upperArmFlexedCm", label: "Arm flexed", kind: "length" },
         { key: "leftUpperArmCm", label: "Left upper arm", kind: "length" },
         { key: "rightUpperArmCm", label: "Right upper arm", kind: "length" },
         { key: "leftForearmCm", label: "Left forearm", kind: "length" },
@@ -90,6 +92,7 @@
         measurementFormTitle: document.getElementById("measurementFormTitle"),
         measurementDate: document.getElementById("measurementDate"),
         measurementUnit: document.getElementById("measurementUnit"),
+        measurementSimplified: document.getElementById("measurementSimplified"),
         measurementNotes: document.getElementById("measurementNotes"),
         measurementCancelEdit: document.getElementById("measurementCancelEdit"),
         measurementLatest: document.getElementById("measurementLatest"),
@@ -202,7 +205,7 @@
     function defaultDocument() {
         var now = new Date().toISOString();
         return {
-            version: 5,
+            version: 6,
             updatedAt: now,
             groups: [
                 { id: CALENDAR_GROUP_ID, name: "Calendar", color: "#c74363", createdAt: now, manualOrder: 0, orderUpdatedAt: now },
@@ -219,6 +222,7 @@
             goals: [],
             deletedGoals: {},
             measurementUnit: "metric",
+            measurementSimplified: true,
             measurementEntries: [],
             deletedMeasurementEntries: {}
         };
@@ -394,7 +398,7 @@
         measurementEntries.sort(function (a, b) { return a.id.localeCompare(b.id); });
 
         return {
-            version: 5,
+            version: 6,
             updatedAt: value.updatedAt || now,
             groups: groups,
             notes: notes.filter(function (note) { return !deletedNotes[note.id]; }),
@@ -404,6 +408,7 @@
             goals: goals,
             deletedGoals: deletedGoals,
             measurementUnit: value.measurementUnit === "imperial" ? "imperial" : "metric",
+            measurementSimplified: value.measurementSimplified !== false,
             measurementEntries: measurementEntries,
             deletedMeasurementEntries: deletedMeasurementEntries
         };
@@ -596,9 +601,12 @@
         var measurementUnit = (Date.parse(local.updatedAt) || 0) >= (Date.parse(remote.updatedAt) || 0)
             ? local.measurementUnit
             : remote.measurementUnit;
+        var measurementSimplified = (Date.parse(local.updatedAt) || 0) >= (Date.parse(remote.updatedAt) || 0)
+            ? local.measurementSimplified
+            : remote.measurementSimplified;
 
         return normalizeDocument({
-            version: 5,
+            version: 6,
             updatedAt: latestIso(local.updatedAt, remote.updatedAt),
             groups: groups,
             notes: notes,
@@ -608,6 +616,7 @@
             goals: goals,
             deletedGoals: deletedGoals,
             measurementUnit: measurementUnit,
+            measurementSimplified: measurementSimplified,
             measurementEntries: measurementEntries,
             deletedMeasurementEntries: deletedMeasurementEntries
         });
@@ -1394,9 +1403,19 @@
     function renderMeasurements() {
         showView("measurements");
         elements.measurementUnit.value = state.measurementUnit;
+        elements.measurementSimplified.checked = state.measurementSimplified;
+        applyMeasurementMode();
         updateMeasurementUnitLabels();
         renderMeasurementLatest();
         renderMeasurementHistory();
+    }
+
+    function applyMeasurementMode() {
+        var simplified = state.measurementSimplified !== false;
+        elements.measurementForm.classList.toggle("is-simplified", simplified);
+        elements.measurementForm.querySelectorAll("[data-measurement-advanced]").forEach(function (element) {
+            element.hidden = simplified;
+        });
     }
 
     function renderMeasurementLatest() {
@@ -1411,45 +1430,130 @@
         }
 
         var latest = entries[0];
-        var previous = entries[1] || null;
         var heading = document.createElement("div");
         heading.className = "todo-measurement-latest__heading";
-        heading.innerHTML = '<div><p class="todo-eyebrow">Latest check-in</p><h2>' +
-            escapeHtml(formatMeasurementDate(latest.date)) +
-            '</h2></div><small>' + plural(entries.length, "check-in") + " recorded</small>";
+        heading.innerHTML = '<div><p class="todo-eyebrow">Progress trends</p><h2>Daily · weekly · monthly</h2></div><small>Latest check-in ' +
+            escapeHtml(formatMeasurementDate(latest.date)) + "</small>";
         elements.measurementLatest.appendChild(heading);
 
         var cards = document.createElement("div");
         cards.className = "todo-measurement-summary-grid";
-        var preferredKeys = ["weightKg", "bodyFatPercent", "waistCm", "chestCm", "leftUpperArmCm", "leftThighCm"];
+        var preferredKeys = ["weightKg", "waistCm", "chestCm", "hipsCm", "upperArmRelaxedCm", "upperArmFlexedCm"];
+        var renderedCards = 0;
         preferredKeys.forEach(function (key) {
             var field = measurementField(key);
-            if (!field || !Number.isFinite(latest[key])) {
+            var trend = measurementTrend(key);
+            if (!field || !trend) {
                 return;
             }
             var card = document.createElement("article");
-            card.className = "todo-measurement-summary-card";
+            card.className = "todo-measurement-summary-card todo-measurement-trend-card";
+            card.dataset.measurementTrend = key;
             var label = document.createElement("span");
             label.textContent = field.label;
             var value = document.createElement("strong");
-            value.textContent = formatMeasurementValue(latest[key], field.kind);
-            var delta = document.createElement("small");
-            if (previous && Number.isFinite(previous[key])) {
-                var change = latest[key] - previous[key];
-                delta.textContent = formatMeasurementDelta(change, field.kind) + " since previous";
-                if (Math.abs(change) < 0.005) {
-                    delta.className = "is-steady";
+            value.textContent = formatMeasurementValue(trend.current.value, field.kind);
+            var periods = document.createElement("div");
+            periods.className = "todo-measurement-trend-periods";
+            [
+                { label: "Daily", value: trend.daily },
+                { label: "Weekly", value: trend.weekly },
+                { label: "Monthly", value: trend.monthly }
+            ].forEach(function (period) {
+                var periodWrap = document.createElement("span");
+                var periodLabel = document.createElement("small");
+                periodLabel.textContent = period.label;
+                var periodValue = document.createElement("b");
+                if (period.value) {
+                    periodValue.textContent = formatTrendPercent(period.value.percent);
+                    periodValue.className = measurementOutcomeClass(key, period.value.percent);
+                    periodValue.title = "Compared with " + formatMeasurementDate(period.value.baseline.date);
                 } else {
-                    delta.className = change < 0 ? "is-down" : "is-up";
+                    periodValue.textContent = "—";
+                    periodValue.className = "is-steady";
+                    periodValue.title = "More dated check-ins are needed";
                 }
-            } else {
-                delta.textContent = "Baseline";
-                delta.className = "is-steady";
-            }
-            card.append(label, value, delta);
+                periodWrap.append(periodLabel, periodValue);
+                periods.appendChild(periodWrap);
+            });
+            card.append(label, value, periods);
             cards.appendChild(card);
+            renderedCards += 1;
         });
-        elements.measurementLatest.appendChild(cards);
+        if (renderedCards) {
+            elements.measurementLatest.appendChild(cards);
+        } else {
+            var trendEmpty = document.createElement("p");
+            trendEmpty.className = "todo-measurement-trend-empty";
+            trendEmpty.textContent = "Add one of the simplified measurements to start your trends.";
+            elements.measurementLatest.appendChild(trendEmpty);
+        }
+    }
+
+    function measurementTrend(key) {
+        var series = state.measurementEntries
+            .filter(function (entry) { return Number.isFinite(entry[key]); })
+            .sort(function (a, b) {
+                return a.date.localeCompare(b.date) || (Date.parse(a.updatedAt) || 0) - (Date.parse(b.updatedAt) || 0);
+            })
+            .map(function (entry) { return { date: entry.date, value: entry[key] }; });
+        if (!series.length) {
+            return null;
+        }
+
+        var current = series[series.length - 1];
+        var previous = series.length > 1 ? series[series.length - 2] : null;
+        return {
+            current: current,
+            daily: previous ? measurementTrendDelta(current, previous) : null,
+            weekly: measurementPeriodDelta(series, current, 7),
+            monthly: measurementPeriodDelta(series, current, 30)
+        };
+    }
+
+    function measurementPeriodDelta(series, current, days) {
+        var target = shiftDateKey(current.date, -days);
+        for (var index = series.length - 2; index >= 0; index -= 1) {
+            if (series[index].date <= target) {
+                return measurementTrendDelta(current, series[index]);
+            }
+        }
+        return null;
+    }
+
+    function measurementTrendDelta(current, baseline) {
+        if (!baseline || !Number.isFinite(baseline.value) || baseline.value === 0) {
+            return null;
+        }
+        return {
+            baseline: baseline,
+            percent: ((current.value - baseline.value) / baseline.value) * 100
+        };
+    }
+
+    function measurementOutcomeClass(key, change) {
+        if (Math.abs(change) < 0.005) {
+            return "is-steady";
+        }
+        var decreasingIsGood = ["weightKg", "waistCm", "chestCm", "hipsCm"].indexOf(key) >= 0;
+        var increasingIsGood = ["upperArmRelaxedCm", "upperArmFlexedCm"].indexOf(key) >= 0;
+        if (!decreasingIsGood && !increasingIsGood) {
+            return change < 0 ? "is-down" : "is-up";
+        }
+        return (decreasingIsGood && change < 0) || (increasingIsGood && change > 0)
+            ? "is-positive"
+            : "is-negative";
+    }
+
+    function formatTrendPercent(value) {
+        if (Math.abs(value) < 0.005) {
+            value = 0;
+        }
+        var prefix = value > 0.005 ? "+" : "";
+        return prefix + new Intl.NumberFormat(undefined, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        }).format(value) + "%";
     }
 
     function renderMeasurementHistory() {
@@ -1491,8 +1595,8 @@
         edit.addEventListener("click", function () { editMeasurement(entry.id); });
         var remove = document.createElement("button");
         remove.type = "button";
-        remove.className = "todo-icon-button todo-measurement-delete";
-        remove.innerHTML = icon("trash");
+        remove.className = "todo-text-button todo-measurement-delete";
+        remove.innerHTML = icon("trash") + "<span>Delete</span>";
         remove.setAttribute("aria-label", "Delete measurements from " + formatMeasurementDate(entry.date));
         remove.addEventListener("click", function () { deleteMeasurement(entry.id); });
         actions.append(edit, remove);
@@ -1500,7 +1604,7 @@
 
         var values = document.createElement("div");
         values.className = "todo-measurement-row__values";
-        MEASUREMENT_FIELDS.forEach(function (field) {
+        measurementDisplayFields().forEach(function (field) {
             if (!Number.isFinite(entry[field.key])) {
                 return;
             }
@@ -1511,12 +1615,20 @@
             }
             item.innerHTML = "<small>" + escapeHtml(field.label) + "</small><strong>" +
                 escapeHtml(formatMeasurementValue(entry[field.key], field.kind)) +
-                (changeText ? '<em class="' + ((entry[field.key] - previous[field.key]) < 0 ? "is-down" : "is-up") + '">' + escapeHtml(changeText) + "</em>" : "") +
+                (changeText ? '<em class="' + measurementOutcomeClass(field.key, entry[field.key] - previous[field.key]) + '">' + escapeHtml(changeText) + "</em>" : "") +
                 "</strong>";
             values.appendChild(item);
         });
         row.append(heading, values);
         return row;
+    }
+
+    function measurementDisplayFields() {
+        if (state.measurementSimplified === false) {
+            return MEASUREMENT_FIELDS;
+        }
+        var simplifiedKeys = ["weightKg", "waistCm", "chestCm", "hipsCm", "upperArmRelaxedCm", "upperArmFlexedCm"];
+        return simplifiedKeys.map(measurementField).filter(Boolean);
     }
 
     function saveMeasurement(event) {
@@ -1597,9 +1709,11 @@
     function resetMeasurementForm() {
         elements.measurementForm.reset();
         elements.measurementUnit.value = state.measurementUnit;
+        elements.measurementSimplified.checked = state.measurementSimplified !== false;
         elements.measurementDate.value = localDateKey(new Date());
         elements.measurementFormTitle.textContent = "Add measurements";
         elements.measurementCancelEdit.hidden = true;
+        applyMeasurementMode();
         updateMeasurementUnitLabels();
     }
 
@@ -1650,6 +1764,14 @@
         state.measurementUnit = nextUnit;
         writeMeasurementFormValues(currentValues, nextUnit);
         updateMeasurementUnitLabels();
+        persist({ touchActiveNote: false });
+        renderMeasurementLatest();
+        renderMeasurementHistory();
+    }
+
+    function changeMeasurementMode() {
+        state.measurementSimplified = elements.measurementSimplified.checked;
+        applyMeasurementMode();
         persist({ touchActiveNote: false });
         renderMeasurementLatest();
         renderMeasurementHistory();
@@ -3486,6 +3608,7 @@
     });
     elements.goalForm.addEventListener("submit", addGoal);
     elements.measurementForm.addEventListener("submit", saveMeasurement);
+    elements.measurementSimplified.addEventListener("change", changeMeasurementMode);
     elements.measurementUnit.addEventListener("change", changeMeasurementUnit);
     elements.measurementCancelEdit.addEventListener("click", cancelMeasurementEdit);
     elements.groupForm.addEventListener("submit", createGroup);

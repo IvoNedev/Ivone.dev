@@ -179,13 +179,20 @@
                         <span class="todo-measurements-mark" aria-hidden="true"><svg><use href="#i-ruler"></use></svg></span>
                         <div><p class="todo-eyebrow">Body progress</p><h1>Measurements</h1></div>
                     </div>
-                    <label class="todo-measurement-unit" for="measurementUnit">
-                        <span>Units</span>
-                        <select id="measurementUnit">
-                            <option value="metric">kg / cm</option>
-                            <option value="imperial">lb / in</option>
-                        </select>
-                    </label>
+                    <div class="todo-measurements-controls">
+                        <label class="todo-simplified-toggle" for="measurementSimplified">
+                            <input id="measurementSimplified" type="checkbox" checked />
+                            <span aria-hidden="true"></span>
+                            <strong>Simplified</strong>
+                        </label>
+                        <label class="todo-measurement-unit" for="measurementUnit">
+                            <span>Units</span>
+                            <select id="measurementUnit">
+                                <option value="metric">kg / cm</option>
+                                <option value="imperial">lb / in</option>
+                            </select>
+                        </label>
+                    </div>
                 </header>
 
                 <div id="measurementLatest" class="todo-measurement-latest" aria-live="polite"></div>
@@ -206,32 +213,34 @@
                         <legend>Essentials</legend>
                         <div class="todo-measurement-fields">
                             <label><span>Weight <small data-measurement-unit="weight">kg</small></span><input type="number" data-measurement-field="weightKg" data-measurement-kind="weight" min="1" step="0.1" inputmode="decimal" /></label>
-                            <label><span>Body fat <small>%</small></span><input type="number" data-measurement-field="bodyFatPercent" data-measurement-kind="percent" min="1" max="80" step="0.1" inputmode="decimal" /></label>
+                            <label data-measurement-advanced><span>Body fat <small>%</small></span><input type="number" data-measurement-field="bodyFatPercent" data-measurement-kind="percent" min="1" max="80" step="0.1" inputmode="decimal" /></label>
                         </div>
                     </fieldset>
 
                     <fieldset class="todo-measurement-group">
                         <legend>Torso</legend>
                         <div class="todo-measurement-fields">
-                            <label><span>Neck <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="neckCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
-                            <label><span>Shoulders <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="shouldersCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
-                            <label><span>Chest <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="chestCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
                             <label><span>Waist <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="waistCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
-                            <label><span>Hips <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="hipsCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label><span>Chest <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="chestCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label><span>Hips (widest part) <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="hipsCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label data-measurement-advanced><span>Neck <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="neckCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label data-measurement-advanced><span>Shoulders <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="shouldersCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
                         </div>
                     </fieldset>
 
                     <fieldset class="todo-measurement-group">
                         <legend>Arms</legend>
                         <div class="todo-measurement-fields">
-                            <label><span>Left upper arm <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="leftUpperArmCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
-                            <label><span>Right upper arm <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="rightUpperArmCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
-                            <label><span>Left forearm <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="leftForearmCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
-                            <label><span>Right forearm <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="rightForearmCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label><span>Upper arm (relaxed) <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="upperArmRelaxedCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label><span>Upper arm (flexed) <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="upperArmFlexedCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label data-measurement-advanced><span>Left upper arm <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="leftUpperArmCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label data-measurement-advanced><span>Right upper arm <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="rightUpperArmCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label data-measurement-advanced><span>Left forearm <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="leftForearmCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
+                            <label data-measurement-advanced><span>Right forearm <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="rightForearmCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>
                         </div>
                     </fieldset>
 
-                    <fieldset class="todo-measurement-group">
+                    <fieldset class="todo-measurement-group" data-measurement-advanced>
                         <legend>Legs</legend>
                         <div class="todo-measurement-fields">
                             <label><span>Left thigh <small data-measurement-unit="length">cm</small></span><input type="number" data-measurement-field="leftThighCm" data-measurement-kind="length" min="1" step="0.1" inputmode="decimal" /></label>

@@ -1008,6 +1008,74 @@ textarea:focus-visible,
     stroke-width: 1.8;
 }
 
+.todo-measurements-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.todo-simplified-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid var(--todo-line);
+    border-radius: 10px;
+    background: var(--todo-surface);
+    color: var(--todo-ink);
+    cursor: pointer;
+    user-select: none;
+}
+
+.todo-simplified-toggle input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.todo-simplified-toggle > span {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: #a9b6b6;
+    transition: background-color .16s ease;
+}
+
+.todo-simplified-toggle > span::after {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 1px 4px rgb(20 49 50 / 25%);
+    content: "";
+    transition: transform .16s ease;
+}
+
+.todo-simplified-toggle input:checked + span {
+    background: #167d89;
+}
+
+.todo-simplified-toggle input:checked + span::after {
+    transform: translateX(16px);
+}
+
+.todo-simplified-toggle input:focus-visible + span {
+    outline: 3px solid color-mix(in srgb, #167d89 25%, transparent);
+    outline-offset: 2px;
+}
+
+.todo-simplified-toggle strong {
+    font-size: 12px;
+}
+
 .todo-measurement-unit {
     display: grid;
     gap: 4px;
@@ -1126,6 +1194,64 @@ textarea:focus-visible,
     color: #6d4cc7;
 }
 
+.todo-measurement-trend-card {
+    gap: 7px;
+}
+
+.todo-measurement-trend-periods {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+    padding-top: 4px;
+    border-top: 1px solid color-mix(in srgb, #167d89 12%, var(--todo-line));
+}
+
+.todo-measurement-trend-periods > span {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    padding: 5px 3px;
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--todo-bg) 72%, transparent);
+    text-align: center;
+}
+
+.todo-measurement-trend-periods small {
+    overflow: hidden;
+    color: var(--todo-muted);
+    font-size: 9px;
+    font-weight: 750;
+    text-overflow: ellipsis;
+}
+
+.todo-measurement-trend-periods b {
+    overflow: hidden;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-measurement-trend-periods b.is-positive,
+.todo-measurement-row__values em.is-positive {
+    color: var(--todo-success);
+}
+
+.todo-measurement-trend-periods b.is-negative,
+.todo-measurement-row__values em.is-negative {
+    color: var(--todo-danger);
+}
+
+.todo-measurement-trend-periods b.is-steady,
+.todo-measurement-row__values em.is-steady {
+    color: var(--todo-muted);
+}
+
+.todo-measurement-trend-empty {
+    margin: 0;
+    color: var(--todo-muted);
+    font-size: 13px;
+}
+
 .todo-measurement-form {
     display: grid;
     gap: 22px;
@@ -1174,6 +1300,10 @@ textarea:focus-visible,
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 10px;
+}
+
+.todo-measurement-form.is-simplified .todo-measurement-fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .todo-measurement-fields label,
@@ -2855,8 +2985,13 @@ body.todo-modal-open {
         grid-template-columns: 44px minmax(0, 1fr);
     }
 
-    .todo-measurement-unit {
+    .todo-measurements-controls {
         grid-column: 2;
+        justify-self: start;
+        flex-wrap: wrap;
+    }
+
+    .todo-measurement-unit {
         justify-self: start;
     }
 
@@ -2869,7 +3004,8 @@ body.todo-modal-open {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .todo-measurement-fields {
+    .todo-measurement-fields,
+    .todo-measurement-form.is-simplified .todo-measurement-fields {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
@@ -3049,8 +3185,12 @@ body.todo-modal-open {
         width: 100%;
     }
 
-    .todo-measurement-summary-grid,
+    .todo-measurement-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
     .todo-measurement-fields,
+    .todo-measurement-form.is-simplified .todo-measurement-fields,
     .todo-measurement-row__values {
         grid-template-columns: 1fr 1fr;
     }
