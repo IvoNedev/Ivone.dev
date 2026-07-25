@@ -50,26 +50,13 @@ for (const filename of [
   await copyFile(path.join(ortDist, filename), path.join(browser, filename));
 }
 await copyFile(path.join(root, "semantic-defaults.json"), path.join(browser, "semantic-defaults.json"));
-const cacheVersion = "ivone-animation-parser-1.0.3";
-const cachedAssets = [
-  "./index.js", "./worker.js", "./models/intent-classifier.int8.onnx",
-  "./models/tokenizer.json", "./models/model-config.json",
-  "./schema/animation-ir.schema.json", "./semantic-defaults.json",
-  "./ort-wasm-simd-threaded.mjs"
-];
 await writeFile(path.join(browser, "sw.js"), `
-const CACHE = ${JSON.stringify(cacheVersion)};
-const ASSETS = ${JSON.stringify(cachedAssets)};
-self.addEventListener("install", event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
-self.addEventListener("activate", event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
-self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(caches.match(event.request).then(hit => hit || fetch(event.request).then(response => {
-    const copy = response.clone();
-    caches.open(CACHE).then(cache => cache.put(event.request, copy));
-    return response;
-  })));
-});
+self.addEventListener("install", event => event.waitUntil(self.skipWaiting()));
+self.addEventListener("activate", event => event.waitUntil(
+  caches.keys()
+    .then(keys => Promise.all(keys.filter(key => key.startsWith("ivone-animation-parser")).map(key => caches.delete(key))))
+    .then(() => self.registration.unregister())
+));
 `, "utf8");
 await rm(publicDirectory, { recursive: true, force: true });
 await cp(browser, publicDirectory, { recursive: true });

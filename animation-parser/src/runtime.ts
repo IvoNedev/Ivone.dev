@@ -38,9 +38,23 @@ export class BrowserAnimationParser implements AnimationParser {
 
   private async start(): Promise<void> {
     if (typeof navigator !== "undefined" && "serviceWorker" in navigator && globalThis.isSecureContext) {
-      void navigator.serviceWorker.register(`${this.baseUrl.replace(/\/?$/, "/")}sw.js`, {
-        scope: this.baseUrl.replace(/\/?$/, "/")
-      }).catch(() => undefined);
+      const parserScope = new URL(this.baseUrl.replace(/\/?$/, "/"), location.href).href;
+      void navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(
+          registrations
+            .filter((registration) => registration.scope.startsWith(parserScope))
+            .map((registration) => registration.unregister())
+        ))
+        .catch(() => undefined);
+    }
+    if (typeof caches !== "undefined") {
+      void caches.keys()
+        .then((keys) => Promise.all(
+          keys
+            .filter((key) => key.startsWith("ivone-animation-parser"))
+            .map((key) => caches.delete(key))
+        ))
+        .catch(() => undefined);
     }
     if (typeof Worker === "undefined") {
       this.updateProgress({ phase: "ready", loaded: 0, message: "Worker unavailable; deterministic fallback ready", backend: "deterministic" });

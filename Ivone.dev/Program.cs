@@ -16,7 +16,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.StaticFiles;
 using QuestPDF.Infrastructure;
 using System;
 using System.Text.Json.Serialization;
@@ -152,18 +151,6 @@ else
 {
     app.Logger.LogWarning("Kopeik.in folder was not found at path: {KopeikInPath}", kopeikInPath);
 }
-
-var browserModelContentTypes = new FileExtensionContentTypeProvider();
-browserModelContentTypes.Mappings[".onnx"] = "application/octet-stream";
-browserModelContentTypes.Mappings[".wasm"] = "application/wasm";
-browserModelContentTypes.Mappings[".mjs"] = "text/javascript";
-
-app.UseWhen(
-    context => context.Request.Path.StartsWithSegments("/animation-parser"),
-    animationParserApp => animationParserApp.UseStaticFiles(new StaticFileOptions
-    {
-        ContentTypeProvider = browserModelContentTypes
-    }));
 
 app.UseStaticFiles();
 

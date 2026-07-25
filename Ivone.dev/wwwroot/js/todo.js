@@ -155,6 +155,7 @@
     var pendingSyncConflict = null;
     var syncConflictResolving = false;
     var syncConnectionPending = false;
+    var initialPaintComplete = false;
 
     function createId(prefix) {
         if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -3577,9 +3578,28 @@
     });
 
     function requestBackgroundSync() {
-        if (navigator.onLine && !pendingSyncConflict && !syncConflictResolving) {
+        if (initialPaintComplete && navigator.onLine && !pendingSyncConflict && !syncConflictResolving) {
             syncCloud({ quiet: true });
         }
+    }
+
+    function syncAfterInitialPaint() {
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(function () {
+                initialPaintComplete = true;
+                if (!navigator.onLine) {
+                    setSyncStatus("Saved locally", true);
+                    return;
+                }
+
+                var beginSync = function () { syncCloud({ quiet: true }); };
+                if (typeof window.requestIdleCallback === "function") {
+                    window.requestIdleCallback(beginSync, { timeout: 1500 });
+                } else {
+                    window.setTimeout(beginSync, 350);
+                }
+            });
+        });
     }
 
     document.addEventListener("visibilitychange", function () {
@@ -3593,9 +3613,5 @@
 
     renderGroupColors();
     renderHome();
-    if (navigator.onLine) {
-        syncCloud();
-    } else {
-        setSyncStatus("Saved locally", true);
-    }
+    syncAfterInitialPaint();
 })();
