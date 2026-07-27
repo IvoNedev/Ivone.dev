@@ -19,6 +19,13 @@ DECLARE @TodoRecipesNeedsKindUpgrade bit =
         THEN 1
         ELSE 0
     END;
+DECLARE @TodoMeasurementsNeedDailyCaloriesUpgrade bit =
+    CASE
+        WHEN OBJECT_ID(N'dbo.TodoMeasurementEntries', N'U') IS NOT NULL
+         AND COL_LENGTH(N'dbo.TodoMeasurementEntries', N'DailyCalories') IS NULL
+        THEN 1
+        ELSE 0
+    END;
 
 BEGIN TRY
     BEGIN TRANSACTION;
@@ -243,6 +250,12 @@ BEGIN TRY
         EXEC(N'ALTER TABLE dbo.TodoRecipes
             ADD Kind nvarchar(16) NOT NULL
                 CONSTRAINT DF_TodoRecipes_Kind DEFAULT N''recipe'';');
+    END;
+
+    IF @TodoMeasurementsNeedDailyCaloriesUpgrade = 1
+    BEGIN
+        EXEC(N'ALTER TABLE dbo.TodoMeasurementEntries
+            ADD DailyCalories decimal(10,2) NULL;');
     END;
 
     IF @ReplaceExistingDocument = 1

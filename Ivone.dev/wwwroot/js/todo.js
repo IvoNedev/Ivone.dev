@@ -3,7 +3,9 @@
 
     var STORAGE_KEY = "ivone.todo.document.v1";
     var DEVICE_KEY = "ivone.todo.device-id.v1";
-    var CLOUD_POLL_INTERVAL = 10000;
+    var DATABASE_SYNC_PENDING_KEY = "ivone.todo.database-sync-pending.v1";
+    var DATABASE_SYNC_READY_KEY = "ivone.todo.database-sync-ready.v1";
+    var CLOUD_POLL_INTERVAL = 5000;
     var CALENDAR_GROUP_ID = "calendar";
     var GOALS_COLOR = "#6d4cc7";
     var MEASUREMENTS_COLOR = "#167d89";
@@ -195,6 +197,9 @@
     var deviceId = getOrCreateDeviceId();
     var loaded = loadLocalDocument();
     var state = loaded.document;
+    if (loaded.exists && localStorage.getItem(DATABASE_SYNC_READY_KEY) !== "1") {
+        localStorage.setItem(DATABASE_SYNC_PENDING_KEY, "1");
+    }
     var syncKey = "shared";
     var activeView = "home";
     var activeGroupId = null;
@@ -898,6 +903,19 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
+    function databaseSyncPending() {
+        return localStorage.getItem(DATABASE_SYNC_PENDING_KEY) === "1";
+    }
+
+    function markDatabaseSyncPending(pending) {
+        if (pending) {
+            localStorage.setItem(DATABASE_SYNC_PENDING_KEY, "1");
+        } else {
+            localStorage.removeItem(DATABASE_SYNC_PENDING_KEY);
+            localStorage.setItem(DATABASE_SYNC_READY_KEY, "1");
+        }
+    }
+
     function persist(options) {
         options = options || {};
         state.updatedAt = new Date().toISOString();
@@ -911,21 +929,27 @@
         }
 
         mutationSequence += 1;
+        markDatabaseSyncPending(true);
         saveLocalDocument();
-        setEditorSaved(false);
-        scheduleCloudPush();
-
+        setEditorSaved(true);
         if (options.render === true) {
             renderCurrentView();
         }
+        if (options.immediate === true) {
+            window.clearTimeout(pushTimer);
+            setSyncStatus("Saving to database...", false);
+            return syncCloud({ waitForLatest: true });
+        }
+        scheduleCloudPush();
+        return Promise.resolve(false);
     }
 
     function scheduleCloudPush() {
         window.clearTimeout(pushTimer);
-        setSyncStatus("Saving…", false);
+        setSyncStatus("Saving to database...", false);
         pushTimer = window.setTimeout(function () {
             pushCloud(false);
-        }, 850);
+        }, 400);
     }
 
     function setEditorSaved(saving) {
@@ -933,11 +957,23 @@
             return;
         }
 
-        elements.editorSaveState.textContent = saving ? "Saving…" : "Saved";
+        elements.editorSaveState.textContent = saving ? "Saving to database..." : "Saved to database";
         elements.editorSaveWrap.classList.toggle("is-saving", saving);
         if (elements.recipeSaveState) {
-            elements.recipeSaveState.textContent = saving ? elements.editorSaveState.textContent : "Saved";
+            elements.recipeSaveState.textContent = saving ? elements.editorSaveState.textContent : "Saved to database";
             elements.recipeSaveWrap.classList.toggle("is-saving", saving);
+        }
+    }
+
+    function setEditorDatabasePending() {
+        if (!elements.editorSaveState) {
+            return;
+        }
+        elements.editorSaveState.textContent = "Database save pending";
+        elements.editorSaveWrap.classList.add("is-saving");
+        if (elements.recipeSaveState) {
+            elements.recipeSaveState.textContent = "Database save pending";
+            elements.recipeSaveWrap.classList.add("is-saving");
         }
     }
 
@@ -1053,12 +1089,14 @@
                 if (mutationSequence !== createSequence) {
                     continue;
                 }
+                markDatabaseSyncPending(false);
                 return true;
             }
 
             if (forceRemote) {
                 state = remoteResult.document;
                 saveLocalDocument();
+                markDatabaseSyncPending(false);
                 activeView = "home";
                 activeGroupId = null;
                 activeNoteId = null;
@@ -1067,9 +1105,18 @@
                 return true;
             }
 
+            if (!databaseSyncPending() && mutationSequence === sequenceAtStart) {
+                applyCloudDocument(remoteResult.document, sequenceAtStart);
+                markDatabaseSyncPending(false);
+                return true;
+            }
+
             var merged = mergeDocuments(state, remoteResult.document);
             applyCloudDocument(merged, sequenceAtStart);
             if (documentsEqual(state, remoteResult.document)) {
+                if (mutationSequence === sequenceAtStart) {
+                    markDatabaseSyncPending(false);
+                }
                 return true;
             }
 
@@ -1087,6 +1134,7 @@
             if (mutationSequence !== snapshotSequence) {
                 continue;
             }
+            markDatabaseSyncPending(false);
             return true;
         }
 
@@ -1100,7 +1148,7 @@
         }
         if (syncInFlight) {
             syncRequested = true;
-            if (options.forceRemote || options.showFeedback) {
+            if (options.forceRemote || options.showFeedback || options.waitForLatest) {
                 return syncPromise.then(function () { return syncCloud(options); });
             }
             return syncPromise;
@@ -1117,20 +1165,16 @@
         }
 
         syncPromise = performCloudSync(options).then(function () {
-            setSyncStatus("Synced", false);
-            if (!options.quiet) {
-                setEditorSaved(false);
-            }
+            setSyncStatus("Saved to database", false);
+            setEditorSaved(false);
             if (options.showFeedback) {
                 showToast("Everything is up to date.");
             }
             return true;
         }).catch(function (error) {
             console.warn("Todo sync failed.", error);
-            if (!options.quiet) {
-                setEditorSaved(false);
-            }
-            setSyncStatus("Saved locally", true);
+            setEditorDatabasePending();
+            setSyncStatus("Database save pending", true);
             if (options.showFeedback || options.forceRemote) {
                 showToast(error.message || "Could not reach sync. Your local copy is safe.");
             }
@@ -1140,7 +1184,7 @@
             syncPromise = null;
             if (!options.quiet) {
                 elements.syncNowButton.disabled = false;
-                elements.syncNowButton.textContent = "Sync now";
+                elements.syncNowButton.textContent = "Save to database now";
             }
             if (syncRequested) {
                 syncRequested = false;
@@ -2012,7 +2056,7 @@
         state.deletedRecipes[recipe.id] = new Date().toISOString();
         state.recipes = state.recipes.filter(function (candidate) { return candidate.id !== recipe.id; });
         activeRecipeId = null;
-        persist({ touchActiveNote: false, touchActiveRecipe: false });
+        persist({ touchActiveNote: false, touchActiveRecipe: false, immediate: true });
         renderRecipes();
         showToast(isFood ? "Food item deleted." : "Recipe deleted.");
     }
@@ -2122,7 +2166,7 @@
             }
             goal.deadline = deadline.value;
             goal.updatedAt = new Date().toISOString();
-            persist({ touchActiveNote: false });
+            persist({ touchActiveNote: false, immediate: true });
             renderGoals();
         });
         complete.addEventListener("change", function () {
@@ -2131,7 +2175,7 @@
                 goal.isMain = false;
             }
             goal.updatedAt = new Date().toISOString();
-            persist({ touchActiveNote: false });
+            persist({ touchActiveNote: false, immediate: true });
             renderGoals();
         });
         main.addEventListener("click", function () {
@@ -2164,7 +2208,7 @@
             createdAt: now,
             updatedAt: now
         });
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         elements.goalForm.reset();
         elements.goalDeadline.value = shiftDateKey(localDateKey(new Date()), 90);
         elements.goalIsMain.checked = !getMainGoal();
@@ -2181,7 +2225,7 @@
                 goal.updatedAt = now;
             }
         });
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         renderGoals();
     }
 
@@ -2192,7 +2236,7 @@
         }
         state.deletedGoals[goalId] = new Date().toISOString();
         state.goals = state.goals.filter(function (candidate) { return candidate.id !== goalId; });
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         elements.goalIsMain.checked = !getMainGoal();
         renderGoals();
     }
@@ -2479,10 +2523,15 @@
         });
 
         activeMeasurementId = null;
-        persist({ touchActiveNote: false });
+        var databaseSave = persist({ touchActiveNote: false, immediate: true });
         resetMeasurementForm();
         renderMeasurements();
-        showToast(created ? "Measurements saved." : "Check-in updated.");
+        showToast(created ? "Saving measurements to database..." : "Saving updated check-in to database...");
+        databaseSave.then(function (saved) {
+            showToast(saved
+                ? "Measurements saved to database."
+                : "Measurements are queued and will retry when the database is reachable.");
+        });
     }
 
     function editMeasurement(entryId) {
@@ -2520,7 +2569,7 @@
             activeMeasurementId = null;
             resetMeasurementForm();
         }
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         renderMeasurements();
         showToast("Check-in deleted.");
     }
@@ -2583,7 +2632,7 @@
         state.measurementUnit = nextUnit;
         writeMeasurementFormValues(currentValues, nextUnit);
         updateMeasurementUnitLabels();
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         renderMeasurementLatest();
         renderMeasurementHistory();
     }
@@ -2591,7 +2640,7 @@
     function changeMeasurementMode() {
         state.measurementSimplified = elements.measurementSimplified.checked;
         applyMeasurementMode();
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         renderMeasurementLatest();
         renderMeasurementHistory();
     }
@@ -3022,7 +3071,7 @@
         }
         selectedCalendarDate = dateKey;
         activeCalendarEventId = null;
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         closeModal(elements.calendarEventModal);
         renderCalendar(selectedCalendarDate, false);
         showToast("Event saved.");
@@ -3039,7 +3088,7 @@
         state.deletedCalendarEvents[event.id] = new Date().toISOString();
         state.calendarEvents = state.calendarEvents.filter(function (candidate) { return candidate.id !== event.id; });
         activeCalendarEventId = null;
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         closeModal(elements.calendarEventModal);
         renderCalendar(selectedCalendarDate, false);
         showToast("Event deleted.");
@@ -3212,7 +3261,7 @@
         var scaled = scaledMealMacros(meal);
         selectedCalendarDate = meal.date;
         activeMealEntryId = null;
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         closeModal(elements.mealModal);
         renderCalendar(selectedCalendarDate, false);
         showToast(meal.recipeTitle + " logged · " + formatMacroValue(scaled.calories) + " kcal.");
@@ -3229,7 +3278,7 @@
         state.deletedMealEntries[meal.id] = new Date().toISOString();
         state.mealEntries = state.mealEntries.filter(function (candidate) { return candidate.id !== meal.id; });
         activeMealEntryId = null;
-        persist({ touchActiveNote: false });
+        persist({ touchActiveNote: false, immediate: true });
         closeModal(elements.mealModal);
         renderCalendar(selectedCalendarDate, false);
         showToast("Meal deleted.");
@@ -4370,7 +4419,7 @@
                 activeGroupId = null;
                 activeNoteId = null;
                 activeRecipeId = null;
-                persist();
+                persist({ immediate: true });
                 closeModal(elements.settingsModal);
                 renderHome();
                 showToast("Backup restored.");
@@ -4492,6 +4541,7 @@
         state = normalizeDocument(documentValue);
         adoptSyncKey(key);
         saveLocalDocument();
+        markDatabaseSyncPending(false);
         activeView = "home";
         activeGroupId = null;
         activeNoteId = null;
@@ -4503,7 +4553,7 @@
         }
         closeSyncConflict(true);
         setEditorSaved(false);
-        setSyncStatus("Synced", false);
+        setSyncStatus("Saved to database", false);
     }
 
     async function resolveSyncConflict(mode, activeButton) {
@@ -4527,7 +4577,7 @@
             showToast(mode === "merge" ? "Both saves combined and connected." : "Your chosen save is now connected.");
         } catch (error) {
             console.warn("Todo sync choice failed.", error);
-            setSyncStatus("Saved locally", true);
+            setSyncStatus("Database save pending", true);
             showToast(error.message || "Could not connect. Both saves are still safe.");
         } finally {
             setSyncConflictBusy(false, null);
@@ -4857,8 +4907,11 @@
                 var merged = mergeDocuments(state, incoming);
                 if (!documentsEqual(state, merged)) {
                     state = merged;
+                    mutationSequence += 1;
+                    markDatabaseSyncPending(true);
                     renderCurrentView();
                     setSyncStatus("Updated", false);
+                    scheduleCloudPush();
                 }
             } catch (error) {
                 console.warn("Ignored an invalid todo update from another tab.", error);
@@ -4867,14 +4920,17 @@
     });
 
     window.addEventListener("online", function () {
-        setSyncStatus("Back online", false);
+        setSyncStatus(databaseSyncPending() ? "Saving to database..." : "Back online", false);
         syncCloud();
     });
     window.addEventListener("offline", function () {
-        setSyncStatus("Saved locally", true);
+        setSyncStatus(databaseSyncPending() ? "Offline - database save pending" : "Offline", true);
     });
     window.addEventListener("beforeunload", function () {
         saveLocalDocument();
+        if (navigator.onLine && databaseSyncPending()) {
+            syncCloud({ quiet: true });
+        }
     });
 
     function requestBackgroundSync() {
@@ -4888,16 +4944,10 @@
             window.requestAnimationFrame(function () {
                 initialPaintComplete = true;
                 if (!navigator.onLine) {
-                    setSyncStatus("Saved locally", true);
+                    setSyncStatus(databaseSyncPending() ? "Offline - database save pending" : "Offline", true);
                     return;
                 }
-
-                var beginSync = function () { syncCloud({ quiet: true }); };
-                if (typeof window.requestIdleCallback === "function") {
-                    window.requestIdleCallback(beginSync, { timeout: 1500 });
-                } else {
-                    window.setTimeout(beginSync, 350);
-                }
+                syncCloud({ quiet: true });
             });
         });
     }
@@ -4905,9 +4955,21 @@
     document.addEventListener("visibilitychange", function () {
         if (document.visibilityState === "visible") {
             requestBackgroundSync();
+        } else if (navigator.onLine && databaseSyncPending()) {
+            syncCloud({ quiet: true });
+        }
+    });
+    window.addEventListener("pagehide", function () {
+        if (navigator.onLine && databaseSyncPending()) {
+            syncCloud({ quiet: true });
         }
     });
     window.addEventListener("focus", requestBackgroundSync);
+    root.addEventListener("focusout", function () {
+        if (navigator.onLine && databaseSyncPending()) {
+            syncCloud({ quiet: true, waitForLatest: true });
+        }
+    });
     window.setInterval(requestBackgroundSync, CLOUD_POLL_INTERVAL);
     currentTimeTimer = window.setInterval(function () {
         updateCurrentTimeLine();

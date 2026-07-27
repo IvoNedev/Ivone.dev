@@ -53,7 +53,7 @@
             </button>
             <button id="syncButton" class="todo-sync-pill" type="button" aria-label="Open storage and sync settings">
                 <svg aria-hidden="true"><use href="#i-cloud"></use></svg>
-                <span id="syncStatus">Saved locally</span>
+                <span id="syncStatus">Connecting to database...</span>
             </button>
         </header>
 
@@ -524,13 +524,13 @@
                     <div><p class="todo-eyebrow">Storage</p><h2 id="settingsTitle">Keep your notes close</h2></div>
                     <button class="todo-icon-button" type="button" data-close-modal aria-label="Close settings"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
                 </header>
-                <p class="todo-modal__intro">Your Todo data is stored in one SQLite database beside the app. Desktop and mobile automatically use the same shared copy.</p>
+                <p class="todo-modal__intro">Your Todo data is stored in the app's SQL database. Desktop and mobile automatically use the same shared copy.</p>
 
                 <div class="todo-shared-storage-status">
                     <span aria-hidden="true"><svg><use href="#i-cloud"></use></svg></span>
-                    <div><strong>Shared server storage</strong><small>Local browser storage is only an offline safety copy.</small></div>
+                    <div><strong>Shared SQL storage</strong><small>Browser storage is only a temporary offline queue until the database confirms the save.</small></div>
                 </div>
-                <button id="syncNowButton" class="todo-primary-button todo-wide-button" type="button">Sync now</button>
+                <button id="syncNowButton" class="todo-primary-button todo-wide-button" type="button">Save to database now</button>
 
                 <div class="todo-divider"><span>Portable backup</span></div>
                 <div class="todo-backup-actions">
