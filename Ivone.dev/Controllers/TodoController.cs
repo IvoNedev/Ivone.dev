@@ -8,23 +8,19 @@ namespace Ivone.dev.Controllers;
 [Route("api/todo")]
 public sealed class TodoController : ControllerBase
 {
-    private readonly TodoFileStore _store;
+    private readonly TodoSqlStore _store;
 
-    public TodoController(TodoFileStore store)
+    public TodoController(TodoSqlStore store)
     {
         _store = store;
     }
 
+    [HttpGet]
     [HttpGet("{syncKey}")]
     [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-    public async Task<IActionResult> Get(string syncKey, CancellationToken cancellationToken)
+    public async Task<IActionResult> Get(CancellationToken cancellationToken, string? syncKey = null)
     {
-        if (!_store.IsValidKey(syncKey))
-        {
-            return BadRequest(new { message = "That sync key is not valid." });
-        }
-
-        var document = await _store.ReadAsync(syncKey, cancellationToken);
+        var document = await _store.ReadAsync(cancellationToken);
         if (document is null)
         {
             return NotFound();
@@ -34,18 +30,14 @@ public sealed class TodoController : ControllerBase
         return Content(document.Json, "application/json");
     }
 
+    [HttpPut]
     [HttpPut("{syncKey}")]
-    [RequestSizeLimit(TodoFileStore.MaximumDocumentBytes)]
+    [RequestSizeLimit(TodoSqlStore.MaximumDocumentBytes)]
     public async Task<IActionResult> Put(
-        string syncKey,
         [FromBody] JsonElement document,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? syncKey = null)
     {
-        if (!_store.IsValidKey(syncKey))
-        {
-            return BadRequest(new { message = "That sync key is not valid." });
-        }
-
         try
         {
             var ifMatch = Request.Headers.IfMatch.ToString();
@@ -54,12 +46,11 @@ public sealed class TodoController : ControllerBase
             {
                 return StatusCode(StatusCodes.Status428PreconditionRequired, new
                 {
-                    message = "Sync requires If-Match or If-None-Match so an older device cannot overwrite newer notes."
+                    message = "Sync requires If-Match or If-None-Match so an older device cannot overwrite the shared Todo data."
                 });
             }
 
             var etag = await _store.WriteAsync(
-                syncKey,
                 document,
                 string.IsNullOrWhiteSpace(ifMatch) ? null : ifMatch,
                 createOnly,
@@ -71,7 +62,7 @@ public sealed class TodoController : ControllerBase
         {
             return StatusCode(StatusCodes.Status412PreconditionFailed, new
             {
-                message = "A newer copy of these notes is already available. Download it and retry."
+                message = "A newer shared copy is already available. Refresh and retry."
             });
         }
         catch (InvalidDataException exception)

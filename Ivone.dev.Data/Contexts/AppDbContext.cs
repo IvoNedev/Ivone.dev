@@ -3,6 +3,7 @@ using System;
 using Ivone.dev.Data.Models;
 using Ivone.dev.Data.Models.Fitness;
 using Ivone.dev.Data.Models.Pyt;
+using Ivone.dev.Data.Models.Todo;
 using Ivone.dev.Data.Models.Track;
 using Microsoft.EntityFrameworkCore;
 using NPOB.Data.Entities;
@@ -46,10 +47,25 @@ namespace ivone.dev.Data.Contexts
         public DbSet<FitnessWorkout> FitnessWorkouts => Set<FitnessWorkout>();
         public DbSet<FitnessWorkoutExercise> FitnessWorkoutExercises => Set<FitnessWorkoutExercise>();
         public DbSet<FitnessWorkoutSet> FitnessWorkoutSets => Set<FitnessWorkoutSet>();
+        public DbSet<TodoDocument> TodoDocuments => Set<TodoDocument>();
+        public DbSet<TodoGroup> TodoGroups => Set<TodoGroup>();
+        public DbSet<TodoNote> TodoNotes => Set<TodoNote>();
+        public DbSet<TodoNoteItem> TodoNoteItems => Set<TodoNoteItem>();
+        public DbSet<TodoNoteVisit> TodoNoteVisits => Set<TodoNoteVisit>();
+        public DbSet<TodoCalendarEvent> TodoCalendarEvents => Set<TodoCalendarEvent>();
+        public DbSet<TodoMealEntry> TodoMealEntries => Set<TodoMealEntry>();
+        public DbSet<TodoGoal> TodoGoals => Set<TodoGoal>();
+        public DbSet<TodoMeasurementEntry> TodoMeasurementEntries => Set<TodoMeasurementEntry>();
+        public DbSet<TodoRecipe> TodoRecipes => Set<TodoRecipe>();
+        public DbSet<TodoRecipeIngredient> TodoRecipeIngredients => Set<TodoRecipeIngredient>();
+        public DbSet<TodoRecipeMethodStep> TodoRecipeMethodSteps => Set<TodoRecipeMethodStep>();
+        public DbSet<TodoDeletion> TodoDeletions => Set<TodoDeletion>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.ConfigureTodoModel();
 
             modelBuilder.Entity<MortgageScenario>(entity =>
             {

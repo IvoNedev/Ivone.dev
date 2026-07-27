@@ -15,6 +15,9 @@
     --todo-danger-soft: #f9e5e2;
     --todo-calendar: #c74363;
     --todo-calendar-soft: #f9e8ed;
+    --todo-recipe: #b4532a;
+    --todo-recipe-dark: #8f3f20;
+    --todo-recipe-soft: #f7e8db;
     --todo-focus: #225ee8;
     --todo-radius-sm: 10px;
     --todo-radius: 16px;
@@ -285,6 +288,196 @@ textarea:focus-visible,
     font-family: inherit;
     font-size: 11px;
     font-weight: 700;
+}
+
+.todo-today-dashboard {
+    margin: -22px 0 44px;
+    overflow: hidden;
+    border: 1px solid var(--todo-line);
+    border-radius: var(--todo-radius-lg);
+    background: var(--todo-surface);
+}
+
+.todo-today-dashboard__heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 17px 20px 15px;
+    border-bottom: 1px solid var(--todo-line);
+}
+
+.todo-today-dashboard__heading h2 {
+    margin: 1px 0 0;
+    font-size: 24px;
+    line-height: 1.1;
+    letter-spacing: -.03em;
+}
+
+.todo-today-dashboard__heading .todo-text-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.todo-today-dashboard__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
+}
+
+.todo-today-nutrition {
+    min-width: 0;
+    padding: 19px 20px 18px;
+}
+
+.todo-today-nutrition__total {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.todo-today-nutrition__total > span {
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.todo-today-nutrition__total p {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+.todo-today-nutrition__total strong {
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -.035em;
+}
+
+.todo-today-nutrition__total p span {
+    color: var(--todo-muted);
+    font-size: 12px;
+}
+
+.todo-today-nutrition__progress {
+    height: 7px;
+    margin-top: 12px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: var(--todo-surface-muted);
+}
+
+.todo-today-nutrition__progress span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--todo-success);
+    transition: width 240ms ease-out;
+}
+
+.todo-today-nutrition__status {
+    margin: 7px 0 0;
+    color: var(--todo-muted);
+    font-size: 11px;
+}
+
+.todo-today-nutrition__status.is-over {
+    color: var(--todo-danger);
+    font-weight: 750;
+}
+
+.todo-today-macros {
+    display: flex;
+    gap: 22px;
+    margin: 15px 0 0;
+}
+
+.todo-today-macros > div {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.todo-today-macros dt {
+    color: var(--todo-muted);
+    font-size: 11px;
+}
+
+.todo-today-macros dd {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 850;
+    font-variant-numeric: tabular-nums;
+}
+
+.todo-today-next {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 20px;
+    align-items: center;
+    gap: 12px;
+    min-height: 138px;
+    padding: 20px;
+    border: 0;
+    border-left: 1px solid var(--todo-line);
+    background: color-mix(in srgb, var(--todo-calendar-soft) 45%, var(--todo-surface));
+    text-align: left;
+    transition: background var(--todo-fast);
+}
+
+.todo-today-next:hover,
+.todo-today-next:focus-visible {
+    background: var(--todo-calendar-soft);
+}
+
+.todo-today-next__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: white;
+    color: var(--todo-calendar);
+}
+
+.todo-today-next__icon svg,
+.todo-today-next__arrow {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+}
+
+.todo-today-next__copy {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.todo-today-next__copy small,
+.todo-today-next__copy > span {
+    overflow: hidden;
+    color: var(--todo-muted);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-today-next__copy strong {
+    overflow: hidden;
+    font-size: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-today-next__arrow {
+    width: 18px;
+    height: 18px;
+    color: var(--todo-muted);
 }
 
 .todo-section-heading,
@@ -1252,6 +1445,34 @@ textarea:focus-visible,
     font-size: 13px;
 }
 
+.todo-calorie-target-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 14px;
+    padding: 16px 18px;
+    border: 1px solid color-mix(in srgb, var(--todo-accent) 35%, var(--todo-line));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--todo-recipe-soft) 72%, white);
+}
+
+.todo-calorie-target-card strong {
+    display: block;
+    margin-top: 2px;
+    font-size: 28px;
+    line-height: 1.1;
+    letter-spacing: -.035em;
+}
+
+.todo-calorie-target-card > p {
+    max-width: 480px;
+    margin: 0;
+    color: var(--todo-muted);
+    font-size: 13px;
+    text-align: right;
+}
+
 .todo-measurement-form {
     display: grid;
     gap: 22px;
@@ -1294,6 +1515,49 @@ textarea:focus-visible,
     font-weight: 800;
     letter-spacing: .08em;
     text-transform: uppercase;
+}
+
+.todo-measurement-nutrition-field {
+    display: grid;
+    grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+    align-items: end;
+    gap: 16px;
+}
+
+.todo-measurement-nutrition-field label {
+    display: grid;
+    gap: 6px;
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.todo-measurement-nutrition-field label > span {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.todo-measurement-nutrition-field small {
+    color: var(--todo-recipe);
+    font-size: 10px;
+    font-weight: 850;
+}
+
+.todo-measurement-nutrition-field input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 1px solid var(--todo-line);
+    border-radius: 10px;
+    background: white;
+    color: var(--todo-ink);
+}
+
+.todo-measurement-nutrition-field p {
+    margin: 0 0 9px;
+    color: var(--todo-muted);
+    font-size: 12px;
 }
 
 .todo-measurement-fields {
@@ -1462,7 +1726,7 @@ textarea:focus-visible,
 }
 
 .todo-calendar-view {
-    width: min(100%, 1000px);
+    width: min(100%, 1220px);
     margin: 0 auto;
 }
 
@@ -1549,7 +1813,7 @@ textarea:focus-visible,
 
 .todo-calendar-slot {
     display: grid;
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr) 104px;
     height: 72px;
 }
 
@@ -1633,10 +1897,88 @@ textarea:focus-visible,
     transform: translate(-50%, 0);
 }
 
+.todo-calendar-meal-lane {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 72px;
+    border-top: 1px solid var(--todo-line);
+    border-left: 1px solid var(--todo-line);
+    background: color-mix(in srgb, var(--todo-recipe-soft) 32%, transparent);
+}
+
+.todo-calendar-meal-add,
+.todo-calendar-meal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: calc(100% - 12px);
+    min-height: 44px;
+    padding: 7px;
+    border: 1px solid color-mix(in srgb, var(--todo-recipe) 38%, var(--todo-line));
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--todo-recipe-soft) 68%, white);
+    color: var(--todo-recipe-dark);
+    font-size: 11px;
+    font-weight: 800;
+    transition: background var(--todo-fast), border-color var(--todo-fast);
+}
+
+.todo-calendar-meal-add:hover,
+.todo-calendar-meal-add:focus-visible,
+.todo-calendar-meal:hover,
+.todo-calendar-meal:focus-visible {
+    border-color: var(--todo-recipe);
+    background: var(--todo-recipe-soft);
+}
+
+.todo-calendar-meal {
+    justify-content: flex-start;
+    min-width: 0;
+    text-align: left;
+}
+
+.todo-calendar-meal > span {
+    display: grid;
+    min-width: 0;
+}
+
+.todo-calendar-meal strong {
+    overflow: hidden;
+    color: var(--todo-ink);
+    font-size: 10px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-calendar-meal small {
+    color: var(--todo-recipe-dark);
+    font-size: 9px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.todo-calendar-meal-extra {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    padding: 2px 4px;
+    border-radius: 5px;
+    background: var(--todo-recipe);
+    color: white;
+    font-size: 8px;
+    font-weight: 800;
+}
+
 .todo-calendar-event {
     position: absolute;
     z-index: 4;
-    right: 14px;
+    right: 116px;
     left: 84px;
     display: grid;
     align-content: start;
@@ -1679,7 +2021,7 @@ textarea:focus-visible,
 .todo-calendar-now {
     position: absolute;
     z-index: 6;
-    right: 0;
+    right: 104px;
     left: 64px;
     height: 2px;
     background: #cf263c;
@@ -1743,6 +2085,187 @@ textarea:focus-visible,
 
 #calendarEventTitle {
     font-size: 16px;
+}
+
+.todo-meal-field {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 7px;
+}
+
+#mealRecipeSelect,
+#mealPortionPercent {
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid var(--todo-line);
+    border-radius: 10px;
+    background: white;
+    color: var(--todo-ink);
+    font-size: 16px;
+}
+
+.todo-meal-help {
+    margin: 7px 0 0;
+    color: var(--todo-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.todo-meal-portion-input {
+    position: relative;
+    display: block;
+}
+
+.todo-meal-portion-input input {
+    padding-right: 42px;
+}
+
+.todo-meal-portion-input b {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    color: var(--todo-muted);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.todo-meal-portions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+    margin-top: 9px;
+}
+
+.todo-meal-portions button {
+    min-height: 44px;
+    padding: 8px;
+    border: 1px solid var(--todo-line);
+    border-radius: 9px;
+    background: var(--todo-bg);
+    color: var(--todo-muted);
+    font-weight: 800;
+    transition: border-color var(--todo-fast), background var(--todo-fast), color var(--todo-fast);
+}
+
+.todo-meal-portions button:hover,
+.todo-meal-portions button:focus-visible,
+.todo-meal-portions button.is-selected {
+    border-color: var(--todo-recipe);
+    background: var(--todo-recipe-soft);
+    color: var(--todo-recipe-dark);
+}
+
+.todo-meal-preview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 18px;
+}
+
+.todo-meal-preview > div {
+    display: grid;
+    gap: 2px;
+    padding: 11px 12px;
+    border: 1px solid color-mix(in srgb, var(--todo-recipe) 24%, var(--todo-line));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--todo-recipe-soft) 48%, white);
+}
+
+.todo-meal-preview span,
+.todo-meal-preview p {
+    color: var(--todo-muted);
+    font-size: 11px;
+}
+
+.todo-meal-preview p {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
+.todo-meal-preview strong {
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+}
+
+.todo-meal-macros {
+    min-width: 0;
+    margin: 18px 0 0;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--todo-recipe) 28%, var(--todo-line));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--todo-recipe-soft) 38%, white);
+}
+
+.todo-meal-macros legend {
+    padding: 0 6px;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.todo-meal-macros > p {
+    margin: 0 0 12px;
+    color: var(--todo-muted);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+.todo-meal-macro-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.todo-meal-macro-grid > label {
+    display: grid;
+    min-width: 0;
+    gap: 5px;
+    color: var(--todo-muted);
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.todo-meal-macro-input {
+    position: relative;
+    display: block;
+}
+
+.todo-meal-macro-input input {
+    width: 100%;
+    min-height: 46px;
+    padding: 8px 44px 8px 10px;
+    border: 1px solid var(--todo-line);
+    border-radius: 9px;
+    background: white;
+    color: var(--todo-ink);
+    font-size: 16px;
+    font-variant-numeric: tabular-nums;
+}
+
+.todo-meal-macro-input input:focus {
+    border-color: var(--todo-recipe);
+}
+
+.todo-meal-macro-input b {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    color: var(--todo-muted);
+    font-size: 10px;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.todo-meal-macros:disabled {
+    opacity: .55;
+}
+
+.todo-meal-error {
+    min-height: 18px;
+    margin: 10px 0 -10px;
+    color: var(--todo-danger);
+    font-size: 12px;
+    font-weight: 750;
 }
 
 .todo-calendar-form-actions {
@@ -2597,14 +3120,48 @@ body.todo-dragging {
     font-weight: 600;
 }
 
-.todo-copy-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 48px;
-    gap: 8px;
+.todo-shared-storage-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0 14px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--todo-success) 30%, var(--todo-line));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--todo-success) 8%, white);
 }
 
-.todo-copy-row input,
-#otherSyncKey,
+.todo-shared-storage-status > span {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 11px;
+    background: var(--todo-success);
+    color: white;
+}
+
+.todo-shared-storage-status svg {
+    width: 21px;
+    height: 21px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.todo-shared-storage-status div {
+    display: grid;
+    gap: 2px;
+}
+
+.todo-shared-storage-status small {
+    color: var(--todo-muted);
+    font-size: 12px;
+}
+
 #groupName {
     width: 100%;
     min-height: 48px;
@@ -2613,11 +3170,6 @@ body.todo-dragging {
     border-radius: 10px;
     background: white;
     color: var(--todo-ink);
-}
-
-.todo-copy-row input {
-    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
-    font-size: 12px;
 }
 
 .todo-wide-button {
@@ -2767,8 +3319,735 @@ body.todo-dragging {
     outline-offset: 2px;
 }
 
+.todo-recipes-tile {
+    display: flex;
+    flex-direction: column;
+    border-color: var(--todo-recipe-dark);
+    background: var(--todo-recipe);
+    color: white;
+}
+
+.todo-recipes-tile::before {
+    display: none;
+}
+
+.todo-recipes-tile:hover {
+    border-color: #743319;
+    background: #a44925;
+}
+
+.todo-recipes-tile__icon {
+    display: inline-flex;
+    margin-bottom: auto;
+    opacity: .3;
+}
+
+.todo-recipes-tile__icon svg {
+    width: 76px;
+    height: 76px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.35;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.todo-recipes-tile__label {
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    opacity: .76;
+}
+
+.todo-recipes-tile__copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.todo-recipes-tile__copy strong,
+.todo-recipes-tile__copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-recipes-tile__copy strong {
+    font-size: 20px;
+    letter-spacing: -.025em;
+}
+
+.todo-recipes-tile__copy small {
+    font-size: 13px;
+    font-weight: 750;
+    opacity: .86;
+}
+
+.todo-recipes-view,
+.todo-recipe-editor-view {
+    width: min(100%, 1080px);
+    margin: 0 auto;
+}
+
+.todo-recipes-header,
+.todo-recipe-editor-header {
+    margin-bottom: 24px;
+}
+
+.todo-recipes-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    border-radius: 13px;
+    background: var(--todo-recipe-soft);
+    color: var(--todo-recipe-dark);
+}
+
+.todo-recipes-mark svg {
+    width: 25px;
+    height: 25px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.todo-recipes-create-actions,
+.todo-recipes-empty__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.todo-recipe-library-tools {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.todo-recipe-library-tools > span {
+    flex: 0 0 auto;
+    color: var(--todo-muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.todo-recipe-search {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 48px;
+    flex: 1;
+    gap: 10px;
+    padding: 0 14px;
+    border: 1px solid var(--todo-line);
+    border-radius: 13px;
+    background: var(--todo-surface);
+    transition: border-color var(--todo-fast), background var(--todo-fast);
+}
+
+.todo-recipe-search:focus-within {
+    border-color: var(--todo-recipe);
+    background: white;
+}
+
+.todo-recipe-search svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: var(--todo-muted);
+    stroke-width: 2;
+}
+
+.todo-recipe-search input {
+    min-width: 0;
+    width: 100%;
+    height: 46px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--todo-ink);
+    font-size: 16px;
+}
+
+.todo-recipe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 14px;
+}
+
+.todo-recipe-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--todo-line);
+    border-top: 5px solid var(--todo-recipe);
+    border-radius: var(--todo-radius);
+    background: var(--todo-surface);
+    transition: transform var(--todo-fast), border-color var(--todo-fast), background var(--todo-fast);
+}
+
+.todo-recipe-card:hover {
+    transform: translateY(-2px);
+    border-color: #aaa59a;
+    background: white;
+}
+
+.todo-recipe-card.is-food-item {
+    border-top-color: var(--todo-success);
+}
+
+.todo-recipe-card.is-food-item .todo-recipe-card__mark {
+    background: color-mix(in srgb, var(--todo-success) 13%, white);
+    color: var(--todo-success);
+}
+
+.todo-recipe-card.is-food-item .todo-recipe-card__preview li::before {
+    background: var(--todo-success);
+}
+
+.todo-recipe-card.is-compact {
+    min-height: 184px;
+}
+
+.todo-recipe-card__open {
+    display: flex;
+    min-height: 230px;
+    width: 100%;
+    flex-direction: column;
+    padding: 18px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+}
+
+.todo-recipe-card.is-compact .todo-recipe-card__open {
+    min-height: 179px;
+}
+
+.todo-recipe-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.todo-recipe-card__head > div {
+    min-width: 0;
+}
+
+.todo-recipe-card__mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+    border-radius: 12px;
+    background: var(--todo-recipe-soft);
+    color: var(--todo-recipe-dark);
+}
+
+.todo-recipe-card__mark svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+}
+
+.todo-recipe-card__head span {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--todo-muted);
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .035em;
+}
+
+.todo-recipe-card__head h2 {
+    margin: 0;
+    overflow: hidden;
+    font-size: 19px;
+    line-height: 1.2;
+    letter-spacing: -.025em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-recipe-card__preview {
+    display: grid;
+    gap: 7px;
+    margin: 24px 0 18px;
+    padding: 0;
+    color: var(--todo-muted);
+    font-size: 13px;
+    list-style: none;
+}
+
+.todo-recipe-card__preview li {
+    position: relative;
+    overflow: hidden;
+    padding-left: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-recipe-card__preview li::before {
+    content: "";
+    position: absolute;
+    top: .65em;
+    left: 1px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--todo-recipe);
+}
+
+.todo-recipe-card__preview li.is-empty {
+    font-style: italic;
+}
+
+.todo-recipe-card__preview li.is-empty::before {
+    background: var(--todo-line);
+}
+
+.todo-recipe-card__foot {
+    margin-top: auto;
+    color: var(--todo-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.todo-recipes-empty {
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+}
+
+.todo-recipes-empty strong {
+    color: var(--todo-ink);
+    font-size: 18px;
+}
+
+.todo-recipes-empty__actions {
+    margin-top: 12px;
+}
+
+.todo-recipe-editor-header {
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+}
+
+.todo-recipe-save-state {
+    justify-self: center;
+}
+
+.todo-recipe-delete-button {
+    color: var(--todo-danger);
+}
+
+.todo-recipe-editor-card {
+    padding: 28px;
+    border: 1px solid var(--todo-line);
+    border-radius: var(--todo-radius-lg);
+    background: var(--todo-surface);
+}
+
+.todo-recipe-editor-card.is-food-item .todo-recipe-title-wrap {
+    border-bottom-color: color-mix(in srgb, var(--todo-success) 30%, var(--todo-line));
+}
+
+.todo-recipe-title-wrap {
+    margin-bottom: 30px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--todo-line);
+}
+
+.todo-recipe-title-wrap .todo-title-input {
+    width: 100%;
+    margin-top: 4px;
+}
+
+.todo-recipe-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 18px;
+}
+
+.todo-recipe-fields[hidden] {
+    display: none;
+}
+
+.todo-recipe-field {
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid var(--todo-line);
+    border-radius: var(--todo-radius);
+    background: #fff;
+}
+
+.todo-recipe-field--ingredients {
+    border-top: 5px solid var(--todo-recipe);
+}
+
+.todo-recipe-field--method {
+    border-top: 5px solid var(--todo-primary);
+}
+
+.todo-recipe-field--macros {
+    margin-top: 18px;
+    border-top: 5px solid var(--todo-success);
+}
+
+.todo-recipe-field--notes {
+    margin-top: 18px;
+    border-top: 5px solid #d18a0c;
+}
+
+.todo-recipe-field__heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.todo-recipe-field__heading h2 {
+    margin: 0;
+    font-size: 22px;
+    line-height: 1.2;
+    letter-spacing: -.025em;
+}
+
+.todo-recipe-field__heading > span {
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.todo-recipe-field__help {
+    min-height: 42px;
+    margin: 10px 0 14px;
+    color: var(--todo-muted);
+    font-size: 13px;
+}
+
+.todo-calendar-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 264px;
+    align-items: start;
+    gap: 18px;
+}
+
+.todo-calendar-schedule {
+    min-width: 0;
+}
+
+.todo-calendar-nutrition {
+    position: sticky;
+    top: 20px;
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, var(--todo-recipe) 32%, var(--todo-line));
+    border-radius: var(--todo-radius-lg);
+    background: color-mix(in srgb, var(--todo-recipe-soft) 68%, white);
+}
+
+.todo-calendar-nutrition__heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.todo-calendar-nutrition__heading h2 {
+    margin-top: 1px;
+    font-size: 22px;
+    letter-spacing: -.035em;
+}
+
+.todo-calendar-nutrition__icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--todo-recipe);
+    color: white;
+}
+
+.todo-calendar-nutrition__icon svg,
+.todo-calendar-meal-add svg,
+.todo-calendar-meal svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.todo-calendar-nutrition__calories {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    margin-top: 22px;
+}
+
+.todo-calendar-nutrition__calories strong {
+    font-size: 38px;
+    line-height: 1;
+    letter-spacing: -.055em;
+    font-variant-numeric: tabular-nums;
+}
+
+.todo-calendar-nutrition__calories span {
+    color: var(--todo-muted);
+    font-size: 12px;
+}
+
+.todo-calendar-nutrition__calories b {
+    color: var(--todo-ink);
+    font-weight: 800;
+}
+
+.todo-calendar-nutrition__progress {
+    height: 8px;
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--todo-recipe) 16%, white);
+}
+
+.todo-calendar-nutrition__progress span {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--todo-recipe);
+    transition: width var(--todo-medium);
+}
+
+.todo-calendar-nutrition__remaining {
+    min-height: 34px;
+    margin: 9px 0 0;
+    color: var(--todo-recipe-dark);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.todo-calendar-nutrition__remaining.is-over {
+    color: var(--todo-danger);
+}
+
+.todo-calendar-nutrition__macros {
+    display: grid;
+    gap: 9px;
+    margin: 16px 0 0;
+    padding-top: 15px;
+    border-top: 1px solid color-mix(in srgb, var(--todo-recipe) 22%, var(--todo-line));
+}
+
+.todo-calendar-nutrition__macros > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.todo-calendar-nutrition__macros dt {
+    color: var(--todo-muted);
+    font-size: 12px;
+}
+
+.todo-calendar-nutrition__macros dd {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.todo-calendar-nutrition__target {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 14px;
+    white-space: normal;
+}
+
+.todo-recipe-field textarea {
+    display: block;
+    width: 100%;
+    min-height: 190px;
+    padding: 14px 15px;
+    resize: vertical;
+    border: 1px solid var(--todo-line);
+    border-radius: 12px;
+    outline: 0;
+    background: var(--todo-bg);
+    color: var(--todo-ink);
+    font-size: 16px;
+    line-height: 1.75;
+    transition: border-color var(--todo-fast), background var(--todo-fast);
+}
+
+.todo-recipe-field textarea:focus {
+    border-color: var(--todo-recipe);
+    background: white;
+}
+
+.todo-recipe-field--method textarea:focus {
+    border-color: var(--todo-primary);
+}
+
+.todo-recipe-field--notes textarea {
+    min-height: 120px;
+}
+
+.todo-recipe-macro-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
+    align-items: start;
+    gap: 18px;
+}
+
+.todo-recipe-macro-paste {
+    display: grid;
+    gap: 7px;
+}
+
+.todo-recipe-macro-paste > label {
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.todo-recipe-field .todo-recipe-macro-paste textarea {
+    min-height: 132px;
+}
+
+.todo-recipe-macro-paste > p {
+    min-height: 20px;
+    margin: 0;
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.todo-recipe-macro-paste > p.is-success {
+    color: var(--todo-success);
+}
+
+.todo-recipe-macro-paste > p.is-warning {
+    color: var(--todo-danger);
+}
+
+.todo-recipe-macro-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.todo-recipe-macro-grid label {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.todo-recipe-macro-grid label > span {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.todo-recipe-macro-grid small {
+    color: var(--todo-success);
+    font-size: 10px;
+    font-weight: 850;
+}
+
+.todo-recipe-macro-grid input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 10px;
+    border: 1px solid var(--todo-line);
+    border-radius: 10px;
+    background: var(--todo-bg);
+    color: var(--todo-ink);
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+}
+
+.todo-recipe-macro-grid input:focus {
+    border-color: var(--todo-success);
+    background: white;
+}
+
 body.todo-modal-open {
     overflow: hidden;
+}
+
+@media (max-width: 900px) {
+    .todo-calendar-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .todo-calendar-nutrition {
+        position: static;
+        order: -1;
+        display: grid;
+        grid-template-columns: auto minmax(150px, 1fr) minmax(180px, auto);
+        align-items: center;
+        gap: 10px 18px;
+        padding: 15px 18px;
+    }
+
+    .todo-calendar-nutrition__calories,
+    .todo-calendar-nutrition__progress,
+    .todo-calendar-nutrition__remaining,
+    .todo-calendar-nutrition__macros,
+    .todo-calendar-nutrition__target {
+        margin-top: 0;
+    }
+
+    .todo-calendar-nutrition__calories strong {
+        font-size: 30px;
+    }
+
+    .todo-calendar-nutrition__progress {
+        grid-column: 1 / -1;
+    }
+
+    .todo-calendar-nutrition__remaining {
+        grid-column: 1 / 3;
+        min-height: 0;
+    }
+
+    .todo-calendar-nutrition__macros {
+        display: flex;
+        grid-column: 1 / 3;
+        gap: 18px;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .todo-calendar-nutrition__macros > div {
+        gap: 5px;
+    }
+
+    .todo-calendar-nutrition__target {
+        grid-column: 3;
+        grid-row: 3 / 5;
+    }
 }
 
 @media (min-width: 680px) {
@@ -2835,6 +4114,48 @@ body.todo-modal-open {
         display: none;
     }
 
+    .todo-today-dashboard {
+        margin: -10px 0 32px;
+        border-radius: var(--todo-radius);
+    }
+
+    .todo-today-dashboard__heading {
+        padding: 14px 15px 12px;
+    }
+
+    .todo-today-dashboard__heading h2 {
+        font-size: 21px;
+    }
+
+    .todo-today-dashboard__content {
+        grid-template-columns: 1fr;
+    }
+
+    .todo-today-nutrition {
+        padding: 16px 15px 14px;
+    }
+
+    .todo-today-nutrition__total strong {
+        font-size: 27px;
+    }
+
+    .todo-today-macros {
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .todo-today-macros > div {
+        display: grid;
+        gap: 0;
+    }
+
+    .todo-today-next {
+        min-height: 92px;
+        padding: 14px 15px;
+        border-top: 1px solid var(--todo-line);
+        border-left: 0;
+    }
+
     .todo-section-heading {
         align-items: flex-end;
         gap: 10px;
@@ -2897,6 +4218,68 @@ body.todo-modal-open {
         margin-left: 0;
     }
 
+    .todo-calendar-layout {
+        gap: 10px;
+    }
+
+    .todo-calendar-nutrition {
+        grid-template-columns: 36px minmax(0, 1fr);
+        gap: 6px 10px;
+        padding: 11px 12px;
+        border-radius: var(--todo-radius);
+    }
+
+    .todo-calendar-nutrition__heading {
+        display: block;
+    }
+
+    .todo-calendar-nutrition__heading > div {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .todo-calendar-nutrition__icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+    }
+
+    .todo-calendar-nutrition__calories {
+        grid-column: 2;
+        grid-row: 1;
+        gap: 5px;
+        min-width: 0;
+    }
+
+    .todo-calendar-nutrition__calories strong {
+        font-size: 26px;
+    }
+
+    .todo-calendar-nutrition__progress {
+        grid-column: 1 / -1;
+        height: 6px;
+    }
+
+    .todo-calendar-nutrition__remaining {
+        grid-column: 1 / -1;
+        grid-row: auto;
+        min-height: 0;
+        margin: 0;
+        overflow: hidden;
+        font-size: 10px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .todo-calendar-nutrition__macros,
+    .todo-calendar-nutrition__target {
+        display: none;
+    }
+
     .todo-calendar-scroll {
         height: calc(100dvh - 290px);
         min-height: 400px;
@@ -2906,7 +4289,7 @@ body.todo-modal-open {
     }
 
     .todo-calendar-slot {
-        grid-template-columns: 58px minmax(0, 1fr);
+        grid-template-columns: 58px minmax(0, 1fr) 50px;
     }
 
     .todo-calendar-time-label {
@@ -2934,12 +4317,48 @@ body.todo-modal-open {
     }
 
     .todo-calendar-event {
-        right: 8px;
+        right: 58px;
         left: 66px;
     }
 
     .todo-calendar-now {
+        right: 50px;
         left: 52px;
+    }
+
+    .todo-calendar-meal-add,
+    .todo-calendar-meal {
+        width: 44px;
+        height: 48px;
+        min-height: 44px;
+        padding: 4px;
+    }
+
+    .todo-calendar-meal-add span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .todo-calendar-meal {
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .todo-calendar-meal svg {
+        width: 17px;
+        height: 17px;
+    }
+
+    .todo-calendar-meal strong {
+        display: none;
+    }
+
+    .todo-calendar-meal small {
+        font-size: 8px;
     }
 
     .todo-calendar-form-grid {
@@ -3004,6 +4423,16 @@ body.todo-modal-open {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .todo-calorie-target-card {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .todo-calorie-target-card > p {
+        text-align: left;
+    }
+
     .todo-measurement-fields,
     .todo-measurement-form.is-simplified .todo-measurement-fields {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3011,6 +4440,57 @@ body.todo-modal-open {
 
     .todo-measurement-row__values {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .todo-recipes-header {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .todo-recipes-create-actions {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .todo-recipe-library-tools {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .todo-recipe-library-tools > span {
+        padding-left: 4px;
+    }
+
+    .todo-recipe-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .todo-recipe-card__open,
+    .todo-recipe-card.is-compact .todo-recipe-card__open {
+        min-height: 205px;
+    }
+
+    .todo-recipe-editor-card {
+        width: calc(100% + 16px);
+        margin: 0 -8px;
+        padding: 24px 16px;
+        border-radius: 18px;
+    }
+
+    .todo-recipe-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .todo-recipe-field {
+        padding: 18px 15px;
+    }
+
+    .todo-recipe-field__help {
+        min-height: 0;
+    }
+
+    .todo-recipe-macro-layout {
+        grid-template-columns: 1fr;
     }
 
     .todo-sync-conflict-panel {
@@ -3189,6 +4669,15 @@ body.todo-modal-open {
         grid-template-columns: 1fr;
     }
 
+    .todo-measurement-nutrition-field {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .todo-measurement-nutrition-field p {
+        margin-bottom: 0;
+    }
+
     .todo-measurement-fields,
     .todo-measurement-form.is-simplified .todo-measurement-fields,
     .todo-measurement-row__values {
@@ -3201,6 +4690,14 @@ body.todo-modal-open {
 
     .todo-measurement-row__heading small {
         max-width: 190px;
+    }
+
+    .todo-recipe-editor-header {
+        grid-template-columns: 44px minmax(0, 1fr) 44px;
+    }
+
+    .todo-recipe-title-wrap .todo-title-input {
+        font-size: 28px;
     }
 
 }

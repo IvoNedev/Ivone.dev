@@ -2,14 +2,15 @@
     "use strict";
 
     var STORAGE_KEY = "ivone.todo.document.v1";
-    var SYNC_KEY = "ivone.todo.sync-key.v1";
     var DEVICE_KEY = "ivone.todo.device-id.v1";
     var CLOUD_POLL_INTERVAL = 10000;
     var CALENDAR_GROUP_ID = "calendar";
     var GOALS_COLOR = "#6d4cc7";
     var MEASUREMENTS_COLOR = "#167d89";
+    var RECIPES_COLOR = "#b4532a";
     var CALENDAR_HOUR_HEIGHT = 72;
     var MEASUREMENT_FIELDS = [
+        { key: "dailyCalories", label: "Daily calorie target", kind: "calories" },
         { key: "weightKg", label: "Weight", kind: "weight" },
         { key: "bodyFatPercent", label: "Body fat", kind: "percent" },
         { key: "neckCm", label: "Neck", kind: "length" },
@@ -27,6 +28,12 @@
         { key: "rightThighCm", label: "Right thigh", kind: "length" },
         { key: "leftCalfCm", label: "Left calf", kind: "length" },
         { key: "rightCalfCm", label: "Right calf", kind: "length" }
+    ];
+    var MACRO_FIELDS = [
+        { key: "calories", label: "calories", pattern: "(?:kilocalories?|kcal(?:ories?)?s?|ccals?|calories?|calory|cals?|energy)", maximum: 20000 },
+        { key: "proteinG", label: "protein", pattern: "(?:proteins?|prot(?:ein)?|pro|p)", maximum: 5000 },
+        { key: "carbsG", label: "carbs", pattern: "(?:carbohydrates?|carbs?|carb|cho|c)", maximum: 5000 },
+        { key: "fatG", label: "fat", pattern: "(?:fats?|lipids?|lipid|f)", maximum: 5000 }
     ];
     var STATUS_ORDER = ["open", "done", "kept", "blocked"];
     var STATUS_LABELS = {
@@ -49,7 +56,21 @@
         calendarView: document.getElementById("calendarView"),
         goalsView: document.getElementById("goalsView"),
         measurementsView: document.getElementById("measurementsView"),
+        recipesView: document.getElementById("recipesView"),
+        recipeEditorView: document.getElementById("recipeEditorView"),
         homeGrid: document.getElementById("homeGrid"),
+        homeTodayDashboard: document.getElementById("homeTodayDashboard"),
+        homeTodayCalendarButton: document.getElementById("homeTodayCalendarButton"),
+        homeTodayCalories: document.getElementById("homeTodayCalories"),
+        homeTodayCalorieTarget: document.getElementById("homeTodayCalorieTarget"),
+        homeTodayCalorieProgress: document.getElementById("homeTodayCalorieProgress"),
+        homeTodayCalorieStatus: document.getElementById("homeTodayCalorieStatus"),
+        homeTodayProtein: document.getElementById("homeTodayProtein"),
+        homeTodayCarbs: document.getElementById("homeTodayCarbs"),
+        homeTodayFat: document.getElementById("homeTodayFat"),
+        homeTodayNextEvent: document.getElementById("homeTodayNextEvent"),
+        homeTodayNextEventTitle: document.getElementById("homeTodayNextEventTitle"),
+        homeTodayNextEventTime: document.getElementById("homeTodayNextEventTime"),
         recentSection: document.getElementById("recentSection"),
         recentGrid: document.getElementById("recentGrid"),
         noteGrid: document.getElementById("noteGrid"),
@@ -74,6 +95,14 @@
         calendarScroll: document.getElementById("calendarScroll"),
         calendarTimeline: document.getElementById("calendarTimeline"),
         calendarDatePicker: document.getElementById("calendarDatePicker"),
+        calendarCaloriesConsumed: document.getElementById("calendarCaloriesConsumed"),
+        calendarCaloriesTarget: document.getElementById("calendarCaloriesTarget"),
+        calendarCaloriesProgress: document.getElementById("calendarCaloriesProgress"),
+        calendarCaloriesRemaining: document.getElementById("calendarCaloriesRemaining"),
+        calendarProteinTotal: document.getElementById("calendarProteinTotal"),
+        calendarCarbsTotal: document.getElementById("calendarCarbsTotal"),
+        calendarFatTotal: document.getElementById("calendarFatTotal"),
+        calendarNutritionTargetButton: document.getElementById("calendarNutritionTargetButton"),
         calendarEventModal: document.getElementById("calendarEventModal"),
         calendarEventForm: document.getElementById("calendarEventForm"),
         calendarEventFormTitle: document.getElementById("calendarEventFormTitle"),
@@ -82,6 +111,19 @@
         calendarEventTime: document.getElementById("calendarEventTime"),
         calendarEventDuration: document.getElementById("calendarEventDuration"),
         deleteCalendarEventButton: document.getElementById("deleteCalendarEventButton"),
+        mealModal: document.getElementById("mealModal"),
+        mealForm: document.getElementById("mealForm"),
+        mealFormTitle: document.getElementById("mealFormTitle"),
+        mealFormContext: document.getElementById("mealFormContext"),
+        mealRecipeSelect: document.getElementById("mealRecipeSelect"),
+        mealRecipeHelp: document.getElementById("mealRecipeHelp"),
+        mealPortionPercent: document.getElementById("mealPortionPercent"),
+        mealMacroFields: document.getElementById("mealMacroFields"),
+        mealMacroHelp: document.getElementById("mealMacroHelp"),
+        mealMacroInputs: Array.from(document.querySelectorAll("[data-meal-macro]")),
+        mealFormError: document.getElementById("mealFormError"),
+        saveMealButton: document.getElementById("saveMealButton"),
+        deleteMealButton: document.getElementById("deleteMealButton"),
         goalForm: document.getElementById("goalForm"),
         goalTitle: document.getElementById("goalTitle"),
         goalDeadline: document.getElementById("goalDeadline"),
@@ -98,19 +140,43 @@
         measurementLatest: document.getElementById("measurementLatest"),
         measurementHistorySummary: document.getElementById("measurementHistorySummary"),
         measurementHistory: document.getElementById("measurementHistory"),
+        recipesList: document.getElementById("recipesList"),
+        recipesSummary: document.getElementById("recipesSummary"),
+        recipeSearch: document.getElementById("recipeSearch"),
+        recipeEditorKindLabel: document.getElementById("recipeEditorKindLabel"),
+        recipeTitleLabel: document.getElementById("recipeTitleLabel"),
+        recipeTitle: document.getElementById("recipeTitle"),
+        recipePreparationFields: document.getElementById("recipePreparationFields"),
+        recipeIngredients: document.getElementById("recipeIngredients"),
+        recipeMethod: document.getElementById("recipeMethod"),
+        recipeNotes: document.getElementById("recipeNotes"),
+        recipeNotesHelp: document.getElementById("recipeNotesHelp"),
+        recipeNotesLabelText: document.getElementById("recipeNotesLabelText"),
+        recipeMacroText: document.getElementById("recipeMacroText"),
+        recipeMacroStatus: document.getElementById("recipeMacroStatus"),
+        recipeMacrosBasis: document.getElementById("recipeMacrosBasis"),
+        recipeMacroInputs: Array.from(document.querySelectorAll("[data-recipe-macro]")),
+        recipeIngredientCount: document.getElementById("recipeIngredientCount"),
+        recipeMethodCount: document.getElementById("recipeMethodCount"),
+        recipeSaveState: document.getElementById("recipeSaveState"),
+        recipeSaveWrap: document.querySelector(".todo-recipe-save-state"),
         settingsModal: document.getElementById("settingsModal"),
         syncConflictModal: document.getElementById("syncConflictModal"),
         localSyncNotes: document.getElementById("localSyncNotes"),
         localSyncItems: document.getElementById("localSyncItems"),
         localSyncEvents: document.getElementById("localSyncEvents"),
+        localSyncMeals: document.getElementById("localSyncMeals"),
         localSyncGoals: document.getElementById("localSyncGoals"),
         localSyncMeasurements: document.getElementById("localSyncMeasurements"),
+        localSyncRecipes: document.getElementById("localSyncRecipes"),
         localSyncUpdated: document.getElementById("localSyncUpdated"),
         serverSyncNotes: document.getElementById("serverSyncNotes"),
         serverSyncItems: document.getElementById("serverSyncItems"),
         serverSyncEvents: document.getElementById("serverSyncEvents"),
+        serverSyncMeals: document.getElementById("serverSyncMeals"),
         serverSyncGoals: document.getElementById("serverSyncGoals"),
         serverSyncMeasurements: document.getElementById("serverSyncMeasurements"),
+        serverSyncRecipes: document.getElementById("serverSyncRecipes"),
         serverSyncUpdated: document.getElementById("serverSyncUpdated"),
         useLocalSyncButton: document.getElementById("useLocalSyncButton"),
         useServerSyncButton: document.getElementById("useServerSyncButton"),
@@ -121,8 +187,6 @@
         groupColors: document.getElementById("groupColors"),
         syncStatus: document.getElementById("syncStatus"),
         syncButton: document.getElementById("syncButton"),
-        currentSyncKey: document.getElementById("currentSyncKey"),
-        otherSyncKey: document.getElementById("otherSyncKey"),
         syncNowButton: document.getElementById("syncNowButton"),
         importFile: document.getElementById("importFile"),
         toast: document.getElementById("todoToast")
@@ -131,7 +195,7 @@
     var deviceId = getOrCreateDeviceId();
     var loaded = loadLocalDocument();
     var state = loaded.document;
-    var syncKey = getOrCreateSyncKey();
+    var syncKey = "shared";
     var activeView = "home";
     var activeGroupId = null;
     var activeNoteId = null;
@@ -153,7 +217,11 @@
     var focusHandleAfterRender = null;
     var selectedCalendarDate = localDateKey(new Date());
     var activeCalendarEventId = null;
+    var activeMealEntryId = null;
+    var pendingMealDate = null;
+    var pendingMealStartMinutes = 0;
     var activeMeasurementId = null;
+    var activeRecipeId = null;
     var currentTimeTimer = 0;
     var pendingSyncConflict = null;
     var syncConflictResolving = false;
@@ -166,29 +234,6 @@
         }
 
         return prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
-    }
-
-    function createSyncKey() {
-        if (window.crypto && typeof window.crypto.getRandomValues === "function") {
-            var bytes = new Uint8Array(24);
-            window.crypto.getRandomValues(bytes);
-            var binary = "";
-            bytes.forEach(function (value) { binary += String.fromCharCode(value); });
-            return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-        }
-
-        return createId("todo") + createId("sync");
-    }
-
-    function getOrCreateSyncKey() {
-        var existing = localStorage.getItem(SYNC_KEY);
-        if (existing && /^[A-Za-z0-9_-]{24,128}$/.test(existing)) {
-            return existing;
-        }
-
-        var created = createSyncKey();
-        localStorage.setItem(SYNC_KEY, created);
-        return created;
     }
 
     function getOrCreateDeviceId() {
@@ -205,7 +250,7 @@
     function defaultDocument() {
         var now = new Date().toISOString();
         return {
-            version: 6,
+            version: 10,
             updatedAt: now,
             groups: [
                 { id: CALENDAR_GROUP_ID, name: "Calendar", color: "#c74363", createdAt: now, manualOrder: 0, orderUpdatedAt: now },
@@ -219,12 +264,16 @@
             deletedNotes: {},
             calendarEvents: [],
             deletedCalendarEvents: {},
+            mealEntries: [],
+            deletedMealEntries: {},
             goals: [],
             deletedGoals: {},
             measurementUnit: "metric",
             measurementSimplified: true,
             measurementEntries: [],
-            deletedMeasurementEntries: {}
+            deletedMeasurementEntries: {},
+            recipes: [],
+            deletedRecipes: {}
         };
     }
 
@@ -345,6 +394,31 @@
             : [];
         calendarEvents.sort(function (a, b) { return a.id.localeCompare(b.id); });
 
+        var deletedMealEntries = {};
+        if (value.deletedMealEntries && typeof value.deletedMealEntries === "object" && !Array.isArray(value.deletedMealEntries)) {
+            Object.keys(value.deletedMealEntries).sort().forEach(function (mealId) {
+                if (value.deletedMealEntries[mealId]) {
+                    deletedMealEntries[String(mealId)] = String(value.deletedMealEntries[mealId]);
+                }
+            });
+        }
+
+        var mealEntries = Array.isArray(value.mealEntries) ? value.mealEntries.filter(Boolean).map(function (meal) {
+            var portionPercent = Number(meal.portionPercent);
+            return {
+                id: String(meal.id || createId("meal")),
+                date: /^\d{4}-\d{2}-\d{2}$/.test(meal.date || "") ? meal.date : localDateKey(new Date()),
+                startMinutes: Math.max(0, Math.min(1380, Math.round((Number(meal.startMinutes) || 0) / 60) * 60)),
+                recipeId: String(meal.recipeId || ""),
+                recipeTitle: String(meal.recipeTitle || "Deleted recipe").slice(0, 180),
+                portionPercent: Number.isFinite(portionPercent) ? Math.max(1, Math.min(1000, Math.round(portionPercent * 10) / 10)) : 100,
+                macros: normalizeRecipeMacros(meal.macros),
+                createdAt: meal.createdAt || now,
+                updatedAt: meal.updatedAt || now
+            };
+        }).filter(function (meal) { return !deletedMealEntries[meal.id]; }) : [];
+        mealEntries.sort(function (a, b) { return a.id.localeCompare(b.id); });
+
         var deletedGoals = {};
         if (value.deletedGoals && typeof value.deletedGoals === "object" && !Array.isArray(value.deletedGoals)) {
             Object.keys(value.deletedGoals).sort().forEach(function (goalId) {
@@ -397,20 +471,49 @@
         }) : [];
         measurementEntries.sort(function (a, b) { return a.id.localeCompare(b.id); });
 
+        var deletedRecipes = {};
+        if (value.deletedRecipes && typeof value.deletedRecipes === "object" && !Array.isArray(value.deletedRecipes)) {
+            Object.keys(value.deletedRecipes).sort().forEach(function (recipeId) {
+                if (value.deletedRecipes[recipeId]) {
+                    deletedRecipes[String(recipeId)] = String(value.deletedRecipes[recipeId]);
+                }
+            });
+        }
+
+        var recipes = Array.isArray(value.recipes) ? value.recipes.filter(Boolean).map(function (recipe) {
+            return {
+                id: String(recipe.id || createId("recipe")),
+                kind: recipe.kind === "food" ? "food" : "recipe",
+                title: String(recipe.title || "").slice(0, 180),
+                ingredients: normalizeRecipeLines(recipe.ingredients),
+                method: normalizeRecipeLines(recipe.method),
+                notes: String(recipe.notes || "").slice(0, 4000),
+                macroText: String(recipe.macroText || "").slice(0, 1000),
+                macros: normalizeRecipeMacros(recipe.macros),
+                createdAt: recipe.createdAt || now,
+                updatedAt: recipe.updatedAt || now
+            };
+        }).filter(function (recipe) { return !deletedRecipes[recipe.id]; }) : [];
+        recipes.sort(function (a, b) { return a.id.localeCompare(b.id); });
+
         return {
-            version: 6,
+            version: 10,
             updatedAt: value.updatedAt || now,
             groups: groups,
             notes: notes.filter(function (note) { return !deletedNotes[note.id]; }),
             deletedNotes: deletedNotes,
             calendarEvents: calendarEvents,
             deletedCalendarEvents: deletedCalendarEvents,
+            mealEntries: mealEntries,
+            deletedMealEntries: deletedMealEntries,
             goals: goals,
             deletedGoals: deletedGoals,
             measurementUnit: value.measurementUnit === "imperial" ? "imperial" : "metric",
             measurementSimplified: value.measurementSimplified !== false,
             measurementEntries: measurementEntries,
-            deletedMeasurementEntries: deletedMeasurementEntries
+            deletedMeasurementEntries: deletedMeasurementEntries,
+            recipes: recipes,
+            deletedRecipes: deletedRecipes
         };
     }
 
@@ -419,7 +522,7 @@
             return null;
         }
         var number = Number(value);
-        var maximum = kind === "percent" ? 80 : (kind === "weight" ? 500 : 400);
+        var maximum = kind === "calories" ? 20000 : (kind === "percent" ? 80 : (kind === "weight" ? 500 : 400));
         if (!Number.isFinite(number) || number <= 0 || number > maximum) {
             return null;
         }
@@ -430,6 +533,126 @@
         return MEASUREMENT_FIELDS.some(function (field) {
             return Number.isFinite(entry[field.key]);
         });
+    }
+
+    function normalizeRecipeLines(value) {
+        var source = Array.isArray(value) ? value : String(value || "").split(/\r?\n/);
+        return source.map(function (entry) {
+            var line = String(entry || "").replace(/\u00a0/g, " ").trim();
+            var previous = "";
+            while (line && line !== previous) {
+                previous = line;
+                line = line
+                    .replace(/^(?:[-*•●◦▪▫‣⁃·–—]+|[☐☑✓✔✅]+)\s*/, "")
+                    .replace(/^\[[ xX]\]\s*/, "")
+                    .replace(/^\(?\d{1,3}\)?[.)\-:]\s*/, "")
+                    .replace(/^[a-zA-Z][.)]\s+/, "")
+                    .trim();
+            }
+            return line.replace(/[ \t]+/g, " ").slice(0, 1000);
+        }).filter(Boolean).slice(0, 500);
+    }
+
+    function emptyRecipeMacros() {
+        return {
+            calories: null,
+            proteinG: null,
+            carbsG: null,
+            fatG: null
+        };
+    }
+
+    function macroField(key) {
+        return MACRO_FIELDS.find(function (field) { return field.key === key; }) || null;
+    }
+
+    function normalizeMacroNumber(value, key) {
+        if (value === null || value === "" || typeof value === "undefined") {
+            return null;
+        }
+        var number = Number(value);
+        var field = macroField(key);
+        if (!field || !Number.isFinite(number) || number < 0 || number > field.maximum) {
+            return null;
+        }
+        return Math.round(number * 10) / 10;
+    }
+
+    function normalizeRecipeMacros(value) {
+        value = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+        var macros = emptyRecipeMacros();
+        MACRO_FIELDS.forEach(function (field) {
+            macros[field.key] = normalizeMacroNumber(value[field.key], field.key);
+        });
+        return macros;
+    }
+
+    function recipeHasMacros(recipe) {
+        return recipe && MACRO_FIELDS.some(function (field) {
+            return Number.isFinite(recipe.macros && recipe.macros[field.key]);
+        });
+    }
+
+    function parseMacroNumberToken(token, key) {
+        var compact = String(token || "").replace(/[\s\u202f]/g, "");
+        if (key === "calories" && /^\d{1,2}[.,]\d{3}$/.test(compact)) {
+            compact = compact.replace(/[.,]/, "");
+        } else {
+            compact = compact.replace(",", ".");
+        }
+        return normalizeMacroNumber(Number(compact), key);
+    }
+
+    function parseMacroText(value) {
+        var source = String(value || "")
+            .replace(/\*\*|__/g, "")
+            .replace(/\u00a0/g, " ")
+            .replace(/[|;]/g, "\n")
+            .replace(/(?:калории|калория|калориен|ккал)/gi, " calories ")
+            .replace(/(?:протеин|белтъчини|белтък)/gi, " protein ")
+            .replace(/(?:въглехидрати|въглехидрат)/gi, " carbs ")
+            .replace(/(?:мазнини|мазнина)/gi, " fat ");
+        var candidates = [];
+        MACRO_FIELDS.forEach(function (field) {
+            var compactAlias = field.key === "proteinG"
+                ? "p"
+                : field.key === "carbsG"
+                    ? "c"
+                    : field.key === "fatG" ? "f" : null;
+            var expression = "\\b" + field.pattern + "\\b";
+            if (compactAlias) {
+                expression += "|\\b" + compactAlias + "(?=\\s*[:=~≈\\-]?\\s*\\d)";
+            }
+            var aliasPattern = new RegExp(expression, "gi");
+            var match;
+            while ((match = aliasPattern.exec(source))) {
+                candidates.push({
+                    field: field,
+                    index: match.index,
+                    end: match.index + match[0].length
+                });
+            }
+        });
+        candidates.sort(function (a, b) { return a.index - b.index || b.end - a.end; });
+
+        var macros = emptyRecipeMacros();
+        var numberPattern = "(\\d+(?:[ \\u202f]\\d{3})*(?:[.,]\\d+)?)";
+        candidates.forEach(function (candidate, index) {
+            var nextIndex = index + 1 < candidates.length ? candidates[index + 1].index : source.length;
+            var after = source.slice(candidate.end, Math.min(nextIndex, candidate.end + 48));
+            var afterMatch = after.match(new RegExp("^[^\\d]{0,24}" + numberPattern));
+            var token = afterMatch ? afterMatch[1] : null;
+            if (!token) {
+                var before = source.slice(Math.max(0, candidate.index - 36), candidate.index);
+                var beforeMatch = before.match(new RegExp(numberPattern + "\\s*(?:k?cals?|calories?|g|grams?)?\\s*[^\\d]{0,6}$", "i"));
+                token = beforeMatch ? beforeMatch[1] : null;
+            }
+            var parsed = parseMacroNumberToken(token, candidate.field.key);
+            if (parsed !== null) {
+                macros[candidate.field.key] = parsed;
+            }
+        });
+        return macros;
     }
 
     function normalizeItems(items) {
@@ -561,6 +784,28 @@
         calendarEvents = calendarEvents.filter(function (event) { return !deletedCalendarEvents[event.id]; });
         calendarEvents.sort(function (a, b) { return a.id.localeCompare(b.id); });
 
+        var deletedMealEntries = {};
+        Array.from(new Set(Object.keys(local.deletedMealEntries).concat(Object.keys(remote.deletedMealEntries))))
+            .sort()
+            .forEach(function (mealId) {
+                deletedMealEntries[mealId] = latestIso(
+                    local.deletedMealEntries[mealId],
+                    remote.deletedMealEntries[mealId]);
+            });
+        var remoteMealsById = new Map(remote.mealEntries.map(function (meal) { return [meal.id, meal]; }));
+        var mealEntries = local.mealEntries.map(function (meal) {
+            var remoteMeal = remoteMealsById.get(meal.id);
+            remoteMealsById.delete(meal.id);
+            if (!remoteMeal) {
+                return meal;
+            }
+            return (Date.parse(meal.updatedAt) || 0) >= (Date.parse(remoteMeal.updatedAt) || 0)
+                ? meal
+                : remoteMeal;
+        }).concat(Array.from(remoteMealsById.values()));
+        mealEntries = mealEntries.filter(function (meal) { return !deletedMealEntries[meal.id]; });
+        mealEntries.sort(function (a, b) { return a.id.localeCompare(b.id); });
+
         var deletedGoals = {};
         Array.from(new Set(Object.keys(local.deletedGoals).concat(Object.keys(remote.deletedGoals))))
             .sort()
@@ -605,20 +850,43 @@
             ? local.measurementSimplified
             : remote.measurementSimplified;
 
+        var deletedRecipes = {};
+        Array.from(new Set(Object.keys(local.deletedRecipes).concat(Object.keys(remote.deletedRecipes))))
+            .sort()
+            .forEach(function (recipeId) {
+                deletedRecipes[recipeId] = latestIso(local.deletedRecipes[recipeId], remote.deletedRecipes[recipeId]);
+            });
+        var remoteRecipesById = new Map(remote.recipes.map(function (recipe) { return [recipe.id, recipe]; }));
+        var recipes = local.recipes.map(function (recipe) {
+            var remoteRecipe = remoteRecipesById.get(recipe.id);
+            remoteRecipesById.delete(recipe.id);
+            if (!remoteRecipe) {
+                return recipe;
+            }
+            return (Date.parse(recipe.updatedAt) || 0) >= (Date.parse(remoteRecipe.updatedAt) || 0)
+                ? recipe
+                : remoteRecipe;
+        }).concat(Array.from(remoteRecipesById.values()));
+        recipes = recipes.filter(function (recipe) { return !deletedRecipes[recipe.id]; });
+
         return normalizeDocument({
-            version: 6,
+            version: 10,
             updatedAt: latestIso(local.updatedAt, remote.updatedAt),
             groups: groups,
             notes: notes,
             deletedNotes: deletedNotes,
             calendarEvents: calendarEvents,
             deletedCalendarEvents: deletedCalendarEvents,
+            mealEntries: mealEntries,
+            deletedMealEntries: deletedMealEntries,
             goals: goals,
             deletedGoals: deletedGoals,
             measurementUnit: measurementUnit,
             measurementSimplified: measurementSimplified,
             measurementEntries: measurementEntries,
-            deletedMeasurementEntries: deletedMeasurementEntries
+            deletedMeasurementEntries: deletedMeasurementEntries,
+            recipes: recipes,
+            deletedRecipes: deletedRecipes
         });
     }
 
@@ -636,6 +904,10 @@
         var note = getActiveNote();
         if (note && options.touchActiveNote !== false) {
             note.updatedAt = state.updatedAt;
+        }
+        var recipe = activeView === "recipeEditor" ? getActiveRecipe() : null;
+        if (recipe && options.touchActiveRecipe !== false) {
+            recipe.updatedAt = state.updatedAt;
         }
 
         mutationSequence += 1;
@@ -663,6 +935,10 @@
 
         elements.editorSaveState.textContent = saving ? "Saving…" : "Saved";
         elements.editorSaveWrap.classList.toggle("is-saving", saving);
+        if (elements.recipeSaveState) {
+            elements.recipeSaveState.textContent = saving ? elements.editorSaveState.textContent : "Saved";
+            elements.recipeSaveWrap.classList.toggle("is-saving", saving);
+        }
     }
 
     function setSyncStatus(message, offline) {
@@ -670,8 +946,8 @@
         elements.syncButton.classList.toggle("is-offline", Boolean(offline));
     }
 
-    function cloudUrl(key) {
-        return root.dataset.apiRoot.replace(/\/$/, "") + "/" + encodeURIComponent(key);
+    function cloudUrl() {
+        return root.dataset.apiRoot.replace(/\/$/, "");
     }
 
     async function readCloud(key) {
@@ -711,6 +987,9 @@
         var calendarEventBefore = activeCalendarEventId
             ? JSON.stringify(state.calendarEvents.find(function (event) { return event.id === activeCalendarEventId; }) || null)
             : null;
+        var mealEntryBefore = activeMealEntryId
+            ? JSON.stringify(state.mealEntries.find(function (meal) { return meal.id === activeMealEntryId; }) || null)
+            : null;
         state = normalizeDocument(nextState);
         saveLocalDocument();
         if (activeCalendarEventId && calendarEventBefore !== JSON.stringify(
@@ -719,6 +998,14 @@
             if (!elements.calendarEventModal.hidden) {
                 closeModal(elements.calendarEventModal);
                 showToast("That event changed on another device. The latest version is now shown.");
+            }
+        }
+        if (activeMealEntryId && mealEntryBefore !== JSON.stringify(
+            state.mealEntries.find(function (meal) { return meal.id === activeMealEntryId; }) || null)) {
+            activeMealEntryId = null;
+            if (!elements.mealModal.hidden) {
+                closeModal(elements.mealModal);
+                showToast("That meal changed on another device. The latest version is now shown.");
             }
         }
         if (mutationSequence === sequenceAtStart) {
@@ -775,6 +1062,7 @@
                 activeView = "home";
                 activeGroupId = null;
                 activeNoteId = null;
+                activeRecipeId = null;
                 renderHome();
                 return true;
             }
@@ -829,9 +1117,9 @@
         }
 
         syncPromise = performCloudSync(options).then(function () {
+            setSyncStatus("Synced", false);
             if (!options.quiet) {
                 setEditorSaved(false);
-                setSyncStatus("Synced", false);
             }
             if (options.showFeedback) {
                 showToast("Everything is up to date.");
@@ -892,6 +1180,14 @@
 
     function getActiveNote() {
         return activeNoteId ? getNote(activeNoteId) : null;
+    }
+
+    function getRecipe(recipeId) {
+        return state.recipes.find(function (recipe) { return recipe.id === recipeId; }) || null;
+    }
+
+    function getActiveRecipe() {
+        return activeRecipeId ? getRecipe(activeRecipeId) : null;
     }
 
     function flattenItems(items, result, depth) {
@@ -963,6 +1259,8 @@
         elements.calendarView.hidden = name !== "calendar";
         elements.goalsView.hidden = name !== "goals";
         elements.measurementsView.hidden = name !== "measurements";
+        elements.recipesView.hidden = name !== "recipes";
+        elements.recipeEditorView.hidden = name !== "recipeEditor";
         elements.editorMenu.hidden = true;
         elements.editorMenuButton.setAttribute("aria-expanded", "false");
         window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
@@ -994,6 +1292,16 @@
             return;
         }
 
+        if (activeView === "recipes") {
+            renderRecipes();
+            return;
+        }
+
+        if (activeView === "recipeEditor" && getActiveRecipe()) {
+            renderRecipeEditor();
+            return;
+        }
+
         renderHome();
     }
 
@@ -1003,6 +1311,7 @@
         var query = elements.search.value.trim().toLocaleLowerCase();
         elements.homeHeading.textContent = query ? "Search results" : "Everything has a place.";
         elements.recentSection.hidden = Boolean(query) || !state.notes.length;
+        elements.homeTodayDashboard.hidden = Boolean(query);
 
         if (query) {
             var matchedNotes = state.notes.filter(function (note) {
@@ -1013,21 +1322,32 @@
                     .toLocaleLowerCase();
                 return haystack.indexOf(query) >= 0;
             }).sort(byDisplayOrder);
+            var matchedRecipes = recipesByUpdated().filter(function (recipe) {
+                return [recipe.title]
+                    .concat(recipe.ingredients, recipe.method, [recipe.notes, recipe.macroText])
+                    .join(" ")
+                    .toLocaleLowerCase()
+                    .indexOf(query) >= 0;
+            });
 
-            if (!matchedNotes.length) {
+            if (!matchedNotes.length && !matchedRecipes.length) {
                 var empty = document.createElement("div");
                 empty.className = "todo-search-empty";
-                empty.innerHTML = "<strong>No matches yet.</strong><br>Try a title, group, or checklist item.";
+                empty.innerHTML = "<strong>No matches yet.</strong><br>Try a title, ingredient, group, or checklist item.";
                 elements.homeGrid.appendChild(empty);
                 return;
             }
 
+            matchedRecipes.forEach(function (recipe) {
+                elements.homeGrid.appendChild(buildRecipeCard(recipe, true));
+            });
             matchedNotes.forEach(function (note) {
                 elements.homeGrid.appendChild(buildNoteTile(note, true));
             });
             return;
         }
 
+        renderHomeTodayDashboard();
         var newTile = document.createElement("button");
         newTile.type = "button";
         newTile.className = "todo-new-tile";
@@ -1040,6 +1360,7 @@
             if (group.id === CALENDAR_GROUP_ID) {
                 elements.homeGrid.appendChild(buildGoalsTile());
                 elements.homeGrid.appendChild(buildMeasurementsTile());
+                elements.homeGrid.appendChild(buildRecipesTile());
             }
         });
 
@@ -1178,8 +1499,97 @@
         });
     }
 
+    function latestDailyCalorieTarget() {
+        return state.measurementEntries
+            .filter(function (entry) { return Number.isFinite(entry.dailyCalories); })
+            .sort(function (a, b) {
+                return b.date.localeCompare(a.date) || byUpdatedDescending(a, b);
+            })[0] || null;
+    }
+
+    function nutritionForDate(dateKey) {
+        var meals = mealEntriesForDate(dateKey);
+        var totals = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 };
+        meals.forEach(function (meal) {
+            var macros = scaledMealMacros(meal);
+            MACRO_FIELDS.forEach(function (field) {
+                if (Number.isFinite(macros[field.key])) {
+                    totals[field.key] += macros[field.key];
+                }
+            });
+        });
+        MACRO_FIELDS.forEach(function (field) {
+            totals[field.key] = Math.round(totals[field.key] * 10) / 10;
+        });
+        var targetEntry = latestDailyCalorieTarget();
+        return {
+            meals: meals,
+            totals: totals,
+            target: targetEntry && Number.isFinite(targetEntry.dailyCalories)
+                ? targetEntry.dailyCalories
+                : null
+        };
+    }
+
+    function openTodayCalendar() {
+        var today = localDateKey(new Date());
+        selectedCalendarDate = today;
+        renderCalendar(today, true);
+    }
+
+    function renderHomeTodayDashboard() {
+        var today = localDateKey(new Date());
+        var nutrition = nutritionForDate(today);
+        var totals = nutrition.totals;
+        var target = nutrition.target;
+        elements.homeTodayCalories.textContent = formatMacroValue(totals.calories);
+        elements.homeTodayCalorieTarget.textContent = target ? formatMacroValue(target) : "—";
+        elements.homeTodayProtein.textContent = formatMacroValue(totals.proteinG) + " g";
+        elements.homeTodayCarbs.textContent = formatMacroValue(totals.carbsG) + " g";
+        elements.homeTodayFat.textContent = formatMacroValue(totals.fatG) + " g";
+
+        var progress = target ? Math.min(100, totals.calories / target * 100) : 0;
+        elements.homeTodayCalorieProgress.querySelector("span").style.width = progress + "%";
+        elements.homeTodayCalorieProgress.setAttribute("aria-valuenow", String(Math.round(totals.calories)));
+        if (target) {
+            elements.homeTodayCalorieProgress.setAttribute("aria-valuemax", String(Math.round(target)));
+            var remaining = Math.round((target - totals.calories) * 10) / 10;
+            elements.homeTodayCalorieStatus.textContent = remaining >= 0
+                ? formatMacroValue(remaining) + " kcal remaining"
+                : formatMacroValue(Math.abs(remaining)) + " kcal over target";
+            elements.homeTodayCalorieStatus.classList.toggle("is-over", remaining < 0);
+        } else {
+            elements.homeTodayCalorieProgress.removeAttribute("aria-valuemax");
+            elements.homeTodayCalorieStatus.textContent = nutrition.meals.length
+                ? plural(nutrition.meals.length, "meal") + " logged · set a target in Measurements"
+                : "No meals logged · set a target in Measurements";
+            elements.homeTodayCalorieStatus.classList.remove("is-over");
+        }
+
+        var now = new Date();
+        var nowMinutes = now.getHours() * 60 + now.getMinutes();
+        var events = calendarEventsForDate(today);
+        var nextEvent = events.find(function (event) {
+            return event.startMinutes + event.durationMinutes > nowMinutes;
+        }) || null;
+        if (nextEvent) {
+            var happeningNow = nextEvent.startMinutes <= nowMinutes;
+            elements.homeTodayNextEventTitle.textContent = nextEvent.title;
+            elements.homeTodayNextEventTime.textContent = happeningNow
+                ? "Now · until " + minutesToTime(nextEvent.startMinutes + nextEvent.durationMinutes)
+                : minutesToTime(nextEvent.startMinutes) + " · " + formatDuration(nextEvent.durationMinutes);
+            elements.homeTodayNextEvent.setAttribute("aria-label",
+                (happeningNow ? "Open current event " : "Open next event ") + nextEvent.title);
+        } else {
+            elements.homeTodayNextEventTitle.textContent = "Nothing else scheduled";
+            elements.homeTodayNextEventTime.textContent = events.length ? "Your remaining day is clear." : "Add something to your calendar.";
+            elements.homeTodayNextEvent.setAttribute("aria-label", "Open today's calendar");
+        }
+    }
+
     function buildMeasurementsTile() {
         var latest = measurementsByDate()[0] || null;
+        var calorieTarget = latestDailyCalorieTarget();
         var button = document.createElement("button");
         button.type = "button";
         button.className = "todo-group-tile todo-measurements-tile";
@@ -1201,7 +1611,9 @@
         if (latest) {
             var headline = Number.isFinite(latest.weightKg)
                 ? formatMeasurementValue(latest.weightKg, "weight")
-                : (Number.isFinite(latest.waistCm) ? "Waist " + formatMeasurementValue(latest.waistCm, "length") : "Check-in saved");
+                : (Number.isFinite(latest.waistCm)
+                    ? "Waist " + formatMeasurementValue(latest.waistCm, "length")
+                    : (calorieTarget ? formatMeasurementValue(calorieTarget.dailyCalories, "calories") + " target" : "Check-in saved"));
             title.textContent = headline;
             detail.textContent = formatMeasurementDate(latest.date) + " · " + plural(state.measurementEntries.length, "check-in");
         } else {
@@ -1212,6 +1624,397 @@
         button.append(iconWrap, label, copy);
         button.addEventListener("click", openMeasurements);
         return button;
+    }
+
+    function recipesByUpdated() {
+        return state.recipes.slice().sort(function (a, b) {
+            return byUpdatedDescending(a, b) || a.title.localeCompare(b.title) || a.id.localeCompare(b.id);
+        });
+    }
+
+    function buildRecipesTile() {
+        var recipes = recipesByUpdated();
+        var latest = recipes[0] || null;
+        var latestIsFood = latest && latest.kind === "food";
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "todo-group-tile todo-recipes-tile";
+        button.style.setProperty("--group-color", RECIPES_COLOR);
+        button.setAttribute("aria-label", recipes.length
+            ? "Open Recipes, " + plural(recipes.length, "saved item") + ". Latest: " +
+                (latest.title || (latestIsFood ? "Untitled food item" : "Untitled recipe"))
+            : "Open Recipes and add your first recipe or food item");
+
+        var iconWrap = document.createElement("span");
+        iconWrap.className = "todo-recipes-tile__icon";
+        iconWrap.innerHTML = icon("recipe");
+        var label = document.createElement("span");
+        label.className = "todo-recipes-tile__label";
+        label.textContent = "Recipes";
+        var copy = document.createElement("span");
+        copy.className = "todo-recipes-tile__copy";
+        var title = document.createElement("strong");
+        title.textContent = latest
+            ? (latest.title || (latestIsFood ? "Untitled food item" : "Untitled recipe"))
+            : "Build your own cookbook";
+        var detail = document.createElement("small");
+        detail.textContent = latest
+            ? plural(recipes.length, "saved item") + " · " +
+                (Number.isFinite(latest.macros.calories)
+                    ? formatMacroValue(latest.macros.calories) + (latestIsFood ? " kcal per item" : " kcal per portion")
+                    : (latestIsFood ? "Food item" : plural(latest.ingredients.length, "ingredient")))
+            : "Recipes, ingredients and everyday foods";
+        copy.append(title, detail);
+        button.append(iconWrap, label, copy);
+        button.addEventListener("click", openRecipes);
+        return button;
+    }
+
+    function openRecipes() {
+        elements.recipeSearch.value = "";
+        renderRecipes();
+    }
+
+    function renderRecipes() {
+        showView("recipes");
+        clear(elements.recipesList);
+        var query = elements.recipeSearch.value.trim().toLocaleLowerCase();
+        var recipes = recipesByUpdated().filter(function (recipe) {
+            if (!query) {
+                return true;
+            }
+            return [recipe.title]
+                .concat(recipe.ingredients, recipe.method, [recipe.notes, recipe.macroText])
+                .join(" ")
+                .toLocaleLowerCase()
+                .indexOf(query) >= 0;
+        });
+
+        if (query) {
+            elements.recipesSummary.textContent = plural(recipes.length, "match");
+        } else {
+            var foodItemCount = state.recipes.filter(function (recipe) { return recipe.kind === "food"; }).length;
+            var recipeCount = state.recipes.length - foodItemCount;
+            elements.recipesSummary.textContent = recipeCount && foodItemCount
+                ? plural(recipeCount, "recipe") + " · " + plural(foodItemCount, "food item")
+                : (foodItemCount ? plural(foodItemCount, "food item") : plural(recipeCount, "recipe"));
+        }
+
+        if (!recipes.length) {
+            var empty = document.createElement("div");
+            empty.className = "todo-group-empty todo-recipes-empty";
+            var title = document.createElement("strong");
+            var copy = document.createElement("span");
+            title.textContent = query ? "Nothing found." : "Your cookbook starts here.";
+            copy.textContent = query
+                ? "Try another title, ingredient, or food."
+                : "Save a full recipe or a simple food such as a banana.";
+            empty.append(title, copy);
+            if (!query) {
+                var actions = document.createElement("div");
+                actions.className = "todo-recipes-empty__actions";
+                var addFood = document.createElement("button");
+                addFood.type = "button";
+                addFood.className = "todo-secondary-button";
+                addFood.innerHTML = icon("utensils") + " Food item";
+                addFood.addEventListener("click", function () { createRecipe("food"); });
+                var addRecipe = document.createElement("button");
+                addRecipe.type = "button";
+                addRecipe.className = "todo-primary-button";
+                addRecipe.innerHTML = icon("plus") + " New recipe";
+                addRecipe.addEventListener("click", function () { createRecipe("recipe"); });
+                actions.append(addFood, addRecipe);
+                empty.appendChild(actions);
+            }
+            elements.recipesList.appendChild(empty);
+            return;
+        }
+
+        recipes.forEach(function (recipe) {
+            elements.recipesList.appendChild(buildRecipeCard(recipe, false));
+        });
+    }
+
+    function buildRecipeCard(recipe, compact) {
+        var isFood = recipe.kind === "food";
+        var itemLabel = isFood ? "food item" : "recipe";
+        var emptyTitle = isFood ? "Untitled food item" : "Untitled recipe";
+        var card = document.createElement("article");
+        card.className = "todo-recipe-card" + (isFood ? " is-food-item" : "") + (compact ? " is-compact" : "");
+        var open = document.createElement("button");
+        open.type = "button";
+        open.className = "todo-recipe-card__open";
+        open.setAttribute("aria-label", "Open " + itemLabel + " " + (recipe.title || emptyTitle));
+
+        var head = document.createElement("div");
+        head.className = "todo-recipe-card__head";
+        var mark = document.createElement("span");
+        mark.className = "todo-recipe-card__mark";
+        mark.innerHTML = icon(isFood ? "utensils" : "recipe");
+        var heading = document.createElement("div");
+        var eyebrow = document.createElement("span");
+        var macroSummary = [];
+        if (Number.isFinite(recipe.macros.calories)) {
+            macroSummary.push(formatMacroValue(recipe.macros.calories) + " kcal");
+        }
+        if (Number.isFinite(recipe.macros.proteinG)) {
+            macroSummary.push(formatMacroValue(recipe.macros.proteinG) + " g protein");
+        }
+        eyebrow.textContent = isFood
+            ? "Food item" + (macroSummary.length ? " · " + macroSummary.join(" · ") : "")
+            : (macroSummary.length
+                ? macroSummary.join(" · ")
+                : plural(recipe.ingredients.length, "ingredient") + " · " + plural(recipe.method.length, "step"));
+        var title = document.createElement("h2");
+        title.textContent = recipe.title || emptyTitle;
+        heading.append(eyebrow, title);
+        head.append(mark, heading);
+        open.appendChild(head);
+
+        var preview = document.createElement("ul");
+        preview.className = "todo-recipe-card__preview";
+        var previewItems = isFood
+            ? [
+                Number.isFinite(recipe.macros.carbsG) ? formatMacroValue(recipe.macros.carbsG) + " g carbs" : "",
+                Number.isFinite(recipe.macros.fatG) ? formatMacroValue(recipe.macros.fatG) + " g fat" : "",
+                recipe.notes
+            ].filter(Boolean).slice(0, 3)
+            : recipe.ingredients.slice(0, 3);
+        if (!previewItems.length) {
+            var empty = document.createElement("li");
+            empty.textContent = isFood ? "No nutrition details yet" : "No ingredients yet";
+            empty.className = "is-empty";
+            preview.appendChild(empty);
+        } else {
+            previewItems.forEach(function (ingredient) {
+                var item = document.createElement("li");
+                item.textContent = ingredient;
+                preview.appendChild(item);
+            });
+        }
+        open.appendChild(preview);
+
+        var foot = document.createElement("span");
+        foot.className = "todo-recipe-card__foot";
+        foot.textContent = "Updated " + relativeDate(recipe.updatedAt);
+        open.appendChild(foot);
+        open.addEventListener("click", function () { openRecipeEditor(recipe.id); });
+        card.appendChild(open);
+        return card;
+    }
+
+    function createRecipe(kind) {
+        kind = kind === "food" ? "food" : "recipe";
+        var now = new Date().toISOString();
+        var recipe = {
+            id: createId("recipe"),
+            kind: kind,
+            title: "",
+            ingredients: [],
+            method: [],
+            notes: "",
+            macroText: "",
+            macros: emptyRecipeMacros(),
+            createdAt: now,
+            updatedAt: now
+        };
+        state.recipes.unshift(recipe);
+        activeRecipeId = recipe.id;
+        persist({ touchActiveNote: false });
+        renderRecipeEditor();
+        window.setTimeout(function () { elements.recipeTitle.focus(); }, 0);
+    }
+
+    function openRecipeEditor(recipeId) {
+        activeRecipeId = recipeId;
+        renderRecipeEditor();
+    }
+
+    function formatRecipeLines(lines, ordered) {
+        return lines.map(function (line, index) {
+            return ordered ? (index + 1) + ". " + line : "• " + line;
+        }).join("\n");
+    }
+
+    function renderRecipeEditor() {
+        var recipe = getActiveRecipe();
+        if (!recipe) {
+            renderRecipes();
+            return;
+        }
+        showView("recipeEditor");
+        var isFood = recipe.kind === "food";
+        elements.recipeEditorKindLabel.textContent = isFood ? "Food item" : "Recipe";
+        elements.recipeTitleLabel.textContent = isFood ? "Food item name" : "Recipe title";
+        elements.recipeTitle.placeholder = isFood ? "Banana, protein scoop, yoghurt…" : "What are you cooking?";
+        elements.recipePreparationFields.hidden = isFood;
+        elements.recipeMacrosBasis.textContent = isFood ? "Per item" : "Per portion";
+        elements.recipeNotesHelp.textContent = isFood
+            ? "Optional: brand, serving size, flavour, or anything else worth remembering."
+            : "Good for timings, servings, substitutions, or the source.";
+        elements.recipeNotesLabelText.textContent = isFood ? "Food item notes" : "Recipe notes";
+        elements.recipeNotes.placeholder = isFood
+            ? "e.g. One medium banana, about 118 g"
+            : "Makes 8 portions. Also works with honey instead of erythritol…";
+        elements.recipeTitle.closest(".todo-recipe-editor-card").classList.toggle("is-food-item", isFood);
+        document.getElementById("deleteRecipeButton").setAttribute("aria-label", isFood ? "Delete food item" : "Delete recipe");
+        elements.recipeTitle.value = recipe.title;
+        elements.recipeIngredients.value = formatRecipeLines(recipe.ingredients, false);
+        elements.recipeMethod.value = formatRecipeLines(recipe.method, true);
+        elements.recipeNotes.value = recipe.notes;
+        elements.recipeMacroText.value = recipe.macroText;
+        renderRecipeMacroFields(recipe);
+        updateRecipeLineCounts(recipe);
+    }
+
+    function updateRecipeLineCounts(recipe) {
+        recipe = recipe || getActiveRecipe();
+        if (!recipe) {
+            return;
+        }
+        elements.recipeIngredientCount.textContent = plural(recipe.ingredients.length, "item");
+        elements.recipeMethodCount.textContent = plural(recipe.method.length, "step");
+    }
+
+    function formatMacroValue(value) {
+        return new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value);
+    }
+
+    function renderRecipeMacroFields(recipe) {
+        recipe = recipe || getActiveRecipe();
+        if (!recipe) {
+            return;
+        }
+        elements.recipeMacroInputs.forEach(function (input) {
+            var value = recipe.macros[input.dataset.recipeMacro];
+            input.value = Number.isFinite(value) ? String(value) : "";
+        });
+
+        var recognized = MACRO_FIELDS.filter(function (field) {
+            return Number.isFinite(recipe.macros[field.key]);
+        });
+        elements.recipeMacroStatus.classList.toggle("is-success", recognized.length > 0);
+        elements.recipeMacroStatus.classList.toggle("is-warning", Boolean(recipe.macroText.trim()) && !recognized.length);
+        if (recognized.length) {
+            elements.recipeMacroStatus.textContent = plural(recognized.length, "value") + " classified: " +
+                recognized.map(function (field) { return field.label; }).join(", ") + ".";
+        } else if (recipe.macroText.trim()) {
+            elements.recipeMacroStatus.textContent = "Nothing recognised yet. Try labels such as Calories, Protein, Carbs and Fat.";
+        } else {
+            elements.recipeMacroStatus.textContent = "Paste a nutrition summary to classify it.";
+        }
+    }
+
+    function updateRecipeMacrosFromText() {
+        var recipe = getActiveRecipe();
+        if (!recipe) {
+            return;
+        }
+        recipe.macroText = elements.recipeMacroText.value.slice(0, 1000);
+        recipe.macros = parseMacroText(recipe.macroText);
+        renderRecipeMacroFields(recipe);
+        persist({ touchActiveNote: false });
+    }
+
+    function updateRecipeMacroValue(input) {
+        var recipe = getActiveRecipe();
+        if (!recipe) {
+            return;
+        }
+        recipe.macros[input.dataset.recipeMacro] = normalizeMacroNumber(
+            input.value.trim() === "" ? null : Number(input.value),
+            input.dataset.recipeMacro);
+        renderRecipeMacroFields(recipe);
+        persist({ touchActiveNote: false });
+    }
+
+    function updateRecipeListField(kind, textarea) {
+        var recipe = getActiveRecipe();
+        if (!recipe) {
+            return;
+        }
+        recipe[kind] = normalizeRecipeLines(textarea.value);
+        updateRecipeLineCounts(recipe);
+        persist({ touchActiveNote: false });
+    }
+
+    function tidyRecipeListField(kind, textarea, ordered) {
+        var recipe = getActiveRecipe();
+        if (!recipe) {
+            return;
+        }
+        var lines = normalizeRecipeLines(textarea.value);
+        var changed = JSON.stringify(lines) !== JSON.stringify(recipe[kind]);
+        recipe[kind] = lines;
+        textarea.value = formatRecipeLines(lines, ordered);
+        updateRecipeLineCounts(recipe);
+        if (changed) {
+            persist({ touchActiveNote: false });
+        }
+    }
+
+    function pasteRecipeList(event, kind, textarea, ordered) {
+        var pasted = event.clipboardData && event.clipboardData.getData("text");
+        if (!pasted) {
+            return;
+        }
+        event.preventDefault();
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var inserted = normalizeRecipeLines(pasted).join("\n");
+        var combined = textarea.value.slice(0, start) + inserted + textarea.value.slice(end);
+        var lines = normalizeRecipeLines(combined);
+        textarea.value = formatRecipeLines(lines, ordered);
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        updateRecipeListField(kind, textarea);
+        showToast(plural(normalizeRecipeLines(pasted).length, ordered ? "step" : "ingredient") + " cleaned up.");
+    }
+
+    function addRecipeLine(event, kind, textarea, ordered) {
+        if (event.key !== "Enter" || event.isComposing) {
+            return;
+        }
+        event.preventDefault();
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var lineNumber = normalizeRecipeLines(textarea.value.slice(0, start)).length + 1;
+        var prefix = ordered ? lineNumber + ". " : "• ";
+        textarea.setRangeText("\n" + prefix, start, end, "end");
+        updateRecipeListField(kind, textarea);
+    }
+
+    function finishRecipeEditing() {
+        var recipe = getActiveRecipe();
+        if (recipe && !recipe.title.trim() && !recipe.ingredients.length && !recipe.method.length &&
+            !recipe.notes.trim() && !recipe.macroText.trim() && !recipeHasMacros(recipe)) {
+            state.deletedRecipes[recipe.id] = new Date().toISOString();
+            state.recipes = state.recipes.filter(function (candidate) { return candidate.id !== recipe.id; });
+            persist({ touchActiveNote: false, touchActiveRecipe: false });
+        }
+        activeRecipeId = null;
+    }
+
+    function closeRecipeEditor() {
+        finishRecipeEditing();
+        renderRecipes();
+    }
+
+    function deleteActiveRecipe() {
+        var recipe = getActiveRecipe();
+        if (!recipe) {
+            return;
+        }
+        var isFood = recipe.kind === "food";
+        var name = recipe.title.trim() || (isFood ? "this food item" : "this recipe");
+        if (!window.confirm("Delete “" + name + "”? This cannot be undone after sync.")) {
+            return;
+        }
+        state.deletedRecipes[recipe.id] = new Date().toISOString();
+        state.recipes = state.recipes.filter(function (candidate) { return candidate.id !== recipe.id; });
+        activeRecipeId = null;
+        persist({ touchActiveNote: false, touchActiveRecipe: false });
+        renderRecipes();
+        showToast(isFood ? "Food item deleted." : "Recipe deleted.");
     }
 
     function openGoals() {
@@ -1436,6 +2239,19 @@
             escapeHtml(formatMeasurementDate(latest.date)) + "</small>";
         elements.measurementLatest.appendChild(heading);
 
+        var calorieTarget = latestDailyCalorieTarget();
+        if (calorieTarget) {
+            var targetCard = document.createElement("article");
+            targetCard.className = "todo-calorie-target-card";
+            targetCard.innerHTML =
+                '<div><p class="todo-eyebrow">Active nutrition target</p><strong>' +
+                escapeHtml(formatMeasurementValue(calorieTarget.dailyCalories, "calories")) +
+                '</strong></div><p>Using the newest value you entered, from <b>' +
+                escapeHtml(formatMeasurementDate(calorieTarget.date)) +
+                "</b>. This will power recipe portion tracking next.</p>";
+            elements.measurementLatest.appendChild(targetCard);
+        }
+
         var cards = document.createElement("div");
         cards.className = "todo-measurement-summary-grid";
         var preferredKeys = ["weightKg", "waistCm", "chestCm", "hipsCm", "upperArmRelaxedCm", "upperArmFlexedCm"];
@@ -1627,7 +2443,7 @@
         if (state.measurementSimplified === false) {
             return MEASUREMENT_FIELDS;
         }
-        var simplifiedKeys = ["weightKg", "waistCm", "chestCm", "hipsCm", "upperArmRelaxedCm", "upperArmFlexedCm"];
+        var simplifiedKeys = ["dailyCalories", "weightKg", "waistCm", "chestCm", "hipsCm", "upperArmRelaxedCm", "upperArmFlexedCm"];
         return simplifiedKeys.map(measurementField).filter(Boolean);
     }
 
@@ -1636,7 +2452,7 @@
         var date = elements.measurementDate.value;
         var values = readMeasurementFormValues(state.measurementUnit);
         if (!date || !measurementHasValues(values)) {
-            showToast("Add a date and at least one measurement.");
+            showToast("Add a date and at least one value.");
             return;
         }
 
@@ -1656,6 +2472,9 @@
         entry.note = elements.measurementNotes.value.trim().slice(0, 500);
         entry.updatedAt = now;
         MEASUREMENT_FIELDS.forEach(function (field) {
+            if (field.key === "dailyCalories" && values[field.key] === null && Number.isFinite(entry[field.key])) {
+                return;
+            }
             entry[field.key] = values[field.key];
         });
 
@@ -1790,7 +2609,9 @@
     function formatMeasurementValue(value, kind) {
         var converted = value;
         var suffix = "%";
-        if (kind === "weight") {
+        if (kind === "calories") {
+            suffix = " kcal";
+        } else if (kind === "weight") {
             if (state.measurementUnit === "imperial") {
                 converted *= 2.2046226218;
             }
@@ -1807,7 +2628,9 @@
     function formatMeasurementDelta(value, kind) {
         var converted = value;
         var suffix = " pp";
-        if (kind === "weight") {
+        if (kind === "calories") {
+            suffix = " kcal";
+        } else if (kind === "weight") {
             if (state.measurementUnit === "imperial") {
                 converted *= 2.2046226218;
             }
@@ -1913,6 +2736,71 @@
             });
     }
 
+    function mealEntriesForDate(dateKey) {
+        return state.mealEntries.filter(function (meal) { return meal.date === dateKey; })
+            .sort(function (a, b) {
+                return a.startMinutes - b.startMinutes || a.id.localeCompare(b.id);
+            });
+    }
+
+    function scaledMealMacros(meal) {
+        var multiplier = Math.max(0.01, Number(meal.portionPercent) || 100) / 100;
+        var result = emptyRecipeMacros();
+        MACRO_FIELDS.forEach(function (field) {
+            var value = meal.macros && meal.macros[field.key];
+            result[field.key] = Number.isFinite(value)
+                ? Math.round(value * multiplier * 10) / 10
+                : null;
+        });
+        return result;
+    }
+
+    function renderCalendarNutrition(meals) {
+        var totals = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 };
+        meals.forEach(function (meal) {
+            var macros = scaledMealMacros(meal);
+            MACRO_FIELDS.forEach(function (field) {
+                if (Number.isFinite(macros[field.key])) {
+                    totals[field.key] += macros[field.key];
+                }
+            });
+        });
+        MACRO_FIELDS.forEach(function (field) {
+            totals[field.key] = Math.round(totals[field.key] * 10) / 10;
+        });
+
+        var targetEntry = latestDailyCalorieTarget();
+        var target = targetEntry && Number.isFinite(targetEntry.dailyCalories)
+            ? targetEntry.dailyCalories
+            : null;
+        elements.calendarCaloriesConsumed.textContent = formatMacroValue(totals.calories);
+        elements.calendarCaloriesTarget.textContent = target ? formatMacroValue(target) : "no target";
+        elements.calendarProteinTotal.textContent = formatMacroValue(totals.proteinG) + " g";
+        elements.calendarCarbsTotal.textContent = formatMacroValue(totals.carbsG) + " g";
+        elements.calendarFatTotal.textContent = formatMacroValue(totals.fatG) + " g";
+        elements.calendarNutritionTargetButton.textContent = target
+            ? "Change target in Measurements"
+            : "Set calorie target in Measurements";
+
+        var progress = target ? Math.min(100, totals.calories / target * 100) : 0;
+        elements.calendarCaloriesProgress.querySelector("span").style.width = progress + "%";
+        elements.calendarCaloriesProgress.setAttribute("aria-valuenow", String(Math.round(totals.calories)));
+        if (target) {
+            elements.calendarCaloriesProgress.setAttribute("aria-valuemax", String(Math.round(target)));
+            var difference = Math.round((target - totals.calories) * 10) / 10;
+            elements.calendarCaloriesRemaining.textContent = difference >= 0
+                ? formatMacroValue(difference) + " kcal remaining"
+                : formatMacroValue(Math.abs(difference)) + " kcal over target";
+            elements.calendarCaloriesRemaining.classList.toggle("is-over", difference < 0);
+        } else {
+            elements.calendarCaloriesProgress.removeAttribute("aria-valuemax");
+            elements.calendarCaloriesRemaining.textContent = meals.length
+                ? plural(meals.length, "meal") + " logged · add a target to see what remains"
+                : "Log a meal beside any hour.";
+            elements.calendarCaloriesRemaining.classList.remove("is-over");
+        }
+    }
+
     function renderCalendar(dateKey, focusTimeline) {
         selectedCalendarDate = dateKey || localDateKey(new Date());
         showView("calendar");
@@ -1920,6 +2808,7 @@
         var today = localDateKey(new Date());
         var isToday = selectedCalendarDate === today;
         var events = calendarEventsForDate(selectedCalendarDate);
+        var meals = mealEntriesForDate(selectedCalendarDate);
         elements.calendarTitle.textContent = isToday
             ? "Today"
             : new Intl.DateTimeFormat(undefined, { weekday: "long" }).format(date);
@@ -1932,9 +2821,15 @@
         document.getElementById("calendarTodayButton").hidden = isToday;
 
         var plannedMinutes = events.reduce(function (total, event) { return total + event.durationMinutes; }, 0);
-        elements.calendarSummary.textContent = events.length
-            ? plural(events.length, "plan") + " · " + formatDuration(plannedMinutes) + " planned"
-            : "No plans yet";
+        var summaryParts = [];
+        if (events.length) {
+            summaryParts.push(plural(events.length, "plan") + " · " + formatDuration(plannedMinutes));
+        }
+        if (meals.length) {
+            summaryParts.push(plural(meals.length, "meal"));
+        }
+        elements.calendarSummary.textContent = summaryParts.length ? summaryParts.join(" · ") : "No plans or meals yet";
+        renderCalendarNutrition(meals);
 
         clear(elements.calendarTimeline);
         for (var hour = 0; hour < 24; hour += 1) {
@@ -1963,7 +2858,32 @@
                 })(startMinutes));
                 hitArea.appendChild(quarterButton);
             }
-            slot.append(label, hitArea);
+            var mealLane = document.createElement("div");
+            mealLane.className = "todo-calendar-meal-lane";
+            var hourMeals = meals.filter(function (meal) { return meal.startMinutes === hour * 60; });
+            if (hourMeals.length) {
+                mealLane.appendChild(buildCalendarMeal(hourMeals[0]));
+                if (hourMeals.length > 1) {
+                    var extraMeals = document.createElement("span");
+                    extraMeals.className = "todo-calendar-meal-extra";
+                    extraMeals.textContent = "+" + (hourMeals.length - 1);
+                    extraMeals.title = plural(hourMeals.length - 1, "additional meal") + " at this hour";
+                    mealLane.appendChild(extraMeals);
+                }
+            } else {
+                var mealButton = document.createElement("button");
+                mealButton.type = "button";
+                mealButton.className = "todo-calendar-meal-add";
+                mealButton.setAttribute("aria-label", "Log a meal at " + minutesToTime(hour * 60));
+                mealButton.innerHTML = '<svg aria-hidden="true"><use href="#i-utensils"></use></svg><span>Meal?</span>';
+                mealButton.addEventListener("click", (function (selectedHour) {
+                    return function () {
+                        openMealForm(null, selectedCalendarDate, selectedHour * 60);
+                    };
+                })(hour));
+                mealLane.appendChild(mealButton);
+            }
+            slot.append(label, hitArea, mealLane);
             elements.calendarTimeline.appendChild(slot);
         }
 
@@ -1985,6 +2905,30 @@
                 elements.calendarScroll.focus({ preventScroll: true });
             }, 0);
         }
+    }
+
+    function buildCalendarMeal(meal) {
+        var macros = scaledMealMacros(meal);
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "todo-calendar-meal";
+        var calorieLabel = Number.isFinite(macros.calories)
+            ? formatMacroValue(macros.calories) + " kcal"
+            : "calories unavailable";
+        button.setAttribute("aria-label", meal.recipeTitle + ", " + formatMacroValue(meal.portionPercent) +
+            " percent portion, " + calorieLabel + ", at " + minutesToTime(meal.startMinutes));
+        button.innerHTML = '<svg aria-hidden="true"><use href="#i-utensils"></use></svg>';
+        var copy = document.createElement("span");
+        var title = document.createElement("strong");
+        title.textContent = meal.recipeTitle;
+        var detail = document.createElement("small");
+        detail.textContent = calorieLabel;
+        copy.append(title, detail);
+        button.appendChild(copy);
+        button.addEventListener("click", function () {
+            openMealForm(meal, meal.date, meal.startMinutes);
+        });
+        return button;
     }
 
     function buildCalendarEvent(event) {
@@ -2099,6 +3043,196 @@
         closeModal(elements.calendarEventModal);
         renderCalendar(selectedCalendarDate, false);
         showToast("Event deleted.");
+    }
+
+    function mealEligibleRecipes() {
+        return state.recipes.filter(function (recipe) {
+            return Number.isFinite(recipe.macros && recipe.macros.calories);
+        }).sort(function (a, b) {
+            var aTitle = a.title || (a.kind === "food" ? "Untitled food item" : "Untitled recipe");
+            var bTitle = b.title || (b.kind === "food" ? "Untitled food item" : "Untitled recipe");
+            return aTitle.localeCompare(bTitle);
+        });
+    }
+
+    function openMealForm(meal, dateKey, startMinutes) {
+        activeMealEntryId = meal ? meal.id : null;
+        pendingMealDate = meal ? meal.date : dateKey;
+        pendingMealStartMinutes = meal ? meal.startMinutes : startMinutes;
+        elements.mealFormTitle.textContent = meal ? "Edit meal" : "Log a meal";
+        elements.mealFormContext.textContent = new Intl.DateTimeFormat(undefined, {
+            weekday: "short",
+            day: "numeric",
+            month: "short"
+        }).format(parseLocalDate(pendingMealDate)) + " · " + minutesToTime(pendingMealStartMinutes);
+        elements.mealPortionPercent.value = String(meal ? meal.portionPercent : 100);
+        elements.deleteMealButton.hidden = !meal;
+        elements.saveMealButton.textContent = meal ? "Save meal" : "Log meal";
+        elements.mealFormError.textContent = "";
+        clear(elements.mealRecipeSelect);
+
+        var recipes = mealEligibleRecipes();
+        if (meal && !recipes.some(function (recipe) { return recipe.id === meal.recipeId; })) {
+            var snapshotOption = document.createElement("option");
+            snapshotOption.value = meal.recipeId;
+            snapshotOption.textContent = meal.recipeTitle + " (saved snapshot)";
+            snapshotOption.dataset.snapshot = "true";
+            elements.mealRecipeSelect.appendChild(snapshotOption);
+        }
+        recipes.forEach(function (recipe) {
+            var option = document.createElement("option");
+            option.value = recipe.id;
+            option.textContent = (recipe.title || (recipe.kind === "food" ? "Untitled food item" : "Untitled recipe")) +
+                (recipe.kind === "food" ? " · food" : "") + " · " + formatMacroValue(recipe.macros.calories) + " kcal";
+            elements.mealRecipeSelect.appendChild(option);
+        });
+
+        if (meal) {
+            elements.mealRecipeSelect.value = meal.recipeId;
+        }
+        var hasOptions = elements.mealRecipeSelect.options.length > 0;
+        elements.mealRecipeSelect.disabled = !hasOptions;
+        elements.mealPortionPercent.disabled = !hasOptions;
+        elements.mealMacroFields.disabled = !hasOptions;
+        elements.saveMealButton.disabled = !hasOptions;
+        elements.mealRecipeHelp.textContent = hasOptions
+            ? "The calendar keeps its own nutrition snapshot, so changing a saved item later will not rewrite past days."
+            : "Add calories to a recipe or food item first, then come back to log it.";
+        updateMealMacroInputs(meal);
+        openModal(elements.mealModal);
+    }
+
+    function selectedMealBase() {
+        var recipeId = elements.mealRecipeSelect.value;
+        var recipe = state.recipes.find(function (candidate) { return candidate.id === recipeId; });
+        if (recipe) {
+            return {
+                recipeId: recipe.id,
+                recipeTitle: recipe.title || (recipe.kind === "food" ? "Untitled food item" : "Untitled recipe"),
+                macros: normalizeRecipeMacros(recipe.macros)
+            };
+        }
+        var existing = activeMealEntryId
+            ? state.mealEntries.find(function (meal) { return meal.id === activeMealEntryId; })
+            : null;
+        if (existing && existing.recipeId === recipeId) {
+            return {
+                recipeId: existing.recipeId,
+                recipeTitle: existing.recipeTitle,
+                macros: normalizeRecipeMacros(existing.macros)
+            };
+        }
+        return null;
+    }
+
+    function updateMealMacroInputs(sourceMeal) {
+        var base = selectedMealBase();
+        var portion = Number(elements.mealPortionPercent.value);
+        document.querySelectorAll("[data-meal-portion]").forEach(function (button) {
+            var selected = Number(button.dataset.mealPortion) === portion;
+            button.classList.toggle("is-selected", selected);
+            button.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+        var totals = sourceMeal
+            ? scaledMealMacros(sourceMeal)
+            : base && Number.isFinite(portion) && portion > 0
+                ? scaledMealMacros({ macros: base.macros, portionPercent: Math.min(1000, portion) })
+                : emptyRecipeMacros();
+        elements.mealMacroInputs.forEach(function (input) {
+            var value = totals[input.dataset.mealMacro];
+            input.value = Number.isFinite(value) ? String(value) : "";
+        });
+        elements.mealMacroHelp.textContent = base
+            ? "Totals for this meal. Choose the portion first, then edit extras such as another protein scoop."
+            : "Choose a recipe with calories to pre-fill nutrition.";
+    }
+
+    function mealMacroTotalsFromInputs() {
+        var totals = emptyRecipeMacros();
+        elements.mealMacroInputs.forEach(function (input) {
+            totals[input.dataset.mealMacro] = normalizeMacroNumber(input.value, input.dataset.mealMacro);
+        });
+        return totals;
+    }
+
+    function unscaleMealMacros(totals, portionPercent) {
+        var multiplier = portionPercent / 100;
+        var baseMacros = emptyRecipeMacros();
+        MACRO_FIELDS.forEach(function (field) {
+            var value = totals[field.key];
+            baseMacros[field.key] = Number.isFinite(value)
+                ? Math.round(value / multiplier * 10) / 10
+                : null;
+        });
+        return normalizeRecipeMacros(baseMacros);
+    }
+
+    function saveMeal(event) {
+        event.preventDefault();
+        elements.mealFormError.textContent = "";
+        var base = selectedMealBase();
+        var portion = Number(elements.mealPortionPercent.value);
+        var macroTotals = mealMacroTotalsFromInputs();
+        if (!base) {
+            elements.mealFormError.textContent = "Choose a recipe that has calories.";
+            elements.mealRecipeSelect.focus();
+            return;
+        }
+        if (!Number.isFinite(portion) || portion < 1 || portion > 1000) {
+            elements.mealFormError.textContent = "Portion must be between 1% and 1000%.";
+            elements.mealPortionPercent.focus();
+            return;
+        }
+        if (!Number.isFinite(macroTotals.calories)) {
+            elements.mealFormError.textContent = "Enter the calories for this meal.";
+            elements.mealMacroInputs[0].focus();
+            return;
+        }
+
+        portion = Math.round(portion * 10) / 10;
+        var now = new Date().toISOString();
+        var meal = activeMealEntryId
+            ? state.mealEntries.find(function (candidate) { return candidate.id === activeMealEntryId; })
+            : null;
+        if (!meal) {
+            meal = {
+                id: createId("meal"),
+                createdAt: now
+            };
+            state.mealEntries.push(meal);
+        }
+        meal.date = pendingMealDate;
+        meal.startMinutes = pendingMealStartMinutes;
+        meal.recipeId = base.recipeId;
+        meal.recipeTitle = base.recipeTitle;
+        meal.portionPercent = portion;
+        meal.macros = unscaleMealMacros(macroTotals, portion);
+        meal.updatedAt = now;
+
+        var scaled = scaledMealMacros(meal);
+        selectedCalendarDate = meal.date;
+        activeMealEntryId = null;
+        persist({ touchActiveNote: false });
+        closeModal(elements.mealModal);
+        renderCalendar(selectedCalendarDate, false);
+        showToast(meal.recipeTitle + " logged · " + formatMacroValue(scaled.calories) + " kcal.");
+    }
+
+    function deleteMeal() {
+        if (!activeMealEntryId) {
+            return;
+        }
+        var meal = state.mealEntries.find(function (candidate) { return candidate.id === activeMealEntryId; });
+        if (!meal || !window.confirm("Delete " + meal.recipeTitle + " from this day?")) {
+            return;
+        }
+        state.deletedMealEntries[meal.id] = new Date().toISOString();
+        state.mealEntries = state.mealEntries.filter(function (candidate) { return candidate.id !== meal.id; });
+        activeMealEntryId = null;
+        persist({ touchActiveNote: false });
+        closeModal(elements.mealModal);
+        renderCalendar(selectedCalendarDate, false);
+        showToast("Meal deleted.");
     }
 
     function buildNoteTile(note, showGroup, options) {
@@ -3131,7 +4265,7 @@
         modal.setAttribute("aria-hidden", "false");
         document.body.classList.add("todo-modal-open");
         window.setTimeout(function () {
-            var focusable = modal.querySelector("input:not([readonly]), button:not([data-close-modal]):not([data-close-group-modal]):not([data-close-calendar-event]):not([data-close-sync-conflict])");
+            var focusable = modal.querySelector("input:not([readonly]):not(:disabled), select:not(:disabled), textarea:not([readonly]):not(:disabled), button:not(:disabled):not([data-close-modal]):not([data-close-group-modal]):not([data-close-calendar-event]):not([data-close-meal]):not([data-close-sync-conflict])");
             if (focusable) {
                 focusable.focus();
             }
@@ -3141,14 +4275,12 @@
     function closeModal(modal) {
         modal.hidden = true;
         modal.setAttribute("aria-hidden", "true");
-        if (elements.settingsModal.hidden && elements.groupModal.hidden && elements.calendarEventModal.hidden && elements.syncConflictModal.hidden) {
+        if (elements.settingsModal.hidden && elements.groupModal.hidden && elements.calendarEventModal.hidden && elements.mealModal.hidden && elements.syncConflictModal.hidden) {
             document.body.classList.remove("todo-modal-open");
         }
     }
 
     function openSettings() {
-        elements.currentSyncKey.value = syncKey;
-        elements.otherSyncKey.value = "";
         openModal(elements.settingsModal);
     }
 
@@ -3237,6 +4369,7 @@
                 activeView = "home";
                 activeGroupId = null;
                 activeNoteId = null;
+                activeRecipeId = null;
                 persist();
                 closeModal(elements.settingsModal);
                 renderHome();
@@ -3264,8 +4397,10 @@
             notes: documentCopy.notes.length,
             items: documentCopy.notes.reduce(function (total, note) { return total + countItems(note.items); }, 0),
             events: documentCopy.calendarEvents.length,
+            meals: documentCopy.mealEntries.length,
             goals: documentCopy.goals.length,
             measurements: documentCopy.measurementEntries.length,
+            recipes: documentCopy.recipes.length,
             updatedAt: documentCopy.updatedAt
         };
     }
@@ -3286,16 +4421,15 @@
         elements[prefix + "SyncNotes"].textContent = plural(stats.notes, "note");
         elements[prefix + "SyncItems"].textContent = plural(stats.items, "checklist item");
         elements[prefix + "SyncEvents"].textContent = plural(stats.events, "calendar event");
+        elements[prefix + "SyncMeals"].textContent = plural(stats.meals, "logged meal");
         elements[prefix + "SyncGoals"].textContent = plural(stats.goals, "goal");
         elements[prefix + "SyncMeasurements"].textContent = plural(stats.measurements, "measurement check-in");
+        elements[prefix + "SyncRecipes"].textContent = plural(stats.recipes, "saved food item");
         elements[prefix + "SyncUpdated"].textContent = syncSaveTime(stats.updatedAt);
     }
 
     function adoptSyncKey(key) {
-        syncKey = key;
-        localStorage.setItem(SYNC_KEY, syncKey);
-        elements.currentSyncKey.value = syncKey;
-        elements.otherSyncKey.value = "";
+        syncKey = "shared";
     }
 
     function showSyncConflict(key, localDocument, remoteDocument) {
@@ -3361,6 +4495,7 @@
         activeView = "home";
         activeGroupId = null;
         activeNoteId = null;
+        activeRecipeId = null;
         returnGroupId = null;
         renderHome();
         if (!elements.settingsModal.hidden) {
@@ -3396,43 +4531,6 @@
             showToast(error.message || "Could not connect. Both saves are still safe.");
         } finally {
             setSyncConflictBusy(false, null);
-        }
-    }
-
-    async function connectExistingKey(event) {
-        event.preventDefault();
-        var candidate = elements.otherSyncKey.value.trim();
-        if (!/^[A-Za-z0-9_-]{24,128}$/.test(candidate)) {
-            showToast("That sync key does not look valid.");
-            return;
-        }
-
-        var submitButton = event.currentTarget.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-        submitButton.textContent = "Comparing...";
-        syncConnectionPending = true;
-        try {
-            if (syncPromise) {
-                await syncPromise;
-            }
-            var remoteResult = await readCloud(candidate);
-            if (remoteResult.missing) {
-                throw new Error("No server save was found for that key. Check that every character matches.");
-            }
-            var localSnapshot = normalizeDocument(state);
-            if (documentsHaveSameContent(localSnapshot, remoteResult.document)) {
-                applyChosenSyncDocument(candidate, remoteResult.document);
-                showToast("This device is connected to the shared save.");
-                return;
-            }
-            showSyncConflict(candidate, localSnapshot, remoteResult.document);
-        } catch (error) {
-            console.warn("Could not compare sync saves.", error);
-            showToast(error.message || "Could not compare the two saves.");
-        } finally {
-            syncConnectionPending = false;
-            submitButton.disabled = false;
-            submitButton.textContent = "Compare and connect";
         }
     }
 
@@ -3481,7 +4579,12 @@
         return value.replace(/["\\]/g, "\\$&");
     }
 
-    document.getElementById("homeButton").addEventListener("click", renderHome);
+    document.getElementById("homeButton").addEventListener("click", function () {
+        if (activeView === "recipeEditor") {
+            finishRecipeEditing();
+        }
+        renderHome();
+    });
     document.getElementById("newGroupButton").addEventListener("click", function () {
         groupModalContext = "home";
         elements.groupName.value = "";
@@ -3575,6 +4678,12 @@
             closeModal(elements.calendarEventModal);
         });
     });
+    document.querySelectorAll("[data-close-meal]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            activeMealEntryId = null;
+            closeModal(elements.mealModal);
+        });
+    });
     document.querySelectorAll("[data-close-sync-conflict]").forEach(function (button) {
         button.addEventListener("click", function () { closeSyncConflict(false); });
     });
@@ -3587,6 +4696,8 @@
     document.getElementById("calendarTodayButton").addEventListener("click", function () {
         renderCalendar(localDateKey(new Date()), true);
     });
+    elements.homeTodayCalendarButton.addEventListener("click", openTodayCalendar);
+    elements.homeTodayNextEvent.addEventListener("click", openTodayCalendar);
     elements.calendarDatePicker.addEventListener("change", function () {
         if (elements.calendarDatePicker.value) {
             renderCalendar(elements.calendarDatePicker.value, true);
@@ -3594,6 +4705,17 @@
     });
     elements.calendarEventForm.addEventListener("submit", saveCalendarEvent);
     elements.deleteCalendarEventButton.addEventListener("click", deleteCalendarEvent);
+    elements.calendarNutritionTargetButton.addEventListener("click", openMeasurements);
+    elements.mealForm.addEventListener("submit", saveMeal);
+    elements.mealRecipeSelect.addEventListener("change", function () { updateMealMacroInputs(null); });
+    elements.mealPortionPercent.addEventListener("input", function () { updateMealMacroInputs(null); });
+    document.querySelectorAll("[data-meal-portion]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            elements.mealPortionPercent.value = button.dataset.mealPortion;
+            updateMealMacroInputs(null);
+        });
+    });
+    elements.deleteMealButton.addEventListener("click", deleteMeal);
     elements.calendarEventTitle.addEventListener("keydown", function (event) {
         if (event.key === "Enter" && !event.isComposing) {
             event.preventDefault();
@@ -3611,19 +4733,64 @@
     elements.measurementSimplified.addEventListener("change", changeMeasurementMode);
     elements.measurementUnit.addEventListener("change", changeMeasurementUnit);
     elements.measurementCancelEdit.addEventListener("click", cancelMeasurementEdit);
-    elements.groupForm.addEventListener("submit", createGroup);
-    document.getElementById("copySyncKeyButton").addEventListener("click", async function () {
-        try {
-            await navigator.clipboard.writeText(syncKey);
-            showToast("Sync key copied.");
-        } catch (error) {
-            elements.currentSyncKey.select();
-            document.execCommand("copy");
-            showToast("Sync key copied.");
+    document.getElementById("newRecipeButton").addEventListener("click", function () { createRecipe("recipe"); });
+    document.getElementById("newFoodItemButton").addEventListener("click", function () { createRecipe("food"); });
+    document.querySelectorAll('[data-action="close-recipe-editor"]').forEach(function (button) {
+        button.addEventListener("click", closeRecipeEditor);
+    });
+    elements.recipeSearch.addEventListener("input", renderRecipes);
+    elements.recipeTitle.addEventListener("input", function () {
+        var recipe = getActiveRecipe();
+        if (recipe) {
+            recipe.title = elements.recipeTitle.value;
+            persist({ touchActiveNote: false });
         }
     });
+    elements.recipeTitle.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.isComposing) {
+            event.preventDefault();
+            var recipe = getActiveRecipe();
+            (recipe && recipe.kind === "food" ? elements.recipeMacroText : elements.recipeIngredients).focus();
+        }
+    });
+    elements.recipeIngredients.addEventListener("input", function () {
+        updateRecipeListField("ingredients", elements.recipeIngredients);
+    });
+    elements.recipeIngredients.addEventListener("blur", function () {
+        tidyRecipeListField("ingredients", elements.recipeIngredients, false);
+    });
+    elements.recipeIngredients.addEventListener("paste", function (event) {
+        pasteRecipeList(event, "ingredients", elements.recipeIngredients, false);
+    });
+    elements.recipeIngredients.addEventListener("keydown", function (event) {
+        addRecipeLine(event, "ingredients", elements.recipeIngredients, false);
+    });
+    elements.recipeMethod.addEventListener("input", function () {
+        updateRecipeListField("method", elements.recipeMethod);
+    });
+    elements.recipeMethod.addEventListener("blur", function () {
+        tidyRecipeListField("method", elements.recipeMethod, true);
+    });
+    elements.recipeMethod.addEventListener("paste", function (event) {
+        pasteRecipeList(event, "method", elements.recipeMethod, true);
+    });
+    elements.recipeMethod.addEventListener("keydown", function (event) {
+        addRecipeLine(event, "method", elements.recipeMethod, true);
+    });
+    elements.recipeMacroText.addEventListener("input", updateRecipeMacrosFromText);
+    elements.recipeMacroInputs.forEach(function (input) {
+        input.addEventListener("change", function () { updateRecipeMacroValue(input); });
+    });
+    elements.recipeNotes.addEventListener("input", function () {
+        var recipe = getActiveRecipe();
+        if (recipe) {
+            recipe.notes = elements.recipeNotes.value.slice(0, 4000);
+            persist({ touchActiveNote: false });
+        }
+    });
+    document.getElementById("deleteRecipeButton").addEventListener("click", deleteActiveRecipe);
+    elements.groupForm.addEventListener("submit", createGroup);
     document.getElementById("syncNowButton").addEventListener("click", function () { pushCloud(true); });
-    document.getElementById("connectSyncForm").addEventListener("submit", connectExistingKey);
     elements.useLocalSyncButton.addEventListener("click", function () {
         resolveSyncConflict("local", elements.useLocalSyncButton);
     });
@@ -3640,6 +4807,9 @@
     document.addEventListener("keydown", function (event) {
         if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "k") {
             event.preventDefault();
+            if (activeView === "recipeEditor") {
+                finishRecipeEditing();
+            }
             renderHome();
             elements.search.focus();
         }
@@ -3652,6 +4822,9 @@
             } else if (!elements.calendarEventModal.hidden) {
                 activeCalendarEventId = null;
                 closeModal(elements.calendarEventModal);
+            } else if (!elements.mealModal.hidden) {
+                activeMealEntryId = null;
+                closeModal(elements.mealModal);
             } else if (!elements.settingsModal.hidden) {
                 closeModal(elements.settingsModal);
             } else if (!elements.groupModal.hidden) {
@@ -3669,6 +4842,10 @@
                 renderHome();
             } else if (activeView === "measurements") {
                 renderHome();
+            } else if (activeView === "recipes") {
+                renderHome();
+            } else if (activeView === "recipeEditor") {
+                closeRecipeEditor();
             }
         }
     });
@@ -3732,7 +4909,12 @@
     });
     window.addEventListener("focus", requestBackgroundSync);
     window.setInterval(requestBackgroundSync, CLOUD_POLL_INTERVAL);
-    currentTimeTimer = window.setInterval(updateCurrentTimeLine, 60000);
+    currentTimeTimer = window.setInterval(function () {
+        updateCurrentTimeLine();
+        if (activeView === "home" && !elements.homeTodayDashboard.hidden) {
+            renderHomeTodayDashboard();
+        }
+    }, 60000);
 
     renderGroupColors();
     renderHome();

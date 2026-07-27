@@ -40,6 +40,8 @@
         <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M7 3v4M17 3v4M3 10h18"></path></symbol>
         <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></symbol>
         <symbol id="i-ruler" viewBox="0 0 24 24"><path d="m4 16 12-12 4 4L8 20H4v-4Z"></path><path d="m13 7 4 4M10 10l2 2M7 13l2 2"></path></symbol>
+        <symbol id="i-recipe" viewBox="0 0 24 24"><path d="M5 4.5h5.2A3.8 3.8 0 0 1 14 8.3V20a3.8 3.8 0 0 0-3.8-3.8H5V4.5Z"></path><path d="M19 4.5h-1.2A3.8 3.8 0 0 0 14 8.3V20a3.8 3.8 0 0 1 3.8-3.8H19V4.5ZM8 8h2.5M8 11h2.5"></path></symbol>
+        <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M7 3v7M4 3v5a3 3 0 0 0 6 0V3M7 11v10M16 3v18M16 3c3 1.5 4 4 4 7h-4"></path></symbol>
         <symbol id="i-todo-mark" viewBox="0 0 24 24"><path d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17V7A2.5 2.5 0 0 1 5 4.5Z"></path><path d="m7 12.5 3.2 3.2L17.5 8"></path></symbol>
     </svg>
 
@@ -63,6 +65,44 @@
                     <input id="globalSearch" type="search" placeholder="Search everything" autocomplete="off" />
                     <kbd>Ctrl K</kbd>
                 </div>
+
+                <section id="homeTodayDashboard" class="todo-today-dashboard" aria-labelledby="homeTodayTitle" aria-live="polite">
+                    <header class="todo-today-dashboard__heading">
+                        <div>
+                            <p class="todo-eyebrow">At a glance</p>
+                            <h2 id="homeTodayTitle">Today</h2>
+                        </div>
+                        <button id="homeTodayCalendarButton" class="todo-text-button" type="button">
+                            Open calendar <svg aria-hidden="true"><use href="#i-chevron"></use></svg>
+                        </button>
+                    </header>
+                    <div class="todo-today-dashboard__content">
+                        <div class="todo-today-nutrition">
+                            <div class="todo-today-nutrition__total">
+                                <span>Calories</span>
+                                <p><strong id="homeTodayCalories">0</strong><span> / <b id="homeTodayCalorieTarget">—</b> kcal</span></p>
+                            </div>
+                            <div id="homeTodayCalorieProgress" class="todo-today-nutrition__progress" role="progressbar" aria-label="Today's calorie progress" aria-valuemin="0" aria-valuenow="0">
+                                <span></span>
+                            </div>
+                            <p id="homeTodayCalorieStatus" class="todo-today-nutrition__status">No meals logged yet.</p>
+                            <dl class="todo-today-macros">
+                                <div><dt>Protein</dt><dd id="homeTodayProtein">0 g</dd></div>
+                                <div><dt>Carbs</dt><dd id="homeTodayCarbs">0 g</dd></div>
+                                <div><dt>Fat</dt><dd id="homeTodayFat">0 g</dd></div>
+                            </dl>
+                        </div>
+                        <button id="homeTodayNextEvent" class="todo-today-next" type="button">
+                            <span class="todo-today-next__icon" aria-hidden="true"><svg><use href="#i-calendar"></use></svg></span>
+                            <span class="todo-today-next__copy">
+                                <small>Next in your day</small>
+                                <strong id="homeTodayNextEventTitle">Nothing scheduled</strong>
+                                <span id="homeTodayNextEventTime">Your day is clear.</span>
+                            </span>
+                            <svg class="todo-today-next__arrow" aria-hidden="true"><use href="#i-chevron"></use></svg>
+                        </button>
+                    </div>
+                </section>
 
                 <div class="todo-section-heading">
                     <div>
@@ -127,12 +167,36 @@
                         </button>
                     </nav>
                 </header>
-                <div class="todo-calendar-meta">
-                    <span id="calendarSummary">No plans yet</span>
-                    <button id="calendarTodayButton" class="todo-text-button" type="button">Jump to today</button>
-                </div>
-                <div id="calendarScroll" class="todo-calendar-scroll" tabindex="0" aria-label="Day schedule. Select a time to add an event.">
-                    <div id="calendarTimeline" class="todo-calendar-timeline"></div>
+                <div class="todo-calendar-layout">
+                    <div class="todo-calendar-schedule">
+                        <div class="todo-calendar-meta">
+                            <span id="calendarSummary">No plans yet</span>
+                            <button id="calendarTodayButton" class="todo-text-button" type="button">Jump to today</button>
+                        </div>
+                        <div id="calendarScroll" class="todo-calendar-scroll" tabindex="0" aria-label="Day schedule. Select a time to add an event or use the meal action beside an hour.">
+                            <div id="calendarTimeline" class="todo-calendar-timeline"></div>
+                        </div>
+                    </div>
+                    <aside id="calendarNutrition" class="todo-calendar-nutrition" aria-labelledby="calendarNutritionTitle" aria-live="polite">
+                        <div class="todo-calendar-nutrition__heading">
+                            <span class="todo-calendar-nutrition__icon" aria-hidden="true"><svg><use href="#i-utensils"></use></svg></span>
+                            <div><p class="todo-eyebrow">Food today</p><h2 id="calendarNutritionTitle">Nutrition</h2></div>
+                        </div>
+                        <div class="todo-calendar-nutrition__calories">
+                            <strong id="calendarCaloriesConsumed">0</strong>
+                            <span>of <b id="calendarCaloriesTarget">no target</b> kcal</span>
+                        </div>
+                        <div id="calendarCaloriesProgress" class="todo-calendar-nutrition__progress" role="progressbar" aria-label="Daily calorie progress" aria-valuemin="0" aria-valuenow="0">
+                            <span></span>
+                        </div>
+                        <p id="calendarCaloriesRemaining" class="todo-calendar-nutrition__remaining">Log a meal beside any hour.</p>
+                        <dl class="todo-calendar-nutrition__macros">
+                            <div><dt>Protein</dt><dd id="calendarProteinTotal">0 g</dd></div>
+                            <div><dt>Carbs</dt><dd id="calendarCarbsTotal">0 g</dd></div>
+                            <div><dt>Fat</dt><dd id="calendarFatTotal">0 g</dd></div>
+                        </dl>
+                        <button id="calendarNutritionTargetButton" class="todo-text-button todo-calendar-nutrition__target" type="button">Set calorie target in Measurements</button>
+                    </aside>
                 </div>
             </section>
 
@@ -217,6 +281,17 @@
                         </div>
                     </fieldset>
 
+                    <fieldset class="todo-measurement-group todo-measurement-nutrition-group">
+                        <legend>Nutrition target</legend>
+                        <div class="todo-measurement-nutrition-field">
+                            <label for="measurementDailyCalories">
+                                <span>Daily calorie target <small>kcal</small></span>
+                                <input id="measurementDailyCalories" type="number" data-measurement-field="dailyCalories" data-measurement-kind="calories" min="1" max="20000" step="1" inputmode="numeric" placeholder="2200" />
+                            </label>
+                            <p>The newest value you enter becomes your active daily target. You only need to add it again when the target changes.</p>
+                        </div>
+                    </fieldset>
+
                     <fieldset class="todo-measurement-group">
                         <legend>Torso</legend>
                         <div class="todo-measurement-fields">
@@ -266,6 +341,133 @@
                     <small id="measurementHistorySummary">No check-ins yet</small>
                 </div>
                 <div id="measurementHistory" class="todo-measurement-history" aria-live="polite"></div>
+            </section>
+
+            <section id="recipesView" class="todo-view todo-recipes-view" hidden>
+                <header class="todo-view-header todo-recipes-header">
+                    <button class="todo-icon-button" type="button" data-action="back-home" aria-label="Back to categories">
+                        <svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+                    </button>
+                    <div class="todo-view-header__title">
+                        <span class="todo-recipes-mark" aria-hidden="true"><svg><use href="#i-recipe"></use></svg></span>
+                        <div><p class="todo-eyebrow">Your cookbook</p><h1>Recipes</h1></div>
+                    </div>
+                    <div class="todo-recipes-create-actions">
+                        <button id="newFoodItemButton" class="todo-secondary-button" type="button">
+                            <svg aria-hidden="true"><use href="#i-utensils"></use></svg> Food item
+                        </button>
+                        <button id="newRecipeButton" class="todo-primary-button" type="button">
+                            <svg aria-hidden="true"><use href="#i-plus"></use></svg> New recipe
+                        </button>
+                    </div>
+                </header>
+
+                <div class="todo-recipe-library-tools">
+                    <div class="todo-recipe-search">
+                        <svg aria-hidden="true"><use href="#i-search"></use></svg>
+                        <label class="todo-visually-hidden" for="recipeSearch">Search recipes and food items</label>
+                        <input id="recipeSearch" type="search" placeholder="Search recipes, foods, or ingredients" autocomplete="off" />
+                    </div>
+                    <span id="recipesSummary">No saved items yet</span>
+                </div>
+                <div id="recipesList" class="todo-recipe-grid" aria-live="polite"></div>
+            </section>
+
+            <section id="recipeEditorView" class="todo-view todo-recipe-editor-view" hidden>
+                <header class="todo-view-header todo-editor-header todo-recipe-editor-header">
+                    <button class="todo-icon-button" type="button" data-action="close-recipe-editor" aria-label="Back to recipes">
+                        <svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+                    </button>
+                    <div class="todo-editor-save-state todo-recipe-save-state"><span></span><span id="recipeSaveState">Saved</span></div>
+                    <button id="deleteRecipeButton" class="todo-icon-button todo-recipe-delete-button" type="button" aria-label="Delete recipe">
+                        <svg aria-hidden="true"><use href="#i-trash"></use></svg>
+                    </button>
+                </header>
+
+                <article class="todo-recipe-editor-card">
+                    <div class="todo-recipe-title-wrap">
+                        <p id="recipeEditorKindLabel" class="todo-eyebrow">Recipe</p>
+                        <label id="recipeTitleLabel" class="todo-visually-hidden" for="recipeTitle">Recipe title</label>
+                        <input id="recipeTitle" class="todo-title-input" type="text" maxlength="180" placeholder="What are you cooking?" autocomplete="off" />
+                    </div>
+
+                    <div id="recipePreparationFields" class="todo-recipe-fields">
+                        <section class="todo-recipe-field todo-recipe-field--ingredients" aria-labelledby="recipeIngredientsLabel">
+                            <div class="todo-recipe-field__heading">
+                                <div>
+                                    <p class="todo-eyebrow">Gather</p>
+                                    <h2 id="recipeIngredientsLabel">Ingredients</h2>
+                                </div>
+                                <span id="recipeIngredientCount">0 items</span>
+                            </div>
+                            <p class="todo-recipe-field__help">Paste any list here. Bullets, tabs and empty lines are cleaned automatically.</p>
+                            <label class="todo-visually-hidden" for="recipeIngredients">Ingredients, one per line</label>
+                            <textarea id="recipeIngredients" rows="9" spellcheck="true" placeholder="• 500 g cottage cheese&#10;• 3 eggs&#10;• 1 ripe banana"></textarea>
+                        </section>
+
+                        <section class="todo-recipe-field todo-recipe-field--method" aria-labelledby="recipeMethodLabel">
+                            <div class="todo-recipe-field__heading">
+                                <div>
+                                    <p class="todo-eyebrow">Make</p>
+                                    <h2 id="recipeMethodLabel">Method</h2>
+                                </div>
+                                <span id="recipeMethodCount">0 steps</span>
+                            </div>
+                            <p class="todo-recipe-field__help">Each new line becomes a numbered step.</p>
+                            <label class="todo-visually-hidden" for="recipeMethod">Method, one step per line</label>
+                            <textarea id="recipeMethod" rows="9" spellcheck="true" placeholder="1. Mix the wet ingredients&#10;2. Fold in the dry ingredients&#10;3. Bake until golden"></textarea>
+                        </section>
+                    </div>
+
+                    <section class="todo-recipe-field todo-recipe-field--macros" aria-labelledby="recipeMacrosLabel">
+                        <div class="todo-recipe-field__heading">
+                            <div>
+                                <p class="todo-eyebrow">Fuel</p>
+                                <h2 id="recipeMacrosLabel">Macros</h2>
+                            </div>
+                            <span id="recipeMacrosBasis">Per portion</span>
+                        </div>
+                        <p class="todo-recipe-field__help">Paste nutrition text in almost any common format. Labels, acronyms, markdown, approximate signs and mixed units are recognised.</p>
+                        <div class="todo-recipe-macro-layout">
+                            <div class="todo-recipe-macro-paste">
+                                <label for="recipeMacroText">Paste macros</label>
+                                <textarea id="recipeMacroText" rows="5" maxlength="1000" spellcheck="false" placeholder="**Calories:** ~520 kcal&#10;**Protein:** ~52 g&#10;**Carbs:** ~47 g&#10;**Fat:** ~14 g"></textarea>
+                                <p id="recipeMacroStatus" role="status" aria-live="polite">Paste a nutrition summary to classify it.</p>
+                            </div>
+                            <div class="todo-recipe-macro-grid">
+                                <label>
+                                    <span>Calories <small>kcal</small></span>
+                                    <input type="number" data-recipe-macro="calories" min="0" max="20000" step="1" inputmode="numeric" placeholder="520" />
+                                </label>
+                                <label>
+                                    <span>Protein <small>g</small></span>
+                                    <input type="number" data-recipe-macro="proteinG" min="0" max="5000" step="0.1" inputmode="decimal" placeholder="52" />
+                                </label>
+                                <label>
+                                    <span>Carbs <small>g</small></span>
+                                    <input type="number" data-recipe-macro="carbsG" min="0" max="5000" step="0.1" inputmode="decimal" placeholder="47" />
+                                </label>
+                                <label>
+                                    <span>Fat <small>g</small></span>
+                                    <input type="number" data-recipe-macro="fatG" min="0" max="5000" step="0.1" inputmode="decimal" placeholder="14" />
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="todo-recipe-field todo-recipe-field--notes" aria-labelledby="recipeNotesLabel">
+                        <div class="todo-recipe-field__heading">
+                            <div>
+                                <p class="todo-eyebrow">Remember</p>
+                                <h2 id="recipeNotesLabel">Notes</h2>
+                            </div>
+                            <span>Optional</span>
+                        </div>
+                        <p id="recipeNotesHelp" class="todo-recipe-field__help">Good for timings, servings, substitutions, or the source.</p>
+                        <label id="recipeNotesLabelText" class="todo-visually-hidden" for="recipeNotes">Recipe notes</label>
+                        <textarea id="recipeNotes" rows="4" maxlength="4000" spellcheck="true" placeholder="Makes 8 portions. Also works with honey instead of erythritol…"></textarea>
+                    </section>
+                </article>
             </section>
 
             <section id="editorView" class="todo-view" hidden>
@@ -322,21 +524,13 @@
                     <div><p class="todo-eyebrow">Storage</p><h2 id="settingsTitle">Keep your notes close</h2></div>
                     <button class="todo-icon-button" type="button" data-close-modal aria-label="Close settings"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
                 </header>
-                <p class="todo-modal__intro">Changes save instantly here and reconcile in the background. Every device must use the exact same private sync key.</p>
+                <p class="todo-modal__intro">Your Todo data is stored in one SQLite database beside the app. Desktop and mobile automatically use the same shared copy.</p>
 
-                <label class="todo-field" for="currentSyncKey"><span>Your sync key</span><small>Treat this like a password.</small></label>
-                <div class="todo-copy-row">
-                    <input id="currentSyncKey" type="text" readonly />
-                    <button id="copySyncKeyButton" class="todo-icon-button" type="button" aria-label="Copy sync key"><svg aria-hidden="true"><use href="#i-copy"></use></svg></button>
+                <div class="todo-shared-storage-status">
+                    <span aria-hidden="true"><svg><use href="#i-cloud"></use></svg></span>
+                    <div><strong>Shared server storage</strong><small>Local browser storage is only an offline safety copy.</small></div>
                 </div>
                 <button id="syncNowButton" class="todo-primary-button todo-wide-button" type="button">Sync now</button>
-
-                <div class="todo-divider"><span>Use on another device</span></div>
-                <form id="connectSyncForm">
-                    <label class="todo-field" for="otherSyncKey"><span>Existing sync key</span></label>
-                    <input id="otherSyncKey" type="text" minlength="24" maxlength="128" autocomplete="off" placeholder="Paste the key from your other device" required />
-                    <button class="todo-secondary-button todo-wide-button" type="submit">Compare and connect</button>
-                </form>
 
                 <div class="todo-divider"><span>Portable backup</span></div>
                 <div class="todo-backup-actions">
@@ -344,7 +538,7 @@
                     <button id="importButton" class="todo-secondary-button" type="button"><svg aria-hidden="true"><use href="#i-upload"></use></svg> Import</button>
                     <input id="importFile" type="file" accept="application/json,.json" hidden />
                 </div>
-                <p class="todo-fine-print">Sync checks for newer changes while this page stays open and protects them from stale uploads. Anyone with the key can access the notes.</p>
+                <p class="todo-fine-print">Sync checks for newer changes while this page stays open and protects them from stale uploads. Anyone who can open this Todo app can access its shared data.</p>
             </div>
         </section>
 
@@ -365,8 +559,10 @@
                             <li><strong id="localSyncNotes">0 notes</strong></li>
                             <li><span id="localSyncItems">0 checklist items</span></li>
                             <li><span id="localSyncEvents">0 calendar events</span></li>
+                            <li><span id="localSyncMeals">0 logged meals</span></li>
                             <li><span id="localSyncGoals">0 goals</span></li>
                             <li><span id="localSyncMeasurements">0 measurement check-ins</span></li>
+                            <li><span id="localSyncRecipes">0 saved food items</span></li>
                         </ul>
                         <p id="localSyncUpdated" class="todo-sync-save-time"></p>
                         <button id="useLocalSyncButton" class="todo-secondary-button todo-wide-button" type="button">Use this device</button>
@@ -378,8 +574,10 @@
                             <li><strong id="serverSyncNotes">0 notes</strong></li>
                             <li><span id="serverSyncItems">0 checklist items</span></li>
                             <li><span id="serverSyncEvents">0 calendar events</span></li>
+                            <li><span id="serverSyncMeals">0 logged meals</span></li>
                             <li><span id="serverSyncGoals">0 goals</span></li>
                             <li><span id="serverSyncMeasurements">0 measurement check-ins</span></li>
+                            <li><span id="serverSyncRecipes">0 saved food items</span></li>
                         </ul>
                         <p id="serverSyncUpdated" class="todo-sync-save-time"></p>
                         <button id="useServerSyncButton" class="todo-secondary-button todo-wide-button" type="button">Use server</button>
@@ -436,6 +634,44 @@
                 <div class="todo-calendar-form-actions">
                     <button id="deleteCalendarEventButton" class="todo-secondary-button is-danger" type="button" hidden>Delete event</button>
                     <button class="todo-primary-button" type="submit">Save event</button>
+                </div>
+            </form>
+        </section>
+
+        <section id="mealModal" class="todo-modal todo-meal-modal" hidden aria-hidden="true">
+            <button class="todo-modal__scrim" type="button" data-close-meal aria-label="Close meal form"></button>
+            <form id="mealForm" class="todo-modal__panel todo-modal__panel--small todo-meal-form" role="dialog" aria-modal="true" aria-labelledby="mealFormTitle">
+                <header class="todo-modal__header">
+                    <div><p id="mealFormContext" class="todo-eyebrow">Meal at 09:00</p><h2 id="mealFormTitle">Log a meal</h2></div>
+                    <button class="todo-icon-button" type="button" data-close-meal aria-label="Close meal form"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
+                </header>
+                <label class="todo-field todo-meal-field" for="mealRecipeSelect"><span>Recipe or food item</span>
+                    <select id="mealRecipeSelect" required></select>
+                </label>
+                <p id="mealRecipeHelp" class="todo-meal-help">Only recipes and food items with calories can be logged.</p>
+                <label class="todo-field todo-meal-field" for="mealPortionPercent"><span>Portion</span>
+                    <span class="todo-meal-portion-input"><input id="mealPortionPercent" type="number" min="1" max="1000" step="0.1" value="100" inputmode="decimal" required /><b>%</b></span>
+                </label>
+                <div class="todo-meal-portions" aria-label="Quick portion sizes">
+                    <button type="button" data-meal-portion="50">50%</button>
+                    <button type="button" data-meal-portion="80">80%</button>
+                    <button type="button" data-meal-portion="100">100%</button>
+                    <button type="button" data-meal-portion="150">150%</button>
+                </div>
+                <fieldset id="mealMacroFields" class="todo-meal-macros">
+                    <legend>Logged nutrition</legend>
+                    <p id="mealMacroHelp">Pre-filled from the recipe for this portion. Edit anything you actually added or removed.</p>
+                    <div class="todo-meal-macro-grid">
+                        <label><span>Calories</span><span class="todo-meal-macro-input"><input type="number" min="0" max="20000" step="0.1" inputmode="decimal" data-meal-macro="calories" required /><b>kcal</b></span></label>
+                        <label><span>Protein</span><span class="todo-meal-macro-input"><input type="number" min="0" max="5000" step="0.1" inputmode="decimal" data-meal-macro="proteinG" /><b>g</b></span></label>
+                        <label><span>Carbs</span><span class="todo-meal-macro-input"><input type="number" min="0" max="5000" step="0.1" inputmode="decimal" data-meal-macro="carbsG" /><b>g</b></span></label>
+                        <label><span>Fat</span><span class="todo-meal-macro-input"><input type="number" min="0" max="5000" step="0.1" inputmode="decimal" data-meal-macro="fatG" /><b>g</b></span></label>
+                    </div>
+                </fieldset>
+                <p id="mealFormError" class="todo-meal-error" role="alert"></p>
+                <div class="todo-calendar-form-actions">
+                    <button id="deleteMealButton" class="todo-secondary-button is-danger" type="button" hidden>Delete meal</button>
+                    <button id="saveMealButton" class="todo-primary-button" type="submit">Log meal</button>
                 </div>
             </form>
         </section>

@@ -97,7 +97,7 @@ builder.Services.AddScoped<ITestService, TestService>();
 builder.Services.AddScoped<PytTripService>();
 builder.Services.AddScoped<PytExportService>();
 builder.Services.AddSingleton<ITimerConfigService, TimerConfigService>();
-builder.Services.AddSingleton<TodoFileStore>();
+builder.Services.AddScoped<TodoSqlStore>();
 builder.Services.AddSingleton<ThreeDAnimationStore>();
 builder.Services.AddSingleton<ScenePlanner>();
 
