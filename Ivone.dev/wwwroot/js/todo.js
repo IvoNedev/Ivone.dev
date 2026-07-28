@@ -933,6 +933,10 @@
         return root.dataset.apiRoot.replace(/\/$/, "");
     }
 
+    function normalizeETag(value) {
+        return String(value || "").replace(/^W\//i, "") || null;
+    }
+
     async function readCloud(key) {
         var response = await fetch(cloudUrl(key), {
             headers: { "Accept": "application/json" },
@@ -947,7 +951,7 @@
         return {
             missing: false,
             document: normalizeDocument(await response.json()),
-            etag: response.headers.get("ETag")
+            etag: normalizeETag(response.headers.get("ETag"))
         };
     }
 

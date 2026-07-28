@@ -580,7 +580,15 @@ public sealed class TodoSqlStore
         currentETag is not null &&
         ifMatch.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .Any(candidate => candidate == "*" ||
-                              string.Equals(candidate, currentETag, StringComparison.Ordinal));
+                              string.Equals(
+                                  NormalizeETag(candidate),
+                                  NormalizeETag(currentETag),
+                                  StringComparison.Ordinal));
+
+    private static string NormalizeETag(string value) =>
+        value.StartsWith("W/", StringComparison.OrdinalIgnoreCase)
+            ? value[2..]
+            : value;
 
     private static bool IsUniqueConstraintViolation(DbUpdateException exception) =>
         exception.InnerException is SqlException { Number: 2601 or 2627 };
