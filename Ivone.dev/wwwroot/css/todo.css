@@ -3208,68 +3208,6 @@ body.todo-dragging {
     font-size: 11px;
 }
 
-.todo-sync-conflict-panel {
-    width: min(100%, 720px);
-}
-
-.todo-sync-compare {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 22px;
-}
-
-.todo-sync-save-card {
-    display: flex;
-    min-width: 0;
-    padding: 20px;
-    flex-direction: column;
-    border: 1px solid var(--todo-line);
-    border-top: 5px solid var(--todo-primary);
-    border-radius: var(--todo-radius);
-    background: white;
-}
-
-.todo-sync-save-card.is-server {
-    border-top-color: var(--todo-calendar);
-}
-
-.todo-sync-save-card h3 {
-    margin-top: 2px;
-    font-size: 21px;
-}
-
-.todo-sync-save-card ul {
-    display: grid;
-    gap: 7px;
-    margin: 22px 0 0;
-    padding: 0;
-    color: var(--todo-muted);
-    font-size: 13px;
-    list-style: none;
-}
-
-.todo-sync-save-card li:first-child {
-    color: var(--todo-ink);
-    font-size: 16px;
-}
-
-.todo-sync-save-time {
-    min-height: 36px;
-    margin: 16px 0 0;
-    color: var(--todo-muted);
-    font-size: 11px;
-}
-
-.todo-sync-save-card .todo-wide-button {
-    margin-top: auto;
-}
-
-.todo-sync-merge-button {
-    min-height: 52px;
-    margin-top: 16px;
-}
-
 .todo-color-fieldset {
     margin: 20px 0;
     padding: 0;
@@ -4491,18 +4429,6 @@ body.todo-modal-open {
 
     .todo-recipe-macro-layout {
         grid-template-columns: 1fr;
-    }
-
-    .todo-sync-conflict-panel {
-        padding: 22px 16px;
-    }
-
-    .todo-sync-compare {
-        grid-template-columns: 1fr;
-    }
-
-    .todo-sync-save-card {
-        padding: 16px;
     }
 
     .todo-primary-button {

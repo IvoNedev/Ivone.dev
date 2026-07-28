@@ -1,10 +1,10 @@
 (function () {
     "use strict";
 
-    var STORAGE_KEY = "ivone.todo.document.v1";
-    var DEVICE_KEY = "ivone.todo.device-id.v1";
-    var DATABASE_SYNC_PENDING_KEY = "ivone.todo.database-sync-pending.v1";
-    var DATABASE_SYNC_READY_KEY = "ivone.todo.database-sync-ready.v1";
+    var LEGACY_STORAGE_KEY = "ivone.todo.document.v1";
+    var LEGACY_DEVICE_KEY = "ivone.todo.device-id.v1";
+    var LEGACY_DATABASE_SYNC_PENDING_KEY = "ivone.todo.database-sync-pending.v1";
+    var LEGACY_DATABASE_SYNC_READY_KEY = "ivone.todo.database-sync-ready.v1";
     var CLOUD_POLL_INTERVAL = 5000;
     var CALENDAR_GROUP_ID = "calendar";
     var GOALS_COLOR = "#6d4cc7";
@@ -52,6 +52,7 @@
     }
 
     var elements = {
+        main: document.getElementById("todoMain"),
         homeView: document.getElementById("homeView"),
         groupView: document.getElementById("groupView"),
         editorView: document.getElementById("editorView"),
@@ -163,26 +164,6 @@
         recipeSaveState: document.getElementById("recipeSaveState"),
         recipeSaveWrap: document.querySelector(".todo-recipe-save-state"),
         settingsModal: document.getElementById("settingsModal"),
-        syncConflictModal: document.getElementById("syncConflictModal"),
-        localSyncNotes: document.getElementById("localSyncNotes"),
-        localSyncItems: document.getElementById("localSyncItems"),
-        localSyncEvents: document.getElementById("localSyncEvents"),
-        localSyncMeals: document.getElementById("localSyncMeals"),
-        localSyncGoals: document.getElementById("localSyncGoals"),
-        localSyncMeasurements: document.getElementById("localSyncMeasurements"),
-        localSyncRecipes: document.getElementById("localSyncRecipes"),
-        localSyncUpdated: document.getElementById("localSyncUpdated"),
-        serverSyncNotes: document.getElementById("serverSyncNotes"),
-        serverSyncItems: document.getElementById("serverSyncItems"),
-        serverSyncEvents: document.getElementById("serverSyncEvents"),
-        serverSyncMeals: document.getElementById("serverSyncMeals"),
-        serverSyncGoals: document.getElementById("serverSyncGoals"),
-        serverSyncMeasurements: document.getElementById("serverSyncMeasurements"),
-        serverSyncRecipes: document.getElementById("serverSyncRecipes"),
-        serverSyncUpdated: document.getElementById("serverSyncUpdated"),
-        useLocalSyncButton: document.getElementById("useLocalSyncButton"),
-        useServerSyncButton: document.getElementById("useServerSyncButton"),
-        mergeSyncButton: document.getElementById("mergeSyncButton"),
         groupModal: document.getElementById("groupModal"),
         groupForm: document.getElementById("groupForm"),
         groupName: document.getElementById("groupName"),
@@ -194,12 +175,12 @@
         toast: document.getElementById("todoToast")
     };
 
-    var deviceId = getOrCreateDeviceId();
-    var loaded = loadLocalDocument();
-    var state = loaded.document;
-    if (loaded.exists && localStorage.getItem(DATABASE_SYNC_READY_KEY) !== "1") {
-        localStorage.setItem(DATABASE_SYNC_PENDING_KEY, "1");
-    }
+    var deviceId = "shared";
+    var state = defaultDocument();
+    var legacyDocument = loadLegacyDocument();
+    var databaseWritePending = false;
+    var databaseReady = false;
+    var databaseInitializationPromise = null;
     var syncKey = "shared";
     var activeView = "home";
     var activeGroupId = null;
@@ -228,9 +209,6 @@
     var activeMeasurementId = null;
     var activeRecipeId = null;
     var currentTimeTimer = 0;
-    var pendingSyncConflict = null;
-    var syncConflictResolving = false;
-    var syncConnectionPending = false;
     var initialPaintComplete = false;
 
     function createId(prefix) {
@@ -239,17 +217,6 @@
         }
 
         return prefix + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
-    }
-
-    function getOrCreateDeviceId() {
-        var existing = localStorage.getItem(DEVICE_KEY);
-        if (existing && /^[A-Za-z0-9_-]{12,128}$/.test(existing)) {
-            return existing;
-        }
-
-        var created = createId("device");
-        localStorage.setItem(DEVICE_KEY, created);
-        return created;
     }
 
     function defaultDocument() {
@@ -282,17 +249,35 @@
         };
     }
 
-    function loadLocalDocument() {
-        var raw = localStorage.getItem(STORAGE_KEY);
+    function loadLegacyDocument() {
+        var raw;
+        try {
+            raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+        } catch (error) {
+            console.warn("Legacy Todo browser data could not be read.", error);
+            return null;
+        }
         if (!raw) {
-            return { document: defaultDocument(), exists: false };
+            return null;
         }
 
         try {
-            return { document: normalizeDocument(JSON.parse(raw)), exists: true };
+            return normalizeDocument(JSON.parse(raw));
         } catch (error) {
-            console.warn("Todo data could not be read. Starting with a clean document.", error);
-            return { document: defaultDocument(), exists: false };
+            console.warn("The legacy browser Todo copy could not be read and will be discarded.", error);
+            clearLegacyBrowserData();
+            return null;
+        }
+    }
+
+    function clearLegacyBrowserData() {
+        try {
+            localStorage.removeItem(LEGACY_STORAGE_KEY);
+            localStorage.removeItem(LEGACY_DEVICE_KEY);
+            localStorage.removeItem(LEGACY_DATABASE_SYNC_PENDING_KEY);
+            localStorage.removeItem(LEGACY_DATABASE_SYNC_READY_KEY);
+        } catch (error) {
+            console.warn("Legacy Todo browser data could not be removed.", error);
         }
     }
 
@@ -899,25 +884,21 @@
         return JSON.stringify(normalizeDocument(first)) === JSON.stringify(normalizeDocument(second));
     }
 
-    function saveLocalDocument() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-
     function databaseSyncPending() {
-        return localStorage.getItem(DATABASE_SYNC_PENDING_KEY) === "1";
+        return databaseWritePending;
     }
 
     function markDatabaseSyncPending(pending) {
-        if (pending) {
-            localStorage.setItem(DATABASE_SYNC_PENDING_KEY, "1");
-        } else {
-            localStorage.removeItem(DATABASE_SYNC_PENDING_KEY);
-            localStorage.setItem(DATABASE_SYNC_READY_KEY, "1");
-        }
+        databaseWritePending = Boolean(pending);
     }
 
     function persist(options) {
         options = options || {};
+        if (!databaseReady) {
+            setSyncStatus("Database unavailable", true);
+            showToast("The database is unavailable, so this change was not saved.");
+            return Promise.resolve(false);
+        }
         state.updatedAt = new Date().toISOString();
         var note = getActiveNote();
         if (note && options.touchActiveNote !== false) {
@@ -930,7 +911,6 @@
 
         mutationSequence += 1;
         markDatabaseSyncPending(true);
-        saveLocalDocument();
         setEditorSaved(true);
         if (options.render === true) {
             renderCurrentView();
@@ -969,10 +949,10 @@
         if (!elements.editorSaveState) {
             return;
         }
-        elements.editorSaveState.textContent = "Database save pending";
+        elements.editorSaveState.textContent = "Not saved to database";
         elements.editorSaveWrap.classList.add("is-saving");
         if (elements.recipeSaveState) {
-            elements.recipeSaveState.textContent = "Database save pending";
+            elements.recipeSaveState.textContent = "Not saved to database";
             elements.recipeSaveWrap.classList.add("is-saving");
         }
     }
@@ -1027,7 +1007,6 @@
             ? JSON.stringify(state.mealEntries.find(function (meal) { return meal.id === activeMealEntryId; }) || null)
             : null;
         state = normalizeDocument(nextState);
-        saveLocalDocument();
         if (activeCalendarEventId && calendarEventBefore !== JSON.stringify(
             state.calendarEvents.find(function (event) { return event.id === activeCalendarEventId; }) || null)) {
             activeCalendarEventId = null;
@@ -1095,7 +1074,6 @@
 
             if (forceRemote) {
                 state = remoteResult.document;
-                saveLocalDocument();
                 markDatabaseSyncPending(false);
                 activeView = "home";
                 activeGroupId = null;
@@ -1121,7 +1099,6 @@
             }
 
             state.updatedAt = new Date().toISOString();
-            saveLocalDocument();
             var snapshot = normalizeDocument(state);
             var snapshotSequence = mutationSequence;
             var response = await writeCloud(key, snapshot, remoteResult.etag);
@@ -1143,9 +1120,6 @@
 
     function syncCloud(options) {
         options = options || {};
-        if ((syncConnectionPending || pendingSyncConflict || syncConflictResolving) && !options.allowDuringConflict) {
-            return Promise.resolve(false);
-        }
         if (syncInFlight) {
             syncRequested = true;
             if (options.forceRemote || options.showFeedback || options.waitForLatest) {
@@ -1174,9 +1148,9 @@
         }).catch(function (error) {
             console.warn("Todo sync failed.", error);
             setEditorDatabasePending();
-            setSyncStatus("Database save pending", true);
+            setSyncStatus("Database save failed - unsaved changes", true);
             if (options.showFeedback || options.forceRemote) {
-                showToast(error.message || "Could not reach sync. Your local copy is safe.");
+                showToast(error.message || "Could not reach the database. Changes exist only in this open page.");
             }
             return false;
         }).finally(function () {
@@ -1197,6 +1171,68 @@
 
     function pushCloud(showFeedback) {
         return syncCloud({ showFeedback: showFeedback });
+    }
+
+    function initializeDatabaseState() {
+        if (databaseInitializationPromise) {
+            return databaseInitializationPromise;
+        }
+
+        elements.main.hidden = true;
+        root.setAttribute("aria-busy", "true");
+        setSyncStatus("Loading from database...", false);
+
+        databaseInitializationPromise = (async function () {
+            var remoteResult = await readCloud(syncKey);
+            if (remoteResult.missing) {
+                state = legacyDocument ? normalizeDocument(legacyDocument) : defaultDocument();
+                databaseReady = true;
+                markDatabaseSyncPending(true);
+                if (!await syncCloud({ quiet: true, waitForLatest: true })) {
+                    throw new Error("The initial Todo document could not be created in the database.");
+                }
+            } else {
+                state = remoteResult.document;
+                databaseReady = true;
+                markDatabaseSyncPending(false);
+
+                if (legacyDocument) {
+                    var migrated = mergeDocuments(legacyDocument, state);
+                    if (!documentsEqual(migrated, state)) {
+                        state = migrated;
+                        mutationSequence += 1;
+                        markDatabaseSyncPending(true);
+                        if (!await syncCloud({ quiet: true, waitForLatest: true })) {
+                            throw new Error("The legacy browser data could not be migrated to the database.");
+                        }
+                    }
+                }
+            }
+
+            legacyDocument = null;
+            clearLegacyBrowserData();
+            initialPaintComplete = true;
+            renderGroupColors();
+            renderHome();
+            elements.main.hidden = false;
+            root.setAttribute("aria-busy", "false");
+            setSyncStatus("Saved to database", false);
+            return true;
+        })().catch(function (error) {
+            console.warn("Todo database initialization failed.", error);
+            databaseReady = false;
+            markDatabaseSyncPending(false);
+            state = defaultDocument();
+            elements.main.hidden = true;
+            root.setAttribute("aria-busy", "false");
+            setSyncStatus("Database unavailable", true);
+            showToast("Todo could not load from the database. No browser copy is being used.");
+            return false;
+        }).finally(function () {
+            databaseInitializationPromise = null;
+        });
+
+        return databaseInitializationPromise;
     }
 
     function icon(name) {
@@ -2530,7 +2566,7 @@
         databaseSave.then(function (saved) {
             showToast(saved
                 ? "Measurements saved to database."
-                : "Measurements are queued and will retry when the database is reachable.");
+                : "Measurements were not saved. Keep this page open and retry the database save.");
         });
     }
 
@@ -4314,7 +4350,7 @@
         modal.setAttribute("aria-hidden", "false");
         document.body.classList.add("todo-modal-open");
         window.setTimeout(function () {
-            var focusable = modal.querySelector("input:not([readonly]):not(:disabled), select:not(:disabled), textarea:not([readonly]):not(:disabled), button:not(:disabled):not([data-close-modal]):not([data-close-group-modal]):not([data-close-calendar-event]):not([data-close-meal]):not([data-close-sync-conflict])");
+            var focusable = modal.querySelector("input:not([readonly]):not(:disabled), select:not(:disabled), textarea:not([readonly]):not(:disabled), button:not(:disabled):not([data-close-modal]):not([data-close-group-modal]):not([data-close-calendar-event]):not([data-close-meal])");
             if (focusable) {
                 focusable.focus();
             }
@@ -4324,7 +4360,7 @@
     function closeModal(modal) {
         modal.hidden = true;
         modal.setAttribute("aria-hidden", "true");
-        if (elements.settingsModal.hidden && elements.groupModal.hidden && elements.calendarEventModal.hidden && elements.mealModal.hidden && elements.syncConflictModal.hidden) {
+        if (elements.settingsModal.hidden && elements.groupModal.hidden && elements.calendarEventModal.hidden && elements.mealModal.hidden) {
             document.body.classList.remove("todo-modal-open");
         }
     }
@@ -4430,158 +4466,6 @@
             }
         });
         reader.readAsText(file);
-    }
-
-    function documentsHaveSameContent(first, second) {
-        var firstCopy = normalizeDocument(first);
-        var secondCopy = normalizeDocument(second);
-        firstCopy.updatedAt = "";
-        secondCopy.updatedAt = "";
-        return JSON.stringify(firstCopy) === JSON.stringify(secondCopy);
-    }
-
-    function syncSaveStats(documentValue) {
-        var documentCopy = normalizeDocument(documentValue);
-        return {
-            notes: documentCopy.notes.length,
-            items: documentCopy.notes.reduce(function (total, note) { return total + countItems(note.items); }, 0),
-            events: documentCopy.calendarEvents.length,
-            meals: documentCopy.mealEntries.length,
-            goals: documentCopy.goals.length,
-            measurements: documentCopy.measurementEntries.length,
-            recipes: documentCopy.recipes.length,
-            updatedAt: documentCopy.updatedAt
-        };
-    }
-
-    function syncSaveTime(value) {
-        var date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-            return "Update time unavailable";
-        }
-        return "Last changed " + new Intl.DateTimeFormat(undefined, {
-            dateStyle: "medium",
-            timeStyle: "short"
-        }).format(date);
-    }
-
-    function renderSyncSave(prefix, documentValue) {
-        var stats = syncSaveStats(documentValue);
-        elements[prefix + "SyncNotes"].textContent = plural(stats.notes, "note");
-        elements[prefix + "SyncItems"].textContent = plural(stats.items, "checklist item");
-        elements[prefix + "SyncEvents"].textContent = plural(stats.events, "calendar event");
-        elements[prefix + "SyncMeals"].textContent = plural(stats.meals, "logged meal");
-        elements[prefix + "SyncGoals"].textContent = plural(stats.goals, "goal");
-        elements[prefix + "SyncMeasurements"].textContent = plural(stats.measurements, "measurement check-in");
-        elements[prefix + "SyncRecipes"].textContent = plural(stats.recipes, "saved food item");
-        elements[prefix + "SyncUpdated"].textContent = syncSaveTime(stats.updatedAt);
-    }
-
-    function adoptSyncKey(key) {
-        syncKey = "shared";
-    }
-
-    function showSyncConflict(key, localDocument, remoteDocument) {
-        pendingSyncConflict = {
-            key: key,
-            localDocument: normalizeDocument(localDocument),
-            remoteDocument: normalizeDocument(remoteDocument)
-        };
-        renderSyncSave("local", pendingSyncConflict.localDocument);
-        renderSyncSave("server", pendingSyncConflict.remoteDocument);
-        closeModal(elements.settingsModal);
-        openModal(elements.syncConflictModal);
-        window.setTimeout(function () { elements.mergeSyncButton.focus(); }, 0);
-    }
-
-    function closeSyncConflict(force) {
-        if (syncConflictResolving && !force) {
-            return;
-        }
-        pendingSyncConflict = null;
-        closeModal(elements.syncConflictModal);
-    }
-
-    function setSyncConflictBusy(busy, activeButton) {
-        syncConflictResolving = busy;
-        [elements.useLocalSyncButton, elements.useServerSyncButton, elements.mergeSyncButton].forEach(function (button) {
-            button.disabled = busy;
-        });
-        elements.useLocalSyncButton.textContent = "Use this device";
-        elements.useServerSyncButton.textContent = "Use server";
-        elements.mergeSyncButton.textContent = "Combine both saves (recommended)";
-        if (busy && activeButton) {
-            activeButton.textContent = "Connecting...";
-        }
-    }
-
-    async function uploadConflictDocument(conflict, combine) {
-        var candidate = normalizeDocument(conflict.localDocument);
-        for (var attempt = 0; attempt < 5; attempt += 1) {
-            var latest = await readCloud(conflict.key);
-            var documentToUpload = combine && !latest.missing
-                ? mergeDocuments(candidate, latest.document)
-                : normalizeDocument(candidate);
-            documentToUpload.updatedAt = new Date().toISOString();
-            var response = await writeCloud(conflict.key, documentToUpload, latest.etag);
-            if (response.status === 412) {
-                continue;
-            }
-            if (!response.ok) {
-                throw new Error("Sync returned " + response.status + ".");
-            }
-            return documentToUpload;
-        }
-        throw new Error("The server save kept changing. Please try again.");
-    }
-
-    function applyChosenSyncDocument(key, documentValue) {
-        window.clearTimeout(pushTimer);
-        mutationSequence += 1;
-        state = normalizeDocument(documentValue);
-        adoptSyncKey(key);
-        saveLocalDocument();
-        markDatabaseSyncPending(false);
-        activeView = "home";
-        activeGroupId = null;
-        activeNoteId = null;
-        activeRecipeId = null;
-        returnGroupId = null;
-        renderHome();
-        if (!elements.settingsModal.hidden) {
-            closeModal(elements.settingsModal);
-        }
-        closeSyncConflict(true);
-        setEditorSaved(false);
-        setSyncStatus("Saved to database", false);
-    }
-
-    async function resolveSyncConflict(mode, activeButton) {
-        if (!pendingSyncConflict) {
-            return;
-        }
-        var conflict = pendingSyncConflict;
-        setSyncConflictBusy(true, activeButton);
-        try {
-            var chosenDocument;
-            if (mode === "server") {
-                var latest = await readCloud(conflict.key);
-                if (latest.missing) {
-                    throw new Error("That server save no longer exists.");
-                }
-                chosenDocument = latest.document;
-            } else {
-                chosenDocument = await uploadConflictDocument(conflict, mode === "merge");
-            }
-            applyChosenSyncDocument(conflict.key, chosenDocument);
-            showToast(mode === "merge" ? "Both saves combined and connected." : "Your chosen save is now connected.");
-        } catch (error) {
-            console.warn("Todo sync choice failed.", error);
-            setSyncStatus("Database save pending", true);
-            showToast(error.message || "Could not connect. Both saves are still safe.");
-        } finally {
-            setSyncConflictBusy(false, null);
-        }
     }
 
     function showToast(message) {
@@ -4734,9 +4618,6 @@
             closeModal(elements.mealModal);
         });
     });
-    document.querySelectorAll("[data-close-sync-conflict]").forEach(function (button) {
-        button.addEventListener("click", function () { closeSyncConflict(false); });
-    });
     document.getElementById("previousDayButton").addEventListener("click", function () {
         renderCalendar(shiftDateKey(selectedCalendarDate, -1), true);
     });
@@ -4840,15 +4721,12 @@
     });
     document.getElementById("deleteRecipeButton").addEventListener("click", deleteActiveRecipe);
     elements.groupForm.addEventListener("submit", createGroup);
-    document.getElementById("syncNowButton").addEventListener("click", function () { pushCloud(true); });
-    elements.useLocalSyncButton.addEventListener("click", function () {
-        resolveSyncConflict("local", elements.useLocalSyncButton);
-    });
-    elements.useServerSyncButton.addEventListener("click", function () {
-        resolveSyncConflict("server", elements.useServerSyncButton);
-    });
-    elements.mergeSyncButton.addEventListener("click", function () {
-        resolveSyncConflict("merge", elements.mergeSyncButton);
+    document.getElementById("syncNowButton").addEventListener("click", function () {
+        if (databaseReady) {
+            pushCloud(true);
+        } else {
+            initializeDatabaseState();
+        }
     });
     document.getElementById("exportButton").addEventListener("click", exportDocument);
     document.getElementById("importButton").addEventListener("click", function () { elements.importFile.click(); });
@@ -4867,8 +4745,6 @@
         if (event.key === "Escape") {
             if (dragSession) {
                 finishDrag(false);
-            } else if (!elements.syncConflictModal.hidden) {
-                closeSyncConflict(false);
             } else if (!elements.calendarEventModal.hidden) {
                 activeCalendarEventId = null;
                 closeModal(elements.calendarEventModal);
@@ -4900,56 +4776,27 @@
         }
     });
 
-    window.addEventListener("storage", function (event) {
-        if (event.key === STORAGE_KEY && event.newValue) {
-            try {
-                var incoming = normalizeDocument(JSON.parse(event.newValue));
-                var merged = mergeDocuments(state, incoming);
-                if (!documentsEqual(state, merged)) {
-                    state = merged;
-                    mutationSequence += 1;
-                    markDatabaseSyncPending(true);
-                    renderCurrentView();
-                    setSyncStatus("Updated", false);
-                    scheduleCloudPush();
-                }
-            } catch (error) {
-                console.warn("Ignored an invalid todo update from another tab.", error);
-            }
-        }
-    });
-
     window.addEventListener("online", function () {
+        if (!databaseReady) {
+            initializeDatabaseState();
+            return;
+        }
         setSyncStatus(databaseSyncPending() ? "Saving to database..." : "Back online", false);
         syncCloud();
     });
     window.addEventListener("offline", function () {
-        setSyncStatus(databaseSyncPending() ? "Offline - database save pending" : "Offline", true);
+        setSyncStatus(databaseSyncPending() ? "Offline - changes not saved" : "Offline", true);
     });
     window.addEventListener("beforeunload", function () {
-        saveLocalDocument();
         if (navigator.onLine && databaseSyncPending()) {
             syncCloud({ quiet: true });
         }
     });
 
     function requestBackgroundSync() {
-        if (initialPaintComplete && navigator.onLine && !pendingSyncConflict && !syncConflictResolving) {
+        if (databaseReady && initialPaintComplete && navigator.onLine) {
             syncCloud({ quiet: true });
         }
-    }
-
-    function syncAfterInitialPaint() {
-        window.requestAnimationFrame(function () {
-            window.requestAnimationFrame(function () {
-                initialPaintComplete = true;
-                if (!navigator.onLine) {
-                    setSyncStatus(databaseSyncPending() ? "Offline - database save pending" : "Offline", true);
-                    return;
-                }
-                syncCloud({ quiet: true });
-            });
-        });
     }
 
     document.addEventListener("visibilitychange", function () {
@@ -4978,7 +4825,5 @@
         }
     }, 60000);
 
-    renderGroupColors();
-    renderHome();
-    syncAfterInitialPaint();
+    initializeDatabaseState();
 })();

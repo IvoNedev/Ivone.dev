@@ -57,7 +57,7 @@
             </button>
         </header>
 
-        <main id="todoMain" class="todo-main" tabindex="-1">
+        <main id="todoMain" class="todo-main" tabindex="-1" hidden>
             <section id="homeView" class="todo-view todo-home-view">
                 <div class="todo-search-wrap">
                     <svg aria-hidden="true"><use href="#i-search"></use></svg>
@@ -528,7 +528,7 @@
 
                 <div class="todo-shared-storage-status">
                     <span aria-hidden="true"><svg><use href="#i-cloud"></use></svg></span>
-                    <div><strong>Shared SQL storage</strong><small>Browser storage is only a temporary offline queue until the database confirms the save.</small></div>
+                    <div><strong>Shared SQL storage</strong><small>No Todo data is stored in the browser. The database is the only persisted copy.</small></div>
                 </div>
                 <button id="syncNowButton" class="todo-primary-button todo-wide-button" type="button">Save to database now</button>
 
@@ -538,54 +538,7 @@
                     <button id="importButton" class="todo-secondary-button" type="button"><svg aria-hidden="true"><use href="#i-upload"></use></svg> Import</button>
                     <input id="importFile" type="file" accept="application/json,.json" hidden />
                 </div>
-                <p class="todo-fine-print">Sync checks for newer changes while this page stays open and protects them from stale uploads. Anyone who can open this Todo app can access its shared data.</p>
-            </div>
-        </section>
-
-        <section id="syncConflictModal" class="todo-modal" hidden aria-hidden="true">
-            <button class="todo-modal__scrim" type="button" data-close-sync-conflict aria-label="Cancel sync connection"></button>
-            <div class="todo-modal__panel todo-sync-conflict-panel" role="dialog" aria-modal="true" aria-labelledby="syncConflictTitle" aria-describedby="syncConflictIntro">
-                <header class="todo-modal__header">
-                    <div><p class="todo-eyebrow">Sync choice</p><h2 id="syncConflictTitle">Two saves found</h2></div>
-                    <button class="todo-icon-button" type="button" data-close-sync-conflict aria-label="Cancel sync connection"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
-                </header>
-                <p id="syncConflictIntro" class="todo-modal__intro">Nothing will be replaced until you choose. Combining is safest when both devices contain notes you want.</p>
-
-                <div class="todo-sync-compare">
-                    <article class="todo-sync-save-card">
-                        <p class="todo-eyebrow">This device</p>
-                        <h3>Local save</h3>
-                        <ul>
-                            <li><strong id="localSyncNotes">0 notes</strong></li>
-                            <li><span id="localSyncItems">0 checklist items</span></li>
-                            <li><span id="localSyncEvents">0 calendar events</span></li>
-                            <li><span id="localSyncMeals">0 logged meals</span></li>
-                            <li><span id="localSyncGoals">0 goals</span></li>
-                            <li><span id="localSyncMeasurements">0 measurement check-ins</span></li>
-                            <li><span id="localSyncRecipes">0 saved food items</span></li>
-                        </ul>
-                        <p id="localSyncUpdated" class="todo-sync-save-time"></p>
-                        <button id="useLocalSyncButton" class="todo-secondary-button todo-wide-button" type="button">Use this device</button>
-                    </article>
-                    <article class="todo-sync-save-card is-server">
-                        <p class="todo-eyebrow">Shared key</p>
-                        <h3>Server save</h3>
-                        <ul>
-                            <li><strong id="serverSyncNotes">0 notes</strong></li>
-                            <li><span id="serverSyncItems">0 checklist items</span></li>
-                            <li><span id="serverSyncEvents">0 calendar events</span></li>
-                            <li><span id="serverSyncMeals">0 logged meals</span></li>
-                            <li><span id="serverSyncGoals">0 goals</span></li>
-                            <li><span id="serverSyncMeasurements">0 measurement check-ins</span></li>
-                            <li><span id="serverSyncRecipes">0 saved food items</span></li>
-                        </ul>
-                        <p id="serverSyncUpdated" class="todo-sync-save-time"></p>
-                        <button id="useServerSyncButton" class="todo-secondary-button todo-wide-button" type="button">Use server</button>
-                    </article>
-                </div>
-
-                <button id="mergeSyncButton" class="todo-primary-button todo-wide-button todo-sync-merge-button" type="button">Combine both saves (recommended)</button>
-                <p class="todo-fine-print">“Use this device” uploads this device’s save. “Use server” replaces this device’s save. Combine keeps unique notes and newer edits from both.</p>
+                <p class="todo-fine-print">The app loads SQL before showing your data, saves committed changes directly, and checks for updates from other devices every five seconds.</p>
             </div>
         </section>
 
