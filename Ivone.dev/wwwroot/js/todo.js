@@ -1,10 +1,6 @@
 (function () {
     "use strict";
 
-    var LEGACY_STORAGE_KEY = "ivone.todo.document.v1";
-    var LEGACY_DEVICE_KEY = "ivone.todo.device-id.v1";
-    var LEGACY_DATABASE_SYNC_PENDING_KEY = "ivone.todo.database-sync-pending.v1";
-    var LEGACY_DATABASE_SYNC_READY_KEY = "ivone.todo.database-sync-ready.v1";
     var CLOUD_POLL_INTERVAL = 5000;
     var CALENDAR_GROUP_ID = "calendar";
     var GOALS_COLOR = "#6d4cc7";
@@ -53,6 +49,10 @@
 
     var elements = {
         main: document.getElementById("todoMain"),
+        databaseGate: document.getElementById("todoDatabaseGate"),
+        databaseGateTitle: document.getElementById("todoDatabaseGateTitle"),
+        databaseGateMessage: document.getElementById("todoDatabaseGateMessage"),
+        databaseRetryButton: document.getElementById("todoDatabaseRetryButton"),
         homeView: document.getElementById("homeView"),
         groupView: document.getElementById("groupView"),
         editorView: document.getElementById("editorView"),
@@ -177,7 +177,6 @@
 
     var deviceId = "shared";
     var state = defaultDocument();
-    var legacyDocument = loadLegacyDocument();
     var databaseWritePending = false;
     var databaseReady = false;
     var databaseInitializationPromise = null;
@@ -247,38 +246,6 @@
             recipes: [],
             deletedRecipes: {}
         };
-    }
-
-    function loadLegacyDocument() {
-        var raw;
-        try {
-            raw = localStorage.getItem(LEGACY_STORAGE_KEY);
-        } catch (error) {
-            console.warn("Legacy Todo browser data could not be read.", error);
-            return null;
-        }
-        if (!raw) {
-            return null;
-        }
-
-        try {
-            return normalizeDocument(JSON.parse(raw));
-        } catch (error) {
-            console.warn("The legacy browser Todo copy could not be read and will be discarded.", error);
-            clearLegacyBrowserData();
-            return null;
-        }
-    }
-
-    function clearLegacyBrowserData() {
-        try {
-            localStorage.removeItem(LEGACY_STORAGE_KEY);
-            localStorage.removeItem(LEGACY_DEVICE_KEY);
-            localStorage.removeItem(LEGACY_DATABASE_SYNC_PENDING_KEY);
-            localStorage.removeItem(LEGACY_DATABASE_SYNC_READY_KEY);
-        } catch (error) {
-            console.warn("Legacy Todo browser data could not be removed.", error);
-        }
     }
 
     function normalizeDocument(value) {
@@ -1173,20 +1140,38 @@
         return syncCloud({ showFeedback: showFeedback });
     }
 
+    function showDatabaseGate(title, message, retryable) {
+        elements.main.hidden = true;
+        elements.databaseGate.hidden = false;
+        elements.databaseGateTitle.textContent = title;
+        elements.databaseGateMessage.textContent = message;
+        elements.databaseRetryButton.hidden = !retryable;
+    }
+
+    function showDatabaseContent() {
+        initialPaintComplete = true;
+        renderGroupColors();
+        renderHome();
+        elements.databaseGate.hidden = true;
+        elements.databaseRetryButton.hidden = true;
+        elements.main.hidden = false;
+        root.setAttribute("aria-busy", "false");
+    }
+
     function initializeDatabaseState() {
         if (databaseInitializationPromise) {
             return databaseInitializationPromise;
         }
 
-        elements.main.hidden = true;
+        showDatabaseGate("Loading your Todo data…", "Connecting to the shared database.", false);
         root.setAttribute("aria-busy", "true");
         setSyncStatus("Loading from database...", false);
 
         databaseInitializationPromise = (async function () {
             var remoteResult = await readCloud(syncKey);
             if (remoteResult.missing) {
-                state = legacyDocument ? normalizeDocument(legacyDocument) : defaultDocument();
                 databaseReady = true;
+                state = defaultDocument();
                 markDatabaseSyncPending(true);
                 if (!await syncCloud({ quiet: true, waitForLatest: true })) {
                     throw new Error("The initial Todo document could not be created in the database.");
@@ -1195,27 +1180,9 @@
                 state = remoteResult.document;
                 databaseReady = true;
                 markDatabaseSyncPending(false);
-
-                if (legacyDocument) {
-                    var migrated = mergeDocuments(legacyDocument, state);
-                    if (!documentsEqual(migrated, state)) {
-                        state = migrated;
-                        mutationSequence += 1;
-                        markDatabaseSyncPending(true);
-                        if (!await syncCloud({ quiet: true, waitForLatest: true })) {
-                            throw new Error("The legacy browser data could not be migrated to the database.");
-                        }
-                    }
-                }
             }
 
-            legacyDocument = null;
-            clearLegacyBrowserData();
-            initialPaintComplete = true;
-            renderGroupColors();
-            renderHome();
-            elements.main.hidden = false;
-            root.setAttribute("aria-busy", "false");
+            showDatabaseContent();
             setSyncStatus("Saved to database", false);
             return true;
         })().catch(function (error) {
@@ -1223,10 +1190,13 @@
             databaseReady = false;
             markDatabaseSyncPending(false);
             state = defaultDocument();
-            elements.main.hidden = true;
             root.setAttribute("aria-busy", "false");
             setSyncStatus("Database unavailable", true);
-            showToast("Todo could not load from the database. No browser copy is being used.");
+            showDatabaseGate(
+                "Todo could not reach the database",
+                "Check the connection and retry.",
+                true);
+            showToast("Todo could not load from the database.");
             return false;
         }).finally(function () {
             databaseInitializationPromise = null;
@@ -4728,6 +4698,7 @@
             initializeDatabaseState();
         }
     });
+    elements.databaseRetryButton.addEventListener("click", initializeDatabaseState);
     document.getElementById("exportButton").addEventListener("click", exportDocument);
     document.getElementById("importButton").addEventListener("click", function () { elements.importFile.click(); });
     elements.importFile.addEventListener("change", function () { importDocument(elements.importFile.files[0]); });

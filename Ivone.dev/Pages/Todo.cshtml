@@ -57,6 +57,15 @@
             </button>
         </header>
 
+        <section id="todoDatabaseGate" class="todo-database-gate" role="status" aria-live="polite">
+            <span class="todo-database-gate__icon" aria-hidden="true"><svg><use href="#i-cloud"></use></svg></span>
+            <div>
+                <strong id="todoDatabaseGateTitle">Loading your Todo data…</strong>
+                <p id="todoDatabaseGateMessage">Connecting to the shared database.</p>
+            </div>
+            <button id="todoDatabaseRetryButton" class="todo-secondary-button" type="button" hidden>Retry database</button>
+        </section>
+
         <main id="todoMain" class="todo-main" tabindex="-1" hidden>
             <section id="homeView" class="todo-view todo-home-view">
                 <div class="todo-search-wrap">

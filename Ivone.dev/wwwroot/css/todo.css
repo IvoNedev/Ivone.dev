@@ -290,6 +290,67 @@ textarea:focus-visible,
     font-weight: 700;
 }
 
+.todo-database-gate {
+    display: flex;
+    width: min(calc(100% - 32px), 720px);
+    min-height: 112px;
+    margin: 32px auto;
+    padding: 22px;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid var(--todo-line);
+    border-radius: var(--todo-radius);
+    background: white;
+    box-shadow: var(--todo-shadow);
+}
+
+.todo-database-gate[hidden] {
+    display: none;
+}
+
+.todo-database-gate__icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--todo-primary);
+    background: var(--todo-primary-soft);
+}
+
+.todo-database-gate__icon svg {
+    width: 23px;
+    height: 23px;
+}
+
+.todo-database-gate div {
+    min-width: 0;
+    flex: 1;
+}
+
+.todo-database-gate strong {
+    display: block;
+    font-size: 16px;
+}
+
+.todo-database-gate p {
+    margin: 5px 0 0;
+    color: var(--todo-muted);
+    font-size: 13px;
+}
+
+@media (max-width: 560px) {
+    .todo-database-gate {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .todo-database-gate .todo-secondary-button {
+        width: 100%;
+    }
+}
+
 .todo-today-dashboard {
     margin: -22px 0 44px;
     overflow: hidden;
