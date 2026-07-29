@@ -9,50 +9,136 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MaxOut</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <meta name="theme-color" content="#f4f2ec" />
+    <meta name="color-scheme" content="light" />
+    <title>MaxOut | Todo</title>
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="~/css/maxout.css" asp-append-version="true" />
 </head>
 <body class="maxout-body">
+    <a class="maxout-skip-link" href="#maxoutMain">Skip to content</a>
+    <svg class="maxout-symbols" aria-hidden="true">
+        <symbol id="mx-dumbbell" viewBox="0 0 24 24"><path d="M6 8v8M3.5 9.5v5M18 8v8M20.5 9.5v5M6 12h12"></path></symbol>
+        <symbol id="mx-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></symbol>
+        <symbol id="mx-arrow-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"></path></symbol>
+        <symbol id="mx-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5M12 7v5l3 2"></path></symbol>
+        <symbol id="mx-trend" viewBox="0 0 24 24"><path d="m4 17 5-5 4 3 7-8"></path><path d="M15 7h5v5"></path></symbol>
+        <symbol id="mx-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"></path></symbol>
+        <symbol id="mx-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7h.01"></path></symbol>
+    </svg>
+
     <div id="maxoutApp"
          class="maxout-app"
          data-state-url="@Url.Page("MaxOut", "State")"
-         data-create-user-url="@Url.Page("MaxOut", "CreateUser")"
-         data-recover-url="@Url.Page("MaxOut", "Recover")"
          data-save-workout-url="@Url.Page("MaxOut", "SaveWorkout")"
          data-end-workout-url="@Url.Page("MaxOut", "EndWorkout")"
+         data-update-workout-url="@Url.Page("MaxOut", "UpdateWorkout")"
+         data-delete-workout-url="@Url.Page("MaxOut", "DeleteWorkout")"
+         data-shared-user-id="1"
          data-request-token="@Model.RequestVerificationToken">
-        <div class="identity-box">
-            <button id="identityButton" class="identity-button" type="button">Recover data</button>
-            <form id="recoverForm" class="recover-popover" hidden>
-                <label for="recoverId">Recover ID</label>
-                <div class="recover-row">
-                    <input id="recoverId" type="number" inputmode="numeric" min="1" value="1" />
-                    <button type="submit">Load</button>
-                </div>
-            </form>
-        </div>
+        <header class="maxout-topbar">
+            <a class="maxout-brand" href="/todo" aria-label="Return to Todo mission control">
+                <span class="maxout-brand__mark" aria-hidden="true"><svg><use href="#mx-dumbbell"></use></svg></span>
+                <span>MAXOUT</span>
+            </a>
+            <a id="identityButton" class="identity-button" href="/todo">
+                <svg aria-hidden="true"><use href="#mx-arrow-left"></use></svg>
+                <span>Mission control</span>
+            </a>
+        </header>
 
-        <main class="maxout-shell">
+        <main id="maxoutMain" class="maxout-shell">
             <section id="homeView" class="view view-home">
-                <div class="brand-lockup">
-                    <span>MaxOut</span>
-                    <h1>Workout log</h1>
-                </div>
-                <div class="home-actions">
-                    <button id="newWorkoutButton" class="action-button action-button-primary" type="button">New Workout</button>
-                    <button id="historyButton" class="action-button action-button-secondary" type="button">History</button>
-                    <button id="guideButton" class="action-button action-button-secondary" type="button">How it works</button>
-                </div>
+                <header class="maxout-home-heading">
+                    <div>
+                        <p class="maxout-eyebrow">Training</p>
+                        <h1>Workout dashboard</h1>
+                        <p>Your saved sessions, outdoor activities and progress in one place.</p>
+                    </div>
+                    <div class="home-actions">
+                        <button id="newWorkoutButton" class="action-button action-button-primary" type="button">
+                            <svg aria-hidden="true"><use href="#mx-plus"></use></svg>
+                            <span>Start workout</span>
+                        </button>
+                        <button id="historyButton" class="action-button action-button-secondary" type="button">
+                            <svg aria-hidden="true"><use href="#mx-history"></use></svg>
+                            <span>Full history</span>
+                        </button>
+                        <button id="guideButton" class="action-button action-button-secondary action-button-quiet" type="button">
+                            <svg aria-hidden="true"><use href="#mx-info"></use></svg>
+                            <span>How it works</span>
+                        </button>
+                    </div>
+                </header>
+
                 <div id="homeStatus" class="status-line" role="status" aria-live="polite"></div>
+
+                <section id="homeActiveWorkout" class="maxout-active-card" hidden aria-labelledby="homeActiveWorkoutTitle">
+                    <span class="maxout-active-card__icon" aria-hidden="true"><svg><use href="#mx-dumbbell"></use></svg></span>
+                    <div>
+                        <p class="maxout-eyebrow">Saved draft</p>
+                        <h2 id="homeActiveWorkoutTitle">Unfinished entry available</h2>
+                        <p id="homeActiveWorkoutDetail"></p>
+                    </div>
+                    <button id="resumeWorkoutButton" class="maxout-text-button" type="button">
+                        Continue <svg aria-hidden="true"><use href="#mx-chevron"></use></svg>
+                    </button>
+                </section>
+
+                <section class="maxout-overview" aria-labelledby="trainingOverviewTitle">
+                    <header class="maxout-section-heading">
+                        <div>
+                            <p class="maxout-eyebrow">At a glance</p>
+                            <h2 id="trainingOverviewTitle">Training trends</h2>
+                        </div>
+                        <span>Compared with the previous matching period</span>
+                    </header>
+                    <div id="homeTrendGrid" class="maxout-trend-grid" aria-live="polite">
+                        <article class="maxout-trend-card">
+                            <span>Last 7 days</span>
+                            <strong id="homeWeekWorkouts">0</strong>
+                            <small>workouts</small>
+                            <em id="homeWeekTrend" class="is-steady">No previous period</em>
+                        </article>
+                        <article class="maxout-trend-card">
+                            <span>Last 30 days</span>
+                            <strong id="homeMonthWorkouts">0</strong>
+                            <small>workouts</small>
+                            <em id="homeMonthTrend" class="is-steady">No previous period</em>
+                        </article>
+                        <article class="maxout-trend-card maxout-trend-card--strength">
+                            <span>Strength volume</span>
+                            <strong id="homeMonthVolume">0 kg</strong>
+                            <small>last 30 days</small>
+                            <em id="homeVolumeTrend" class="is-steady">No previous period</em>
+                        </article>
+                        <article class="maxout-trend-card maxout-trend-card--distance">
+                            <span>Outdoor distance</span>
+                            <strong id="homeMonthDistance">0 km</strong>
+                            <small>last 30 days</small>
+                            <em id="homeDistanceTrend" class="is-steady">No previous period</em>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="maxout-recent" aria-labelledby="recentWorkoutsTitle">
+                    <header class="maxout-section-heading">
+                        <div>
+                            <p class="maxout-eyebrow">Saved to your shared database</p>
+                            <h2 id="recentWorkoutsTitle">Recent workouts</h2>
+                        </div>
+                        <button id="homeHistoryButton" class="maxout-text-button" type="button">
+                            View all <svg aria-hidden="true"><use href="#mx-chevron"></use></svg>
+                        </button>
+                    </header>
+                    <div id="homeRecentWorkouts" class="maxout-recent-list"></div>
+                </section>
             </section>
 
             <section id="workoutView" class="view workout-view" hidden>
                 <header class="workout-top">
                     <div class="select-wrap">
-                        <label for="exerciseSelect">Exercise</label>
+                        <label for="exerciseSelect"><span id="workoutEditorContext">Exercise or activity</span></label>
                         <select id="exerciseSelect"></select>
                     </div>
                     <div class="workout-actions">
@@ -60,6 +146,7 @@
                             <button id="unitKg" class="unit-button active" type="button" data-unit="kg">kg</button>
                             <button id="unitLb" class="unit-button" type="button" data-unit="lb">lb</button>
                         </div>
+                        <button id="cancelWorkoutEditButton" class="cancel-edit-button" type="button" hidden>Cancel edit</button>
                         <button id="endWorkoutButton" class="end-button" type="button">End workout</button>
                     </div>
                 </header>
@@ -70,19 +157,20 @@
             <section id="historyView" class="view history-view" hidden>
                 <header class="history-top">
                     <button id="historyBackButton" class="back-button" type="button" aria-label="Back">
-                        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+                        <svg aria-hidden="true"><use href="#mx-arrow-left"></use></svg>
                     </button>
-                    <h1>History</h1>
+                    <div><p class="maxout-eyebrow">Training log</p><h1>History</h1></div>
                 </header>
+                <div id="historyStatus" class="status-line" role="status" aria-live="polite"></div>
                 <div id="historyList" class="history-list"></div>
             </section>
 
             <section id="guideView" class="view guide-view" hidden>
                 <header class="history-top guide-top">
                     <button id="guideBackButton" class="back-button" type="button" aria-label="Back">
-                        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+                        <svg aria-hidden="true"><use href="#mx-arrow-left"></use></svg>
                     </button>
-                    <h1>How it works</h1>
+                    <div><p class="maxout-eyebrow">MaxOut guide</p><h1>How it works</h1></div>
                 </header>
 
                 <div class="guide-map" aria-label="MaxOut workout flow">
@@ -94,7 +182,7 @@
                         <div class="guide-visual guide-visual-start" aria-hidden="true">
                             <span></span><span></span><span></span>
                         </div>
-                        <p>New Workout opens a clean session. If the device has no backup id yet, MaxOut creates one quietly and stores it locally.</p>
+                        <p>New Workout opens a clean session in the shared database profile used by Todo on every device.</p>
                     </section>
 
                     <section class="guide-panel">
@@ -105,7 +193,7 @@
                         <div class="guide-visual guide-visual-select" aria-hidden="true">
                             <i></i><i></i><i></i>
                         </div>
-                        <p>Exercises are grouped by category. Recent exercises are tinted by recency: amber, green, then blue.</p>
+                        <p>Road Bike, Mountain Bike and Run stay at the top. Strength exercises remain grouped by category, with recent choices tinted by recency.</p>
                     </section>
 
                     <section class="guide-panel">
@@ -127,7 +215,7 @@
                         <div class="guide-visual guide-visual-track" aria-hidden="true">
                             <span>-5</span><strong>12</strong><span>+5</span>
                         </div>
-                        <p>Sets control how many rows exist. Reps and max weight can be tapped in steps or typed directly.</p>
+                        <p>Strength sessions track sets, reps and weight. Outdoor activities track distance, time, elevation, speed, heart rate and cadence when available.</p>
                     </section>
 
                     <section class="guide-panel">
@@ -149,13 +237,13 @@
                         <div class="guide-visual guide-visual-archive" aria-hidden="true">
                             <span></span><span></span><span></span>
                         </div>
-                        <p>End workout moves the session into History. The next workout can use those values for autofill and dropdown recency hints.</p>
+                        <p>Import a GPX file for an outdoor activity or enter its totals manually, then End workout to move the session into History.</p>
                     </section>
                 </div>
 
                 <aside class="guide-backup-strip">
-                    <strong>Backup id</strong>
-                    <span>Use “Your ID” to continue from another device, or Recover data after browser storage is wiped.</span>
+                    <strong>Shared database</strong>
+                    <span>Todo and MaxOut use the same workout history on desktop and mobile. No browser backup ID is required.</span>
                 </aside>
             </section>
         </main>

@@ -42,6 +42,7 @@ BEGIN
         [FitnessWorkoutId] int NOT NULL,
         [ExerciseName] nvarchar(160) NOT NULL,
         [ExerciseCategory] nvarchar(80) NULL,
+        [ActivityDataJson] nvarchar(max) NULL,
         [SortOrder] int NOT NULL,
         CONSTRAINT [PK_fitness_WorkoutExercises] PRIMARY KEY ([Id]),
         CONSTRAINT [FK_fitness_WorkoutExercises_Workouts_FitnessWorkoutId] FOREIGN KEY ([FitnessWorkoutId]) REFERENCES [fitness].[Workouts] ([Id]) ON DELETE CASCADE
@@ -53,6 +54,13 @@ IF COL_LENGTH(N'fitness.WorkoutExercises', N'ExerciseCategory') IS NULL
 BEGIN
     ALTER TABLE [fitness].[WorkoutExercises]
     ADD [ExerciseCategory] nvarchar(80) NULL;
+END;
+GO
+
+IF COL_LENGTH(N'fitness.WorkoutExercises', N'ActivityDataJson') IS NULL
+BEGIN
+    ALTER TABLE [fitness].[WorkoutExercises]
+    ADD [ActivityDataJson] nvarchar(max) NULL;
 END;
 GO
 

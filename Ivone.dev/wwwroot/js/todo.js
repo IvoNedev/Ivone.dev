@@ -6,7 +6,9 @@
     var GOALS_COLOR = "#6d4cc7";
     var MEASUREMENTS_COLOR = "#167d89";
     var RECIPES_COLOR = "#b4532a";
+    var WORKOUT_COLOR = "#247a4b";
     var CALENDAR_HOUR_HEIGHT = 72;
+    var MANUAL_MEAL_RECIPE_ID = "manual";
     var MEASUREMENT_FIELDS = [
         { key: "dailyCalories", label: "Daily calorie target", kind: "calories" },
         { key: "weightKg", label: "Weight", kind: "weight" },
@@ -62,8 +64,11 @@
         recipesView: document.getElementById("recipesView"),
         recipeEditorView: document.getElementById("recipeEditorView"),
         homeGrid: document.getElementById("homeGrid"),
+        quickAddButton: document.getElementById("quickAddButton"),
         homeTodayDashboard: document.getElementById("homeTodayDashboard"),
+        homeTodayClock: document.getElementById("homeTodayClock"),
         homeTodayCalendarButton: document.getElementById("homeTodayCalendarButton"),
+        homeTodayCaloriesButton: document.getElementById("homeTodayCaloriesButton"),
         homeTodayCalories: document.getElementById("homeTodayCalories"),
         homeTodayCalorieTarget: document.getElementById("homeTodayCalorieTarget"),
         homeTodayCalorieProgress: document.getElementById("homeTodayCalorieProgress"),
@@ -74,6 +79,12 @@
         homeTodayNextEvent: document.getElementById("homeTodayNextEvent"),
         homeTodayNextEventTitle: document.getElementById("homeTodayNextEventTitle"),
         homeTodayNextEventTime: document.getElementById("homeTodayNextEventTime"),
+        homeTodayWorkoutButton: document.getElementById("homeTodayWorkoutButton"),
+        homeTodayWorkoutStatus: document.getElementById("homeTodayWorkoutStatus"),
+        homeTodayWorkoutDetail: document.getElementById("homeTodayWorkoutDetail"),
+        homeTodayWeightButton: document.getElementById("homeTodayWeightButton"),
+        homeTodayWeightStatus: document.getElementById("homeTodayWeightStatus"),
+        homeTodayWeightDetail: document.getElementById("homeTodayWeightDetail"),
         recentSection: document.getElementById("recentSection"),
         recentGrid: document.getElementById("recentGrid"),
         noteGrid: document.getElementById("noteGrid"),
@@ -114,10 +125,23 @@
         calendarEventTime: document.getElementById("calendarEventTime"),
         calendarEventDuration: document.getElementById("calendarEventDuration"),
         deleteCalendarEventButton: document.getElementById("deleteCalendarEventButton"),
+        quickAddModal: document.getElementById("quickAddModal"),
+        quickAddForm: document.getElementById("quickAddForm"),
+        quickAddInput: document.getElementById("quickAddInput"),
+        quickAddType: document.getElementById("quickAddType"),
+        quickAddPreview: document.getElementById("quickAddPreview"),
+        quickAddError: document.getElementById("quickAddError"),
+        quickAddSaveButton: document.getElementById("quickAddSaveButton"),
         mealModal: document.getElementById("mealModal"),
         mealForm: document.getElementById("mealForm"),
         mealFormTitle: document.getElementById("mealFormTitle"),
         mealFormContext: document.getElementById("mealFormContext"),
+        mealModeButtons: Array.from(document.querySelectorAll("[data-meal-mode]")),
+        mealRecipeModeFields: document.getElementById("mealRecipeModeFields"),
+        mealManualModeFields: document.getElementById("mealManualModeFields"),
+        mealManualCalories: document.getElementById("mealManualCalories"),
+        mealManualTitle: document.getElementById("mealManualTitle"),
+        mealManualMacroInputs: Array.from(document.querySelectorAll("[data-meal-manual-macro]")),
         mealRecipeSelect: document.getElementById("mealRecipeSelect"),
         mealRecipeHelp: document.getElementById("mealRecipeHelp"),
         mealPortionPercent: document.getElementById("mealPortionPercent"),
@@ -185,6 +209,8 @@
     var activeGroupId = null;
     var activeNoteId = null;
     var returnGroupId = null;
+    var viewHistoryReady = false;
+    var restoringViewHistory = false;
     var pushTimer = 0;
     var toastTimer = 0;
     var focusAfterRender = null;
@@ -205,10 +231,19 @@
     var activeMealEntryId = null;
     var pendingMealDate = null;
     var pendingMealStartMinutes = 0;
+    var mealEntryMode = "recipe";
+    var mealReturnView = "calendar";
     var activeMeasurementId = null;
     var activeRecipeId = null;
     var currentTimeTimer = 0;
     var initialPaintComplete = false;
+    var fitnessState = {
+        loading: true,
+        unavailable: false,
+        activeWorkout: null,
+        history: []
+    };
+    var quickAddTypeOverridden = false;
 
     function createId(prefix) {
         if (window.crypto && typeof window.crypto.randomUUID === "function") {
@@ -1156,6 +1191,8 @@
         initialPaintComplete = true;
         renderGroupColors();
         renderHome();
+        initializeViewHistory();
+        loadFitnessState();
         elements.databaseGate.hidden = true;
         elements.databaseRetryButton.hidden = true;
         elements.main.hidden = false;
@@ -1305,7 +1342,97 @@
         });
     }
 
+    function todoViewState(name) {
+        var viewState = {
+            todoView: true,
+            version: 1,
+            view: name
+        };
+        if (name === "group") {
+            viewState.groupId = activeGroupId;
+        } else if (name === "editor") {
+            viewState.noteId = activeNoteId;
+        } else if (name === "calendar") {
+            viewState.date = selectedCalendarDate;
+        } else if (name === "recipeEditor") {
+            viewState.recipeId = activeRecipeId;
+        }
+        return viewState;
+    }
+
+    function todoViewStateKey(viewState) {
+        if (!viewState || viewState.todoView !== true) {
+            return "";
+        }
+        return [
+            viewState.view || "home",
+            viewState.groupId || "",
+            viewState.noteId || "",
+            viewState.date || "",
+            viewState.recipeId || ""
+        ].join("|");
+    }
+
+    function initializeViewHistory() {
+        var savedViewState = window.history.state;
+        viewHistoryReady = true;
+        if (savedViewState && savedViewState.todoView === true && savedViewState.view !== "home") {
+            restoreViewHistory(savedViewState);
+            return;
+        }
+        window.history.replaceState(todoViewState("home"), "", window.location.href);
+    }
+
+    function restoreViewHistory(viewState) {
+        restoringViewHistory = true;
+        try {
+            if (viewState.view === "editor" && getNote(viewState.noteId)) {
+                activeNoteId = viewState.noteId;
+                renderEditor();
+            } else if (viewState.view === "group" && getGroup(viewState.groupId)) {
+                activeGroupId = viewState.groupId;
+                renderGroup(viewState.groupId);
+            } else if (viewState.view === "calendar") {
+                selectedCalendarDate = viewState.date || localDateKey(new Date());
+                renderCalendar(selectedCalendarDate, false);
+            } else if (viewState.view === "goals") {
+                renderGoals();
+            } else if (viewState.view === "measurements") {
+                renderMeasurements();
+            } else if (viewState.view === "recipes") {
+                renderRecipes();
+            } else if (viewState.view === "recipeEditor" && getRecipe(viewState.recipeId)) {
+                activeRecipeId = viewState.recipeId;
+                renderRecipeEditor();
+            } else {
+                activeNoteId = null;
+                activeRecipeId = null;
+                renderHome();
+            }
+        } finally {
+            restoringViewHistory = false;
+        }
+
+        var restoredState = todoViewState(activeView);
+        if (todoViewStateKey(restoredState) !== todoViewStateKey(viewState)) {
+            window.history.replaceState(restoredState, "", window.location.href);
+        }
+    }
+
+    function goBackOneView(fallback) {
+        if (viewHistoryReady && window.history.state && window.history.state.todoView === true && activeView !== "home") {
+            window.history.back();
+            return;
+        }
+        fallback();
+    }
+
     function showView(name) {
+        var nextViewState = todoViewState(name);
+        if (viewHistoryReady && !restoringViewHistory &&
+            todoViewStateKey(window.history.state) !== todoViewStateKey(nextViewState)) {
+            window.history.pushState(nextViewState, "", window.location.href);
+        }
         activeView = name;
         elements.homeView.hidden = name !== "home";
         elements.groupView.hidden = name !== "group";
@@ -1415,6 +1542,7 @@
                 elements.homeGrid.appendChild(buildGoalsTile());
                 elements.homeGrid.appendChild(buildMeasurementsTile());
                 elements.homeGrid.appendChild(buildRecipesTile());
+                elements.homeGrid.appendChild(buildWorkoutTile());
             }
         });
 
@@ -1554,8 +1682,14 @@
     }
 
     function latestDailyCalorieTarget() {
+        return calorieTargetForDate(localDateKey(new Date()));
+    }
+
+    function calorieTargetForDate(dateKey) {
         return state.measurementEntries
-            .filter(function (entry) { return Number.isFinite(entry.dailyCalories); })
+            .filter(function (entry) {
+                return Number.isFinite(entry.dailyCalories) && entry.date <= dateKey;
+            })
             .sort(function (a, b) {
                 return b.date.localeCompare(a.date) || byUpdatedDescending(a, b);
             })[0] || null;
@@ -1575,7 +1709,7 @@
         MACRO_FIELDS.forEach(function (field) {
             totals[field.key] = Math.round(totals[field.key] * 10) / 10;
         });
-        var targetEntry = latestDailyCalorieTarget();
+        var targetEntry = calorieTargetForDate(dateKey);
         return {
             meals: meals,
             totals: totals,
@@ -1591,13 +1725,64 @@
         renderCalendar(today, true);
     }
 
+    function weightCheckIns() {
+        return measurementsByDate().filter(function (entry) {
+            return Number.isFinite(entry.weightKg);
+        });
+    }
+
+    function updateWeightDashboard() {
+        var entries = weightCheckIns();
+        var latest = entries[0] || null;
+        var previous = entries[1] || null;
+        if (!latest) {
+            elements.homeTodayWeightStatus.textContent = "No weight yet";
+            elements.homeTodayWeightDetail.textContent = "Add a weekly check-in";
+            elements.homeTodayWeightButton.setAttribute("aria-label", "Open Measurements and add a weekly weight check-in");
+            return;
+        }
+        elements.homeTodayWeightStatus.textContent = formatMeasurementValue(latest.weightKg, "weight");
+        var detail = formatMeasurementDate(latest.date);
+        if (previous) {
+            var delta = latest.weightKg - previous.weightKg;
+            if (Math.abs(delta) >= 0.01) {
+                detail += " · " + formatMeasurementDelta(delta, "weight") + " since last";
+            } else {
+                detail += " · unchanged since last";
+            }
+        } else {
+            detail += " · first check-in";
+        }
+        elements.homeTodayWeightDetail.textContent = detail;
+        elements.homeTodayWeightButton.setAttribute(
+            "aria-label",
+            "Open Measurements. Latest weight " + formatMeasurementValue(latest.weightKg, "weight") + ". " + detail);
+    }
+
+    function updateFitnessDashboard() {
+        var copy = workoutStatusCopy();
+        elements.homeTodayWorkoutStatus.textContent = copy.title;
+        elements.homeTodayWorkoutDetail.textContent = copy.detail;
+        elements.homeTodayWorkoutButton.setAttribute("aria-label", "Open MaxOut. " + copy.title + ". " + copy.detail);
+    }
+
     function renderHomeTodayDashboard() {
         var today = localDateKey(new Date());
         var nutrition = nutritionForDate(today);
         var totals = nutrition.totals;
         var target = nutrition.target;
+        var now = new Date();
+        elements.homeTodayClock.textContent = new Intl.DateTimeFormat(undefined, {
+            weekday: "long",
+            hour: "2-digit",
+            minute: "2-digit"
+        }).format(now);
         elements.homeTodayCalories.textContent = formatMacroValue(totals.calories);
         elements.homeTodayCalorieTarget.textContent = target ? formatMacroValue(target) : "—";
+        elements.homeTodayCaloriesButton.setAttribute(
+            "aria-label",
+            "Log a meal. " + formatMacroValue(totals.calories) +
+                (target ? " of " + formatMacroValue(target) : "") + " calories logged today.");
         elements.homeTodayProtein.textContent = formatMacroValue(totals.proteinG) + " g";
         elements.homeTodayCarbs.textContent = formatMacroValue(totals.carbsG) + " g";
         elements.homeTodayFat.textContent = formatMacroValue(totals.fatG) + " g";
@@ -1620,7 +1805,6 @@
             elements.homeTodayCalorieStatus.classList.remove("is-over");
         }
 
-        var now = new Date();
         var nowMinutes = now.getHours() * 60 + now.getMinutes();
         var events = calendarEventsForDate(today);
         var nextEvent = events.find(function (event) {
@@ -1639,10 +1823,19 @@
             elements.homeTodayNextEventTime.textContent = events.length ? "Your remaining day is clear." : "Add something to your calendar.";
             elements.homeTodayNextEvent.setAttribute("aria-label", "Open today's calendar");
         }
+        updateFitnessDashboard();
+        updateWeightDashboard();
+    }
+
+    function openDashboardMealForm() {
+        var now = new Date();
+        openMealForm(null, localDateKey(now), now.getHours() * 60);
     }
 
     function buildMeasurementsTile() {
-        var latest = measurementsByDate()[0] || null;
+        var measurements = measurementsByDate();
+        var weights = weightCheckIns();
+        var latest = weights[0] || measurements[0] || null;
         var calorieTarget = latestDailyCalorieTarget();
         var button = document.createElement("button");
         button.type = "button";
@@ -1669,7 +1862,15 @@
                     ? "Waist " + formatMeasurementValue(latest.waistCm, "length")
                     : (calorieTarget ? formatMeasurementValue(calorieTarget.dailyCalories, "calories") + " target" : "Check-in saved"));
             title.textContent = headline;
-            detail.textContent = formatMeasurementDate(latest.date) + " · " + plural(state.measurementEntries.length, "check-in");
+            if (weights.length > 1) {
+                var weightDelta = weights[0].weightKg - weights[1].weightKg;
+                detail.textContent = formatMeasurementDate(weights[0].date) + " · " +
+                    (Math.abs(weightDelta) >= 0.01
+                        ? formatMeasurementDelta(weightDelta, "weight") + " since last check-in"
+                        : "unchanged since last check-in");
+            } else {
+                detail.textContent = formatMeasurementDate(latest.date) + " · " + plural(state.measurementEntries.length, "check-in");
+            }
         } else {
             title.textContent = "Track your progress";
             detail.textContent = "Weight, body fat and body measurements";
@@ -1722,6 +1923,152 @@
         button.append(iconWrap, label, copy);
         button.addEventListener("click", openRecipes);
         return button;
+    }
+
+    function workoutCounts(workout) {
+        var exercises = workout && Array.isArray(workout.exercises) ? workout.exercises : [];
+        return {
+            exercises: exercises.length,
+            activities: exercises.filter(function (exercise) { return Boolean(exercise.activity); }).length,
+            distanceKm: exercises.reduce(function (total, exercise) {
+                return total + (exercise.activity && Number.isFinite(exercise.activity.distanceKm)
+                    ? exercise.activity.distanceKm
+                    : 0);
+            }, 0),
+            sets: exercises.reduce(function (total, exercise) {
+                return total + (Array.isArray(exercise.sets) ? exercise.sets.length : 0);
+            }, 0)
+        };
+    }
+
+    function workoutCountDetail(counts) {
+        var parts = [];
+        if (counts.activities) {
+            parts.push(counts.activities + (counts.activities === 1 ? " activity" : " activities"));
+            if (counts.distanceKm > 0) {
+                parts.push(new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(counts.distanceKm) + " km");
+            }
+        }
+        var strengthExercises = counts.exercises - counts.activities;
+        if (strengthExercises) {
+            parts.push(plural(strengthExercises, "exercise"));
+        }
+        if (counts.sets) {
+            parts.push(plural(counts.sets, "set"));
+        }
+        return parts.length ? parts.join(" · ") : plural(counts.exercises, "exercise");
+    }
+
+    function latestCompletedWorkout() {
+        return fitnessState.history.length ? fitnessState.history[0] : null;
+    }
+
+    function workoutWasCompletedToday(workout) {
+        var completed = new Date(workout && (workout.completedOnUtc || workout.startedOnUtc));
+        return Number.isFinite(completed.getTime()) &&
+            localDateKey(completed) === localDateKey(new Date());
+    }
+
+    function workoutStatusCopy() {
+        if (fitnessState.loading) {
+            return { title: "Checking MaxOut…", detail: "Loading shared workout history" };
+        }
+        if (fitnessState.unavailable) {
+            return { title: "MaxOut needs attention", detail: "Open the tracker to reconnect" };
+        }
+        var latest = latestCompletedWorkout();
+        if (latest && workoutWasCompletedToday(latest)) {
+            return {
+                title: "Workout complete today",
+                detail: workoutCountDetail(workoutCounts(latest))
+            };
+        }
+        if (latest) {
+            return {
+                title: "No workout today",
+                detail: "Last workout " + formatShortDateTime(latest.completedOnUtc || latest.startedOnUtc) +
+                    " · " + workoutCountDetail(workoutCounts(latest))
+            };
+        }
+        return { title: "No workout today", detail: "Start one whenever you are ready" };
+    }
+
+    function buildWorkoutTile() {
+        var copyValue = workoutStatusCopy();
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "todo-group-tile todo-workout-tile";
+        button.style.setProperty("--group-color", WORKOUT_COLOR);
+        button.setAttribute("aria-label", "Open MaxOut workout tracker. " + copyValue.title);
+
+        var iconWrap = document.createElement("span");
+        iconWrap.className = "todo-workout-tile__icon";
+        iconWrap.innerHTML = icon("dumbbell");
+        var label = document.createElement("span");
+        label.className = "todo-workout-tile__label";
+        label.textContent = "Workout";
+        var copy = document.createElement("span");
+        copy.className = "todo-workout-tile__copy";
+        var title = document.createElement("strong");
+        title.textContent = copyValue.title;
+        var detail = document.createElement("small");
+        detail.textContent = copyValue.detail;
+        copy.append(title, detail);
+        button.append(iconWrap, label, copy);
+        button.addEventListener("click", openWorkoutTracker);
+        return button;
+    }
+
+    function openWorkoutTracker() {
+        window.location.assign(root.dataset.workoutUrl || "/MaxOut?shared=1");
+    }
+
+    function formatShortDateTime(value) {
+        var date = new Date(value);
+        if (!Number.isFinite(date.getTime())) {
+            return "recent workout";
+        }
+        return new Intl.DateTimeFormat(undefined, {
+            month: "short",
+            day: "numeric"
+        }).format(date);
+    }
+
+    async function loadFitnessState() {
+        var url = root.dataset.workoutStateUrl;
+        if (!url) {
+            fitnessState.loading = false;
+            fitnessState.unavailable = true;
+            updateFitnessDashboard();
+            return;
+        }
+        try {
+            var response = await fetch(url, {
+                headers: { "Accept": "application/json" },
+                cache: "no-store"
+            });
+            if (!response.ok) {
+                throw new Error("MaxOut returned " + response.status + ".");
+            }
+            var payload = await response.json();
+            fitnessState = {
+                loading: false,
+                unavailable: false,
+                activeWorkout: payload.activeWorkout || null,
+                history: Array.isArray(payload.history) ? payload.history : []
+            };
+        } catch (error) {
+            console.warn("MaxOut summary could not load.", error);
+            fitnessState.loading = false;
+            fitnessState.unavailable = true;
+        }
+        updateFitnessDashboard();
+        if (activeView === "home" && !elements.search.value.trim()) {
+            var existingTile = elements.homeGrid.querySelector(".todo-workout-tile");
+            if (existingTile) {
+                existingTile.replaceWith(buildWorkoutTile());
+            }
+        }
     }
 
     function openRecipes() {
@@ -2050,7 +2397,7 @@
 
     function closeRecipeEditor() {
         finishRecipeEditing();
-        renderRecipes();
+        goBackOneView(renderRecipes);
     }
 
     function deleteActiveRecipe() {
@@ -2067,7 +2414,7 @@
         state.recipes = state.recipes.filter(function (candidate) { return candidate.id !== recipe.id; });
         activeRecipeId = null;
         persist({ touchActiveNote: false, touchActiveRecipe: false, immediate: true });
-        renderRecipes();
+        goBackOneView(renderRecipes);
         showToast(isFood ? "Food item deleted." : "Recipe deleted.");
     }
 
@@ -2278,7 +2625,11 @@
     function renderMeasurementLatest() {
         clear(elements.measurementLatest);
         var entries = measurementsByDate();
-        if (!entries.length) {
+        var hasCalorieHistory = state.mealEntries.some(function (meal) {
+            return meal.macros && Number.isFinite(meal.macros.calories);
+        });
+        var hasCalorieTracking = hasCalorieHistory || Boolean(latestDailyCalorieTarget());
+        if (!entries.length && !hasCalorieTracking) {
             var empty = document.createElement("div");
             empty.className = "todo-measurement-latest__empty";
             empty.innerHTML = "<strong>Your baseline starts here.</strong><span>Add any measurements you want to track. You can leave the rest blank.</span>";
@@ -2286,11 +2637,11 @@
             return;
         }
 
-        var latest = entries[0];
+        var latest = entries[0] || null;
         var heading = document.createElement("div");
         heading.className = "todo-measurement-latest__heading";
         heading.innerHTML = '<div><p class="todo-eyebrow">Progress trends</p><h2>Daily · weekly · monthly</h2></div><small>Latest check-in ' +
-            escapeHtml(formatMeasurementDate(latest.date)) + "</small>";
+            (latest ? escapeHtml(formatMeasurementDate(latest.date)) : "not added yet") + "</small>";
         elements.measurementLatest.appendChild(heading);
 
         var calorieTarget = latestDailyCalorieTarget();
@@ -2302,7 +2653,7 @@
                 escapeHtml(formatMeasurementValue(calorieTarget.dailyCalories, "calories")) +
                 '</strong></div><p>Using the newest value you entered, from <b>' +
                 escapeHtml(formatMeasurementDate(calorieTarget.date)) +
-                "</b>. This will power recipe portion tracking next.</p>";
+                "</b>. Past days keep the target that was active on their date.</p>";
             elements.measurementLatest.appendChild(targetCard);
         }
 
@@ -2310,6 +2661,10 @@
         cards.className = "todo-measurement-summary-grid";
         var preferredKeys = ["weightKg", "waistCm", "chestCm", "hipsCm", "upperArmRelaxedCm", "upperArmFlexedCm"];
         var renderedCards = 0;
+        if (hasCalorieTracking) {
+            cards.appendChild(buildCalorieSummaryCard());
+            renderedCards += 1;
+        }
         preferredKeys.forEach(function (key) {
             var field = measurementField(key);
             var trend = measurementTrend(key);
@@ -2814,7 +3169,7 @@
         return result;
     }
 
-    function renderCalendarNutrition(meals) {
+    function renderCalendarNutrition(meals, dateKey) {
         var totals = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 };
         meals.forEach(function (meal) {
             var macros = scaledMealMacros(meal);
@@ -2828,7 +3183,7 @@
             totals[field.key] = Math.round(totals[field.key] * 10) / 10;
         });
 
-        var targetEntry = latestDailyCalorieTarget();
+        var targetEntry = calorieTargetForDate(dateKey);
         var target = targetEntry && Number.isFinite(targetEntry.dailyCalories)
             ? targetEntry.dailyCalories
             : null;
@@ -2860,6 +3215,90 @@
         }
     }
 
+    function buildCalorieSummaryCard() {
+        var today = localDateKey(new Date());
+        var daily = calorieRangeSummary(today, 1);
+        var weekly = calorieRangeSummary(today, 7);
+        var monthly = calorieRangeSummary(today, 30);
+        var card = document.createElement("article");
+        card.className = "todo-measurement-summary-card todo-measurement-trend-card todo-calorie-summary-card";
+        card.dataset.measurementTrend = "calories";
+
+        var label = document.createElement("span");
+        label.textContent = "Calories";
+        var value = document.createElement("strong");
+        value.textContent = daily.loggedDays
+            ? formatMacroValue(daily.totalCalories) + " kcal"
+            : "No meals today";
+        var periods = document.createElement("div");
+        periods.className = "todo-measurement-trend-periods";
+        [
+            { label: "Daily", value: daily },
+            { label: "Weekly", value: weekly },
+            { label: "Monthly", value: monthly }
+        ].forEach(function (period) {
+            var periodWrap = document.createElement("span");
+            var periodLabel = document.createElement("small");
+            periodLabel.textContent = period.label;
+            var periodValue = document.createElement("b");
+            if (!period.value.loggedDays) {
+                periodValue.textContent = "—";
+                periodValue.className = "is-steady";
+                periodValue.title = "No calorie entries in this period";
+            } else if (Number.isFinite(period.value.targetDifferencePercent)) {
+                periodValue.textContent = formatTrendPercent(period.value.targetDifferencePercent);
+                periodValue.className = calorieOutcomeClass(period.value.targetDifferencePercent);
+                periodValue.title = formatMacroValue(period.value.averageCalories) + " kcal average across " +
+                    plural(period.value.loggedDays, "logged day") + "; " +
+                    (period.value.targetDifferencePercent > 0 ? "over" : "under") + " the targets active on those dates";
+            } else {
+                periodValue.textContent = formatMacroValue(period.value.averageCalories);
+                periodValue.className = "is-steady";
+                periodValue.title = formatMacroValue(period.value.averageCalories) + " kcal average across " +
+                    plural(period.value.loggedDays, "logged day") + "; no calorie target was active";
+            }
+            periodWrap.append(periodLabel, periodValue);
+            periods.appendChild(periodWrap);
+        });
+        card.append(label, value, periods);
+        return card;
+    }
+
+    function calorieRangeSummary(endDateKey, days) {
+        var totalCalories = 0;
+        var loggedDays = 0;
+        var caloriesWithTargets = 0;
+        var targetCalories = 0;
+        for (var offset = 0; offset < days; offset += 1) {
+            var dateKey = shiftDateKey(endDateKey, -offset);
+            var nutrition = nutritionForDate(dateKey);
+            if (!nutrition.meals.length) {
+                continue;
+            }
+            loggedDays += 1;
+            totalCalories += nutrition.totals.calories;
+            if (Number.isFinite(nutrition.target) && nutrition.target > 0) {
+                caloriesWithTargets += nutrition.totals.calories;
+                targetCalories += nutrition.target;
+            }
+        }
+        return {
+            loggedDays: loggedDays,
+            totalCalories: Math.round(totalCalories * 10) / 10,
+            averageCalories: loggedDays ? Math.round(totalCalories / loggedDays * 10) / 10 : null,
+            targetDifferencePercent: targetCalories
+                ? ((caloriesWithTargets - targetCalories) / targetCalories) * 100
+                : null
+        };
+    }
+
+    function calorieOutcomeClass(change) {
+        if (Math.abs(change) < 0.5) {
+            return "is-steady";
+        }
+        return change > 0 ? "is-over" : "is-under";
+    }
+
     function renderCalendar(dateKey, focusTimeline) {
         selectedCalendarDate = dateKey || localDateKey(new Date());
         showView("calendar");
@@ -2888,7 +3327,7 @@
             summaryParts.push(plural(meals.length, "meal"));
         }
         elements.calendarSummary.textContent = summaryParts.length ? summaryParts.join(" · ") : "No plans or meals yet";
-        renderCalendarNutrition(meals);
+        renderCalendarNutrition(meals, selectedCalendarDate);
 
         clear(elements.calendarTimeline);
         for (var hour = 0; hour < 24; hour += 1) {
@@ -3035,6 +3474,419 @@
         return hours + "h" + (remainder ? " " + remainder + "m" : "");
     }
 
+    function quickAddDateTime(source) {
+        var now = new Date();
+        var date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0, 0);
+        var startMinutes = Math.min(1380, now.getHours() * 60 + Math.round(now.getMinutes() / 15) * 15);
+        var hasDate = false;
+        var hasTime = false;
+        var sourceText = String(source || "");
+        var lower = sourceText.toLocaleLowerCase();
+        var timeMatch = sourceText.match(/\b(\d{1,2})(?::([0-5]\d))?\s*(am|pm)\b/i);
+        if (timeMatch) {
+            var meridiemHour = Math.min(12, Number(timeMatch[1]) || 0) % 12;
+            if (timeMatch[3].toLocaleLowerCase() === "pm") {
+                meridiemHour += 12;
+            }
+            startMinutes = meridiemHour * 60 + (Number(timeMatch[2]) || 0);
+            hasTime = true;
+        } else {
+            timeMatch = sourceText.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+            if (timeMatch) {
+                startMinutes = Number(timeMatch[1]) * 60 + Number(timeMatch[2]);
+                hasTime = true;
+            }
+        }
+
+        var isoDate = sourceText.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/);
+        if (isoDate) {
+            var parsedDate = new Date(Number(isoDate[1]), Number(isoDate[2]) - 1, Number(isoDate[3]), 12, 0, 0, 0);
+            if (parsedDate.getFullYear() === Number(isoDate[1]) &&
+                parsedDate.getMonth() === Number(isoDate[2]) - 1 &&
+                parsedDate.getDate() === Number(isoDate[3])) {
+                date = parsedDate;
+                hasDate = true;
+            }
+        } else if (/\b(?:tomorrow|tmr|tmrw)\b/i.test(sourceText)) {
+            date.setDate(date.getDate() + 1);
+            hasDate = true;
+        } else if (/\btoday\b/i.test(sourceText)) {
+            hasDate = true;
+        } else {
+            var weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+            var weekdayIndex = weekdays.findIndex(function (weekday) {
+                return new RegExp("\\b" + weekday + "\\b", "i").test(lower);
+            });
+            if (weekdayIndex >= 0) {
+                var dayOffset = (weekdayIndex - date.getDay() + 7) % 7;
+                if (dayOffset === 0 && (!hasTime || startMinutes <= now.getHours() * 60 + now.getMinutes())) {
+                    dayOffset = 7;
+                }
+                date.setDate(date.getDate() + dayOffset);
+                hasDate = true;
+            }
+        }
+
+        return {
+            date: localDateKey(date),
+            startMinutes: startMinutes,
+            hasDate: hasDate,
+            hasTime: hasTime
+        };
+    }
+
+    function stripQuickDateTime(value) {
+        return String(value || "")
+            .replace(/\b20\d{2}-\d{1,2}-\d{1,2}\b/gi, " ")
+            .replace(/\b(?:today|tomorrow|tmr|tmrw|sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/gi, " ")
+            .replace(/\b(?:at\s*)?\d{1,2}(?::[0-5]\d)?\s*(?:am|pm)\b/gi, " ")
+            .replace(/\b(?:at\s*)?(?:[01]?\d|2[0-3]):[0-5]\d\b/gi, " ");
+    }
+
+    function quickMacros(value) {
+        var source = String(value || "");
+        var macros = parseMacroText(source);
+        var number = "(\\d+(?:[.,]\\d+)?)";
+        [
+            {
+                key: "calories",
+                patterns: [
+                    new RegExp(number + "\\s*(?:kilocalories?|kcal|ccals?|calories?|calory|cals?)\\b", "i"),
+                    new RegExp("\\b(?:kilocalories?|kcal|ccals?|calories?|calory|cals?|energy)\\b\\s*[:=~≈-]?\\s*" + number, "i")
+                ]
+            },
+            {
+                key: "proteinG",
+                patterns: [
+                    new RegExp("\\b(?:proteins?|prot(?:ein)?|pro|p)\\b\\s*[:=~≈-]?\\s*" + number, "i"),
+                    new RegExp(number + "\\s*(?:g|grams?)?\\s*(?:proteins?|prot(?:ein)?|pro|p)\\b", "i")
+                ]
+            },
+            {
+                key: "carbsG",
+                patterns: [
+                    new RegExp("\\b(?:carbohydrates?|carbs?|carb|cho|c)\\b\\s*[:=~≈-]?\\s*" + number, "i"),
+                    new RegExp(number + "\\s*(?:g|grams?)?\\s*(?:carbohydrates?|carbs?|carb|cho|c)\\b", "i")
+                ]
+            },
+            {
+                key: "fatG",
+                patterns: [
+                    new RegExp("\\b(?:fats?|lipids?|lipid|f)\\b\\s*[:=~≈-]?\\s*" + number, "i"),
+                    new RegExp(number + "\\s*(?:g|grams?)?\\s*(?:fats?|lipids?|lipid|f)\\b", "i")
+                ]
+            }
+        ].forEach(function (definition) {
+            var explicit = definition.patterns.map(function (pattern) {
+                return source.match(pattern);
+            }).find(Boolean);
+            if (!explicit) {
+                return;
+            }
+            var parsed = parseMacroNumberToken(explicit[1], definition.key);
+            if (parsed !== null) {
+                macros[definition.key] = parsed;
+            }
+        });
+        return normalizeRecipeMacros(macros);
+    }
+
+    function stripQuickNutrition(value) {
+        var aliases = "(?:kilocalories?|kcal|ccal|calories?|calory|cals?|protein|proteins|prot|pro|carbohydrates?|carbs?|carb|cho|fats?|fat|lipids?|lipid)";
+        return String(value || "")
+            .replace(new RegExp("\\b" + aliases + "\\s*[:=~≈-]?\\s*\\d+(?:[.,]\\d+)?\\s*(?:kcal|cals?|g|grams?)?\\b", "gi"), " ")
+            .replace(new RegExp("\\b\\d+(?:[.,]\\d+)?\\s*(?:g|grams?)?\\s*" + aliases + "\\b", "gi"), " ")
+            .replace(/\b(?:\d+(?:[.,]\d+)?\s*[pcf]|[pcf]\s*\d+(?:[.,]\d+)?)\b/gi, " ");
+    }
+
+    function quickAddTitle(source, kind) {
+        var value = stripQuickDateTime(source);
+        if (kind === "meal") {
+            value = stripQuickNutrition(value)
+                .replace(/^\s*(?:meal|food|ate|eaten|log)\b\s*[:=-]?\s*/i, "");
+        } else if (kind === "event") {
+            value = value.replace(/^\s*(?:event|calendar|schedule)\b\s*[:=-]?\s*/i, "");
+        } else if (kind === "task") {
+            value = value.replace(/^\s*(?:task|todo|to-do)\b\s*[:=-]?\s*/i, "");
+        } else if (kind === "note") {
+            value = value.replace(/^\s*(?:note|remember)\b\s*[:=-]?\s*/i, "");
+        }
+        return value.replace(/\s+/g, " ").replace(/^[\s,;:.-]+|[\s,;:.-]+$/g, "").trim().slice(0, 180);
+    }
+
+    function detectQuickAddKind(source) {
+        var value = String(source || "").trim();
+        if (/^(?:weight|weigh[- ]?in|weigh|тегло)\b/i.test(value)) {
+            return "weight";
+        }
+        if (/^(?:note|remember)\b/i.test(value)) {
+            return "note";
+        }
+        if (/^(?:event|calendar|schedule)\b/i.test(value)) {
+            return "event";
+        }
+        if (/^(?:meal|food|ate|eaten)\b/i.test(value) ||
+            /\b(?:kcal|ccal|calories?|calory|cals?|protein|proteins|carbs?|carbohydrates?|fats?)\b/i.test(value) ||
+            /\d+(?:[.,]\d+)?\s*[pcf]\b/i.test(value)) {
+            return "meal";
+        }
+        var timing = quickAddDateTime(value);
+        if (timing.hasDate || timing.hasTime || /^(?:gym|workout)\b/i.test(value)) {
+            return "event";
+        }
+        return "task";
+    }
+
+    function parseQuickWeight(source, dateTime) {
+        var match = String(source || "").match(/(?:weight|weigh[- ]?in|weigh|тегло)\s*[:=~-]?\s*(\d+(?:[.,]\d+)?)/i);
+        var value = match ? Number(match[1].replace(",", ".")) : Number.NaN;
+        var sourceUsesPounds = /\b(?:lb|lbs|pounds?)\b/i.test(source);
+        var sourceUsesKg = /\b(?:kg|kgs|kilograms?)\b/i.test(source);
+        if (!sourceUsesPounds && !sourceUsesKg) {
+            sourceUsesPounds = state.measurementUnit === "imperial";
+        }
+        var weightKg = sourceUsesPounds ? value / 2.2046226218 : value;
+        return {
+            kind: "weight",
+            date: dateTime.date,
+            weightKg: normalizeMeasurementNumber(weightKg, "weight"),
+            error: Number.isFinite(weightKg) && normalizeMeasurementNumber(weightKg, "weight") !== null
+                ? ""
+                : "Enter a weight after the word “weight”, for example: weight 91.4 kg."
+        };
+    }
+
+    function parseQuickAdd(source, forcedKind) {
+        var value = String(source || "").trim();
+        var kind = forcedKind || detectQuickAddKind(value);
+        var dateTime = quickAddDateTime(value);
+        if (!value) {
+            return { kind: kind, error: "Type something to add." };
+        }
+        if (kind === "weight") {
+            return parseQuickWeight(value, dateTime);
+        }
+        var title = quickAddTitle(value, kind);
+        if (kind === "meal") {
+            var macros = quickMacros(value);
+            return {
+                kind: kind,
+                title: title,
+                date: dateTime.date,
+                startMinutes: dateTime.startMinutes,
+                macros: macros,
+                error: Number.isFinite(macros.calories)
+                    ? ""
+                    : "Include calories, for example: banana 105 kcal 2g protein."
+            };
+        }
+        if (kind === "event") {
+            return {
+                kind: kind,
+                title: title,
+                date: dateTime.date,
+                startMinutes: dateTime.hasTime
+                    ? dateTime.startMinutes
+                    : (dateTime.hasDate ? 9 * 60 : dateTime.startMinutes),
+                error: title ? "" : "Include an event name, for example: gym tomorrow 18:00."
+            };
+        }
+        return {
+            kind: kind,
+            title: title,
+            error: title ? "" : "Include a name or description."
+        };
+    }
+
+    function quickDateLabel(dateKey) {
+        var today = localDateKey(new Date());
+        if (dateKey === today) {
+            return "Today";
+        }
+        if (dateKey === shiftDateKey(today, 1)) {
+            return "Tomorrow";
+        }
+        return new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric" })
+            .format(parseLocalDate(dateKey));
+    }
+
+    function quickAddPreviewText(parsed) {
+        if (parsed.error) {
+            return parsed.error;
+        }
+        if (parsed.kind === "meal") {
+            var macroText = [formatMacroValue(parsed.macros.calories) + " kcal"];
+            ["proteinG", "carbsG", "fatG"].forEach(function (key) {
+                if (Number.isFinite(parsed.macros[key])) {
+                    macroText.push(formatMacroValue(parsed.macros[key]) + " g " + macroField(key).label);
+                }
+            });
+            return "Meal · " + quickDateLabel(parsed.date) + " at " + minutesToTime(parsed.startMinutes) +
+                " · " + (parsed.title || "Quick calories") + " · " + macroText.join(", ");
+        }
+        if (parsed.kind === "event") {
+            return "Calendar event · " + quickDateLabel(parsed.date) + " at " +
+                minutesToTime(parsed.startMinutes) + " · " + parsed.title;
+        }
+        if (parsed.kind === "weight") {
+            return "Weight check-in · " + quickDateLabel(parsed.date) + " · " +
+                formatMeasurementValue(parsed.weightKg, "weight");
+        }
+        return (parsed.kind === "note" ? "Note" : "Inbox task") + " · " + parsed.title;
+    }
+
+    function updateQuickAddPreview() {
+        var source = elements.quickAddInput.value;
+        var detectedKind = detectQuickAddKind(source);
+        if (!quickAddTypeOverridden) {
+            elements.quickAddType.value = detectedKind;
+        }
+        var parsed = parseQuickAdd(source, elements.quickAddType.value);
+        elements.quickAddPreview.textContent = source
+            ? quickAddPreviewText(parsed)
+            : "Try “banana 105 kcal 2g protein”, “gym tomorrow 18:00”, or “weight 91.4 kg”.";
+        elements.quickAddPreview.classList.toggle("is-error", Boolean(source && parsed.error));
+        elements.quickAddSaveButton.textContent = "Add " +
+            (elements.quickAddType.value === "weight" ? "weight" : elements.quickAddType.value);
+        elements.quickAddError.textContent = "";
+        return parsed;
+    }
+
+    function openQuickAdd() {
+        quickAddTypeOverridden = false;
+        elements.quickAddForm.reset();
+        elements.quickAddType.value = "task";
+        elements.quickAddError.textContent = "";
+        updateQuickAddPreview();
+        openModal(elements.quickAddModal);
+        window.setTimeout(function () { elements.quickAddInput.focus(); }, 0);
+    }
+
+    function quickAddInboxTask(title, now) {
+        var inbox = state.notes.find(function (note) {
+            return String(note.title || "").trim().toLocaleLowerCase() === "inbox";
+        });
+        if (!inbox) {
+            inbox = {
+                id: createId("note"),
+                groupId: defaultNoteGroupId(),
+                title: "Inbox",
+                items: [],
+                createdAt: now,
+                updatedAt: now,
+                pinned: true,
+                manualOrder: null,
+                orderUpdatedAt: now,
+                lastVisitedAt: now,
+                visits: {}
+            };
+            state.notes.unshift(inbox);
+        }
+        inbox.items.push(newItem(title));
+        inbox.updatedAt = now;
+        return "Task added to Inbox";
+    }
+
+    function quickAddNote(title, now) {
+        state.notes.unshift({
+            id: createId("note"),
+            groupId: defaultNoteGroupId(),
+            title: title,
+            items: [],
+            createdAt: now,
+            updatedAt: now,
+            pinned: false,
+            manualOrder: null,
+            orderUpdatedAt: now,
+            lastVisitedAt: now,
+            visits: {}
+        });
+        return "Note added";
+    }
+
+    function quickAddEvent(parsed, now) {
+        state.calendarEvents.push({
+            id: createId("event"),
+            title: parsed.title,
+            date: parsed.date,
+            startMinutes: parsed.startMinutes,
+            durationMinutes: 60,
+            createdAt: now,
+            updatedAt: now
+        });
+        return parsed.title + " added to " + quickDateLabel(parsed.date);
+    }
+
+    function quickAddMeal(parsed, now) {
+        var foodCreated = saveQuickMealAsFoodItem(parsed.title, parsed.macros, now);
+        state.mealEntries.push({
+            id: createId("meal"),
+            date: parsed.date,
+            startMinutes: parsed.startMinutes,
+            recipeId: MANUAL_MEAL_RECIPE_ID,
+            recipeTitle: parsed.title || "Quick calories",
+            portionPercent: 100,
+            macros: normalizeRecipeMacros(parsed.macros),
+            createdAt: now,
+            updatedAt: now
+        });
+        return (parsed.title || "Quick calories") + " logged · " +
+            formatMacroValue(parsed.macros.calories) + " kcal" +
+            (foodCreated ? " · saved to Food Items" : "");
+    }
+
+    function quickAddWeight(parsed, now) {
+        var entry = {
+            id: createId("measurement"),
+            date: parsed.date,
+            note: "Added with Quick Add",
+            createdAt: now,
+            updatedAt: now
+        };
+        MEASUREMENT_FIELDS.forEach(function (field) {
+            entry[field.key] = field.key === "weightKg" ? parsed.weightKg : null;
+        });
+        state.measurementEntries.push(entry);
+        return "Weight check-in added · " + formatMeasurementValue(parsed.weightKg, "weight");
+    }
+
+    function saveQuickAdd(event) {
+        event.preventDefault();
+        elements.quickAddError.textContent = "";
+        var parsed = parseQuickAdd(elements.quickAddInput.value, elements.quickAddType.value);
+        if (parsed.error) {
+            elements.quickAddError.textContent = parsed.error;
+            elements.quickAddInput.focus();
+            return;
+        }
+
+        var now = new Date().toISOString();
+        var result;
+        if (parsed.kind === "meal") {
+            result = quickAddMeal(parsed, now);
+        } else if (parsed.kind === "event") {
+            result = quickAddEvent(parsed, now);
+        } else if (parsed.kind === "weight") {
+            result = quickAddWeight(parsed, now);
+        } else if (parsed.kind === "note") {
+            result = quickAddNote(parsed.title, now);
+        } else {
+            result = quickAddInboxTask(parsed.title, now);
+        }
+
+        var databaseSave = persist({ touchActiveNote: false, touchActiveRecipe: false, immediate: true });
+        closeModal(elements.quickAddModal);
+        if (activeView === "home") {
+            renderHome();
+        } else if (activeView === "calendar") {
+            renderCalendar(selectedCalendarDate, false);
+        }
+        showToast("Saving Quick Add to the database...");
+        databaseSave.then(function (saved) {
+            showToast(saved ? result + "." : "Quick Add was not saved. Keep this page open and retry.");
+        });
+    }
+
     function openCalendarEventForm(event, dateKey, startMinutes) {
         activeCalendarEventId = event ? event.id : null;
         elements.calendarEventFormTitle.textContent = event ? "Edit event" : "Add an event";
@@ -3115,6 +3967,7 @@
     }
 
     function openMealForm(meal, dateKey, startMinutes) {
+        mealReturnView = activeView === "home" ? "home" : "calendar";
         activeMealEntryId = meal ? meal.id : null;
         pendingMealDate = meal ? meal.date : dateKey;
         pendingMealStartMinutes = meal ? meal.startMinutes : startMinutes;
@@ -3128,10 +3981,24 @@
         elements.deleteMealButton.hidden = !meal;
         elements.saveMealButton.textContent = meal ? "Save meal" : "Log meal";
         elements.mealFormError.textContent = "";
+        elements.mealManualTitle.value = meal && meal.recipeId === MANUAL_MEAL_RECIPE_ID
+            ? (meal.recipeTitle === "Quick calories" ? "" : meal.recipeTitle)
+            : "";
+        var manualMealTotals = meal && meal.recipeId === MANUAL_MEAL_RECIPE_ID
+            ? scaledMealMacros(meal)
+            : null;
+        elements.mealManualCalories.value = manualMealTotals && Number.isFinite(manualMealTotals.calories)
+            ? String(manualMealTotals.calories)
+            : "";
+        elements.mealManualMacroInputs.forEach(function (input) {
+            var value = manualMealTotals ? manualMealTotals[input.dataset.mealManualMacro] : null;
+            input.value = Number.isFinite(value) ? String(value) : "";
+        });
         clear(elements.mealRecipeSelect);
 
         var recipes = mealEligibleRecipes();
-        if (meal && !recipes.some(function (recipe) { return recipe.id === meal.recipeId; })) {
+        if (meal && meal.recipeId !== MANUAL_MEAL_RECIPE_ID &&
+            !recipes.some(function (recipe) { return recipe.id === meal.recipeId; })) {
             var snapshotOption = document.createElement("option");
             snapshotOption.value = meal.recipeId;
             snapshotOption.textContent = meal.recipeTitle + " (saved snapshot)";
@@ -3146,19 +4013,48 @@
             elements.mealRecipeSelect.appendChild(option);
         });
 
-        if (meal) {
+        if (meal && meal.recipeId !== MANUAL_MEAL_RECIPE_ID) {
             elements.mealRecipeSelect.value = meal.recipeId;
         }
         var hasOptions = elements.mealRecipeSelect.options.length > 0;
-        elements.mealRecipeSelect.disabled = !hasOptions;
-        elements.mealPortionPercent.disabled = !hasOptions;
-        elements.mealMacroFields.disabled = !hasOptions;
-        elements.saveMealButton.disabled = !hasOptions;
         elements.mealRecipeHelp.textContent = hasOptions
             ? "The calendar keeps its own nutrition snapshot, so changing a saved item later will not rewrite past days."
-            : "Add calories to a recipe or food item first, then come back to log it.";
-        updateMealMacroInputs(meal);
+            : "No saved items have calories yet. Use Quick calories instead.";
         openModal(elements.mealModal);
+        setMealEntryMode(
+            meal && meal.recipeId === MANUAL_MEAL_RECIPE_ID ? "manual" : (hasOptions ? "recipe" : "manual"),
+            meal);
+    }
+
+    function setMealEntryMode(mode, sourceMeal) {
+        mealEntryMode = mode === "manual" ? "manual" : "recipe";
+        var manual = mealEntryMode === "manual";
+        var hasRecipes = elements.mealRecipeSelect.options.length > 0;
+        elements.mealRecipeModeFields.hidden = manual;
+        elements.mealManualModeFields.hidden = !manual;
+        elements.mealRecipeSelect.required = !manual;
+        elements.mealRecipeSelect.disabled = manual || !hasRecipes;
+        elements.mealPortionPercent.required = !manual;
+        elements.mealPortionPercent.disabled = manual || !hasRecipes;
+        elements.mealMacroFields.disabled = manual || !hasRecipes;
+        elements.mealManualCalories.required = manual;
+        elements.mealManualCalories.disabled = !manual;
+        elements.mealManualTitle.disabled = !manual;
+        elements.mealManualMacroInputs.forEach(function (input) {
+            input.disabled = !manual;
+        });
+        elements.saveMealButton.disabled = !manual && !hasRecipes;
+        elements.mealModeButtons.forEach(function (button) {
+            var selected = button.dataset.mealMode === mealEntryMode;
+            button.classList.toggle("is-selected", selected);
+            button.setAttribute("aria-pressed", selected ? "true" : "false");
+        });
+        if (!manual) {
+            updateMealMacroInputs(sourceMeal && sourceMeal.recipeId !== MANUAL_MEAL_RECIPE_ID ? sourceMeal : null);
+        }
+        window.setTimeout(function () {
+            (manual ? elements.mealManualCalories : elements.mealRecipeSelect).focus();
+        }, 0);
     }
 
     function selectedMealBase() {
@@ -3226,30 +4122,95 @@
         return normalizeRecipeMacros(baseMacros);
     }
 
+    function quickMealMacrosFromInputs() {
+        var totals = emptyRecipeMacros();
+        totals.calories = normalizeMacroNumber(elements.mealManualCalories.value, "calories");
+        elements.mealManualMacroInputs.forEach(function (input) {
+            totals[input.dataset.mealManualMacro] = normalizeMacroNumber(
+                input.value,
+                input.dataset.mealManualMacro);
+        });
+        return normalizeRecipeMacros(totals);
+    }
+
+    function saveQuickMealAsFoodItem(title, macros, now) {
+        if (!title) {
+            return false;
+        }
+        var comparableTitle = title.toLocaleLowerCase();
+        var existing = state.recipes.some(function (recipe) {
+            return recipe.kind === "food" &&
+                String(recipe.title || "").trim().toLocaleLowerCase() === comparableTitle;
+        });
+        if (existing) {
+            return false;
+        }
+        state.recipes.unshift({
+            id: createId("recipe"),
+            kind: "food",
+            title: title,
+            ingredients: [],
+            method: [],
+            notes: "",
+            macroText: "",
+            macros: normalizeRecipeMacros(macros),
+            createdAt: now,
+            updatedAt: now
+        });
+        return true;
+    }
+
     function saveMeal(event) {
         event.preventDefault();
         elements.mealFormError.textContent = "";
-        var base = selectedMealBase();
-        var portion = Number(elements.mealPortionPercent.value);
-        var macroTotals = mealMacroTotalsFromInputs();
-        if (!base) {
-            elements.mealFormError.textContent = "Choose a recipe that has calories.";
-            elements.mealRecipeSelect.focus();
-            return;
-        }
-        if (!Number.isFinite(portion) || portion < 1 || portion > 1000) {
-            elements.mealFormError.textContent = "Portion must be between 1% and 1000%.";
-            elements.mealPortionPercent.focus();
-            return;
-        }
-        if (!Number.isFinite(macroTotals.calories)) {
-            elements.mealFormError.textContent = "Enter the calories for this meal.";
-            elements.mealMacroInputs[0].focus();
-            return;
+        var manual = mealEntryMode === "manual";
+        var base;
+        var portion;
+        var macroTotals;
+        var foodItemCreated = false;
+        if (manual) {
+            macroTotals = quickMealMacrosFromInputs();
+            if (!Number.isFinite(macroTotals.calories)) {
+                elements.mealFormError.textContent = "Enter the calories you want to log.";
+                elements.mealManualCalories.focus();
+                return;
+            }
+            var manualTitle = elements.mealManualTitle.value.trim().slice(0, 180);
+            base = {
+                recipeId: MANUAL_MEAL_RECIPE_ID,
+                recipeTitle: manualTitle || "Quick calories",
+                macros: macroTotals
+            };
+            portion = 100;
+        } else {
+            base = selectedMealBase();
+            portion = Number(elements.mealPortionPercent.value);
+            macroTotals = mealMacroTotalsFromInputs();
+            if (!base) {
+                elements.mealFormError.textContent = "Choose a recipe that has calories.";
+                elements.mealRecipeSelect.focus();
+                return;
+            }
+            if (!Number.isFinite(portion) || portion < 1 || portion > 1000) {
+                elements.mealFormError.textContent = "Portion must be between 1% and 1000%.";
+                elements.mealPortionPercent.focus();
+                return;
+            }
+            if (!Number.isFinite(macroTotals.calories)) {
+                elements.mealFormError.textContent = "Enter the calories for this meal.";
+                elements.mealMacroInputs[0].focus();
+                return;
+            }
         }
 
         portion = Math.round(portion * 10) / 10;
         var now = new Date().toISOString();
+        if (manual) {
+            foodItemCreated = saveQuickMealAsFoodItem(
+                elements.mealManualTitle.value.trim().slice(0, 180),
+                macroTotals,
+                now);
+        }
         var meal = activeMealEntryId
             ? state.mealEntries.find(function (candidate) { return candidate.id === activeMealEntryId; })
             : null;
@@ -3265,16 +4226,26 @@
         meal.recipeId = base.recipeId;
         meal.recipeTitle = base.recipeTitle;
         meal.portionPercent = portion;
-        meal.macros = unscaleMealMacros(macroTotals, portion);
+        meal.macros = manual ? normalizeRecipeMacros(macroTotals) : unscaleMealMacros(macroTotals, portion);
         meal.updatedAt = now;
 
         var scaled = scaledMealMacros(meal);
         selectedCalendarDate = meal.date;
         activeMealEntryId = null;
-        persist({ touchActiveNote: false, immediate: true });
+        var databaseSave = persist({ touchActiveNote: false, immediate: true });
         closeModal(elements.mealModal);
-        renderCalendar(selectedCalendarDate, false);
-        showToast(meal.recipeTitle + " logged · " + formatMacroValue(scaled.calories) + " kcal.");
+        if (mealReturnView === "home") {
+            renderHome();
+        } else {
+            renderCalendar(selectedCalendarDate, false);
+        }
+        showToast("Saving " + meal.recipeTitle + " to the database...");
+        databaseSave.then(function (saved) {
+            showToast(saved
+                ? meal.recipeTitle + " logged · " + formatMacroValue(scaled.calories) + " kcal" +
+                    (foodItemCreated ? " · saved to Food Items." : ".")
+                : "Meal was not saved. Keep this page open and retry the database save.");
+        });
     }
 
     function deleteMeal() {
@@ -3782,7 +4753,7 @@
         renderItems();
     }
 
-    function closeEditor() {
+    function finishNoteEditing() {
         var note = getActiveNote();
         if (note && !note.title.trim() && !flattenItems(note.items).some(function (entry) { return entry.item.text.trim(); })) {
             state.deletedNotes[note.id] = new Date().toISOString();
@@ -3791,11 +4762,17 @@
         }
 
         activeNoteId = null;
-        if (returnGroupId && getGroup(returnGroupId)) {
-            openGroup(returnGroupId);
-        } else {
-            renderHome();
-        }
+    }
+
+    function closeEditor() {
+        finishNoteEditing();
+        goBackOneView(function () {
+            if (returnGroupId && getGroup(returnGroupId)) {
+                openGroup(returnGroupId);
+            } else {
+                renderHome();
+            }
+        });
     }
 
     function renderItems() {
@@ -4312,11 +5289,13 @@
         activeNoteId = null;
         persist();
         showToast("Note deleted.");
-        if (returnGroupId && getGroup(returnGroupId)) {
-            openGroup(returnGroupId);
-        } else {
-            renderHome();
-        }
+        goBackOneView(function () {
+            if (returnGroupId && getGroup(returnGroupId)) {
+                openGroup(returnGroupId);
+            } else {
+                renderHome();
+            }
+        });
     }
 
     function openModal(modal) {
@@ -4324,7 +5303,7 @@
         modal.setAttribute("aria-hidden", "false");
         document.body.classList.add("todo-modal-open");
         window.setTimeout(function () {
-            var focusable = modal.querySelector("input:not([readonly]):not(:disabled), select:not(:disabled), textarea:not([readonly]):not(:disabled), button:not(:disabled):not([data-close-modal]):not([data-close-group-modal]):not([data-close-calendar-event]):not([data-close-meal])");
+            var focusable = modal.querySelector("input:not([readonly]):not(:disabled), select:not(:disabled), textarea:not([readonly]):not(:disabled), button:not(:disabled):not([data-close-modal]):not([data-close-group-modal]):not([data-close-calendar-event]):not([data-close-meal]):not([data-close-quick-add])");
             if (focusable) {
                 focusable.focus();
             }
@@ -4334,7 +5313,8 @@
     function closeModal(modal) {
         modal.hidden = true;
         modal.setAttribute("aria-hidden", "true");
-        if (elements.settingsModal.hidden && elements.groupModal.hidden && elements.calendarEventModal.hidden && elements.mealModal.hidden) {
+        if (elements.settingsModal.hidden && elements.groupModal.hidden && elements.calendarEventModal.hidden &&
+            elements.mealModal.hidden && elements.quickAddModal.hidden) {
             document.body.classList.remove("todo-modal-open");
         }
     }
@@ -4507,7 +5487,9 @@
         createNote(activeGroupId || defaultNoteGroupId(), null);
     });
     document.querySelectorAll('[data-action="back-home"]').forEach(function (button) {
-        button.addEventListener("click", renderHome);
+        button.addEventListener("click", function () {
+            goBackOneView(renderHome);
+        });
     });
     document.querySelectorAll('[data-action="close-editor"]').forEach(function (button) {
         button.addEventListener("click", closeEditor);
@@ -4602,7 +5584,31 @@
         renderCalendar(localDateKey(new Date()), true);
     });
     elements.homeTodayCalendarButton.addEventListener("click", openTodayCalendar);
+    elements.homeTodayCaloriesButton.addEventListener("click", openDashboardMealForm);
     elements.homeTodayNextEvent.addEventListener("click", openTodayCalendar);
+    elements.homeTodayWorkoutButton.addEventListener("click", openWorkoutTracker);
+    elements.homeTodayWeightButton.addEventListener("click", openMeasurements);
+    elements.quickAddButton.addEventListener("click", openQuickAdd);
+    elements.quickAddForm.addEventListener("submit", saveQuickAdd);
+    elements.quickAddInput.addEventListener("input", function () {
+        quickAddTypeOverridden = false;
+        updateQuickAddPreview();
+    });
+    elements.quickAddType.addEventListener("change", function () {
+        quickAddTypeOverridden = true;
+        updateQuickAddPreview();
+    });
+    document.querySelectorAll("[data-quick-add-example]").forEach(function (button) {
+        button.addEventListener("click", function () {
+            quickAddTypeOverridden = false;
+            elements.quickAddInput.value = button.dataset.quickAddExample;
+            updateQuickAddPreview();
+            elements.quickAddInput.focus();
+        });
+    });
+    document.querySelectorAll("[data-close-quick-add]").forEach(function (button) {
+        button.addEventListener("click", function () { closeModal(elements.quickAddModal); });
+    });
     elements.calendarDatePicker.addEventListener("change", function () {
         if (elements.calendarDatePicker.value) {
             renderCalendar(elements.calendarDatePicker.value, true);
@@ -4612,6 +5618,12 @@
     elements.deleteCalendarEventButton.addEventListener("click", deleteCalendarEvent);
     elements.calendarNutritionTargetButton.addEventListener("click", openMeasurements);
     elements.mealForm.addEventListener("submit", saveMeal);
+    elements.mealModeButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+            elements.mealFormError.textContent = "";
+            setMealEntryMode(button.dataset.mealMode, null);
+        });
+    });
     elements.mealRecipeSelect.addEventListener("change", function () { updateMealMacroInputs(null); });
     elements.mealPortionPercent.addEventListener("input", function () { updateMealMacroInputs(null); });
     document.querySelectorAll("[data-meal-portion]").forEach(function (button) {
@@ -4717,9 +5729,16 @@
             elements.search.focus();
         }
 
+        if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "j") {
+            event.preventDefault();
+            openQuickAdd();
+        }
+
         if (event.key === "Escape") {
             if (dragSession) {
                 finishDrag(false);
+            } else if (!elements.quickAddModal.hidden) {
+                closeModal(elements.quickAddModal);
             } else if (!elements.calendarEventModal.hidden) {
                 activeCalendarEventId = null;
                 closeModal(elements.calendarEventModal);
@@ -4736,15 +5755,15 @@
             } else if (activeView === "editor") {
                 closeEditor();
             } else if (activeView === "group") {
-                renderHome();
+                goBackOneView(renderHome);
             } else if (activeView === "calendar") {
-                renderHome();
+                goBackOneView(renderHome);
             } else if (activeView === "goals") {
-                renderHome();
+                goBackOneView(renderHome);
             } else if (activeView === "measurements") {
-                renderHome();
+                goBackOneView(renderHome);
             } else if (activeView === "recipes") {
-                renderHome();
+                goBackOneView(renderHome);
             } else if (activeView === "recipeEditor") {
                 closeRecipeEditor();
             }
@@ -4761,6 +5780,27 @@
     });
     window.addEventListener("offline", function () {
         setSyncStatus(databaseSyncPending() ? "Offline - changes not saved" : "Offline", true);
+    });
+    window.addEventListener("popstate", function (event) {
+        if (!databaseReady || !event.state || event.state.todoView !== true) {
+            return;
+        }
+
+        if (activeView === "editor" &&
+            (event.state.view !== "editor" || event.state.noteId !== activeNoteId)) {
+            finishNoteEditing();
+        }
+        if (activeView === "recipeEditor" &&
+            (event.state.view !== "recipeEditor" || event.state.recipeId !== activeRecipeId)) {
+            finishRecipeEditing();
+        }
+        if (event.state.view !== "editor") {
+            activeNoteId = null;
+        }
+        if (event.state.view !== "recipeEditor") {
+            activeRecipeId = null;
+        }
+        restoreViewHistory(event.state);
     });
     window.addEventListener("beforeunload", function () {
         if (navigator.onLine && databaseSyncPending()) {
@@ -4800,5 +5840,6 @@
         }
     }, 60000);
 
+    window.setInterval(loadFitnessState, 60000);
     initializeDatabaseState();
 })();

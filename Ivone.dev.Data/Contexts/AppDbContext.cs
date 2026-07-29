@@ -387,6 +387,7 @@ namespace ivone.dev.Data.Contexts
                 entity.ToTable("WorkoutExercises", "fitness");
                 entity.Property(x => x.ExerciseName).HasMaxLength(160).IsRequired();
                 entity.Property(x => x.ExerciseCategory).HasMaxLength(80);
+                entity.Property(x => x.ActivityDataJson).HasColumnType("nvarchar(max)");
                 entity.HasIndex(x => new { x.FitnessWorkoutId, x.SortOrder });
                 entity.HasOne(x => x.Workout)
                     .WithMany(x => x.Exercises)

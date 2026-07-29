@@ -42,19 +42,31 @@
         <symbol id="i-ruler" viewBox="0 0 24 24"><path d="m4 16 12-12 4 4L8 20H4v-4Z"></path><path d="m13 7 4 4M10 10l2 2M7 13l2 2"></path></symbol>
         <symbol id="i-recipe" viewBox="0 0 24 24"><path d="M5 4.5h5.2A3.8 3.8 0 0 1 14 8.3V20a3.8 3.8 0 0 0-3.8-3.8H5V4.5Z"></path><path d="M19 4.5h-1.2A3.8 3.8 0 0 0 14 8.3V20a3.8 3.8 0 0 1 3.8-3.8H19V4.5ZM8 8h2.5M8 11h2.5"></path></symbol>
         <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M7 3v7M4 3v5a3 3 0 0 0 6 0V3M7 11v10M16 3v18M16 3c3 1.5 4 4 4 7h-4"></path></symbol>
+        <symbol id="i-dumbbell" viewBox="0 0 24 24"><path d="M6 8v8M3.5 9.5v5M18 8v8M20.5 9.5v5M6 12h12"></path></symbol>
+        <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"></path></symbol>
         <symbol id="i-todo-mark" viewBox="0 0 24 24"><path d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17V7A2.5 2.5 0 0 1 5 4.5Z"></path><path d="m7 12.5 3.2 3.2L17.5 8"></path></symbol>
     </svg>
 
-    <div id="todoApp" class="todo-app" data-api-root="/api/todo">
+    <div id="todoApp"
+         class="todo-app"
+         data-api-root="/api/todo"
+         data-workout-url="@Url.Page("/MaxOut", new { shared = 1 })"
+         data-workout-state-url="@Url.Page("/MaxOut", "State", new { userId = 1 })">
         <header class="todo-topbar">
             <button id="homeButton" class="todo-brand" type="button" aria-label="Go to all groups">
                 <span class="todo-brand__mark" aria-hidden="true"><svg><use href="#i-todo-mark"></use></svg></span>
                 <span>TODO</span>
             </button>
-            <button id="syncButton" class="todo-sync-pill" type="button" aria-label="Open storage and sync settings">
-                <svg aria-hidden="true"><use href="#i-cloud"></use></svg>
-                <span id="syncStatus">Connecting to database...</span>
-            </button>
+            <div class="todo-topbar__actions">
+                <button id="quickAddButton" class="todo-quick-add-button" type="button" aria-label="Quick add a task, event, meal, measurement, or note">
+                    <svg aria-hidden="true"><use href="#i-bolt"></use></svg>
+                    <span>Quick add</span>
+                </button>
+                <button id="syncButton" class="todo-sync-pill" type="button" aria-label="Open storage and sync settings">
+                    <svg aria-hidden="true"><use href="#i-cloud"></use></svg>
+                    <span id="syncStatus">Connecting to database...</span>
+                </button>
+            </div>
         </header>
 
         <section id="todoDatabaseGate" class="todo-database-gate" role="status" aria-live="polite">
@@ -78,7 +90,7 @@
                 <section id="homeTodayDashboard" class="todo-today-dashboard" aria-labelledby="homeTodayTitle" aria-live="polite">
                     <header class="todo-today-dashboard__heading">
                         <div>
-                            <p class="todo-eyebrow">At a glance</p>
+                            <p id="homeTodayClock" class="todo-eyebrow">Mission control</p>
                             <h2 id="homeTodayTitle">Today</h2>
                         </div>
                         <button id="homeTodayCalendarButton" class="todo-text-button" type="button">
@@ -87,10 +99,10 @@
                     </header>
                     <div class="todo-today-dashboard__content">
                         <div class="todo-today-nutrition">
-                            <div class="todo-today-nutrition__total">
-                                <span>Calories</span>
+                            <button id="homeTodayCaloriesButton" class="todo-today-nutrition__total" type="button">
+                                <span class="todo-today-nutrition__label"><span>Calories</span><small>Log meal</small></span>
                                 <p><strong id="homeTodayCalories">0</strong><span> / <b id="homeTodayCalorieTarget">—</b> kcal</span></p>
-                            </div>
+                            </button>
                             <div id="homeTodayCalorieProgress" class="todo-today-nutrition__progress" role="progressbar" aria-label="Today's calorie progress" aria-valuemin="0" aria-valuenow="0">
                                 <span></span>
                             </div>
@@ -110,6 +122,18 @@
                             </span>
                             <svg class="todo-today-next__arrow" aria-hidden="true"><use href="#i-chevron"></use></svg>
                         </button>
+                        <div class="todo-today-fitness">
+                            <button id="homeTodayWorkoutButton" class="todo-today-pulse" type="button">
+                                <span class="todo-today-pulse__icon" aria-hidden="true"><svg><use href="#i-dumbbell"></use></svg></span>
+                                <span><small>Workout</small><strong id="homeTodayWorkoutStatus">Checking MaxOut…</strong><em id="homeTodayWorkoutDetail">Shared database</em></span>
+                                <svg class="todo-today-pulse__arrow" aria-hidden="true"><use href="#i-chevron"></use></svg>
+                            </button>
+                            <button id="homeTodayWeightButton" class="todo-today-pulse" type="button">
+                                <span class="todo-today-pulse__icon is-weight" aria-hidden="true"><svg><use href="#i-ruler"></use></svg></span>
+                                <span><small>Weekly check-in</small><strong id="homeTodayWeightStatus">No weight yet</strong><em id="homeTodayWeightDetail">Open Measurements</em></span>
+                                <svg class="todo-today-pulse__arrow" aria-hidden="true"><use href="#i-chevron"></use></svg>
+                            </button>
+                        </div>
                     </div>
                 </section>
 
@@ -568,6 +592,43 @@
             </form>
         </section>
 
+        <section id="quickAddModal" class="todo-modal todo-quick-add-modal" hidden aria-hidden="true">
+            <button class="todo-modal__scrim" type="button" data-close-quick-add aria-label="Close Quick Add"></button>
+            <form id="quickAddForm" class="todo-modal__panel todo-modal__panel--small todo-quick-add-form" role="dialog" aria-modal="true" aria-labelledby="quickAddTitle">
+                <header class="todo-modal__header">
+                    <div><p class="todo-eyebrow">One line, straight to the database</p><h2 id="quickAddTitle">Quick Add</h2></div>
+                    <button class="todo-icon-button" type="button" data-close-quick-add aria-label="Close Quick Add"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
+                </header>
+                <label class="todo-field todo-quick-add-entry" for="quickAddInput">
+                    <span>What do you want to add?</span>
+                    <input id="quickAddInput" type="text" maxlength="500" autocomplete="off" placeholder="banana 105 kcal 2g protein" required />
+                </label>
+                <div class="todo-quick-add-examples" aria-label="Quick Add examples">
+                    <button type="button" data-quick-add-example="banana 105 kcal 2g protein">Food</button>
+                    <button type="button" data-quick-add-example="gym tomorrow 18:00">Event</button>
+                    <button type="button" data-quick-add-example="weight 91.4 kg">Weight</button>
+                    <button type="button" data-quick-add-example="task call dentist">Task</button>
+                </div>
+                <div class="todo-quick-add-detection">
+                    <label for="quickAddType"><span>Add as</span>
+                        <select id="quickAddType">
+                            <option value="task">Task</option>
+                            <option value="event">Calendar event</option>
+                            <option value="meal">Meal</option>
+                            <option value="weight">Weight</option>
+                            <option value="note">Note</option>
+                        </select>
+                    </label>
+                    <p id="quickAddPreview" aria-live="polite">Start typing and I’ll classify it.</p>
+                </div>
+                <p id="quickAddError" class="todo-meal-error" role="alert"></p>
+                <div class="todo-calendar-form-actions">
+                    <button class="todo-secondary-button" type="button" data-close-quick-add>Cancel</button>
+                    <button id="quickAddSaveButton" class="todo-primary-button" type="submit">Add task</button>
+                </div>
+            </form>
+        </section>
+
         <section id="calendarEventModal" class="todo-modal" hidden aria-hidden="true">
             <button class="todo-modal__scrim" type="button" data-close-calendar-event aria-label="Close event form"></button>
             <form id="calendarEventForm" class="todo-modal__panel todo-modal__panel--small" role="dialog" aria-modal="true" aria-labelledby="calendarEventFormTitle">
@@ -607,6 +668,11 @@
                     <div><p id="mealFormContext" class="todo-eyebrow">Meal at 09:00</p><h2 id="mealFormTitle">Log a meal</h2></div>
                     <button class="todo-icon-button" type="button" data-close-meal aria-label="Close meal form"><svg aria-hidden="true"><use href="#i-x"></use></svg></button>
                 </header>
+                <div class="todo-meal-mode" role="group" aria-label="Meal entry type">
+                    <button type="button" data-meal-mode="recipe" aria-pressed="true"><svg aria-hidden="true"><use href="#i-recipe"></use></svg> Recipe</button>
+                    <button type="button" data-meal-mode="manual" aria-pressed="false"><svg aria-hidden="true"><use href="#i-plus"></use></svg> Quick calories</button>
+                </div>
+                <div id="mealRecipeModeFields">
                 <label class="todo-field todo-meal-field" for="mealRecipeSelect"><span>Recipe or food item</span>
                     <select id="mealRecipeSelect" required></select>
                 </label>
@@ -630,6 +696,24 @@
                         <label><span>Fat</span><span class="todo-meal-macro-input"><input type="number" min="0" max="5000" step="0.1" inputmode="decimal" data-meal-macro="fatG" /><b>g</b></span></label>
                     </div>
                 </fieldset>
+                </div>
+                <div id="mealManualModeFields" class="todo-meal-manual" hidden>
+                    <label class="todo-field todo-meal-field" for="mealManualCalories"><span>Calories</span>
+                        <span class="todo-meal-macro-input"><input id="mealManualCalories" type="number" min="0" max="20000" step="0.1" inputmode="decimal" required /><b>kcal</b></span>
+                    </label>
+                    <label class="todo-field todo-meal-field" for="mealManualTitle"><span>What was it? <small>Optional</small></span>
+                        <input id="mealManualTitle" type="text" maxlength="180" autocomplete="off" placeholder="Banana, protein shake, coffee…" />
+                    </label>
+                    <p class="todo-meal-help">Add a name to also save it as a reusable Food Item.</p>
+                    <fieldset class="todo-meal-macros todo-meal-manual-macros">
+                        <legend>Macros <small>Optional</small></legend>
+                        <div class="todo-meal-macro-grid todo-meal-manual-macro-grid">
+                            <label><span>Protein</span><span class="todo-meal-macro-input"><input type="number" min="0" max="5000" step="0.1" inputmode="decimal" data-meal-manual-macro="proteinG" /><b>g</b></span></label>
+                            <label><span>Carbs</span><span class="todo-meal-macro-input"><input type="number" min="0" max="5000" step="0.1" inputmode="decimal" data-meal-manual-macro="carbsG" /><b>g</b></span></label>
+                            <label><span>Fat</span><span class="todo-meal-macro-input"><input type="number" min="0" max="5000" step="0.1" inputmode="decimal" data-meal-manual-macro="fatG" /><b>g</b></span></label>
+                        </div>
+                    </fieldset>
+                </div>
                 <p id="mealFormError" class="todo-meal-error" role="alert"></p>
                 <div class="todo-calendar-form-actions">
                     <button id="deleteMealButton" class="todo-secondary-button is-danger" type="button" hidden>Delete meal</button>

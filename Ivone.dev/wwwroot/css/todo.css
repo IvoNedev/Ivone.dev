@@ -15,9 +15,13 @@
     --todo-danger-soft: #f9e5e2;
     --todo-calendar: #c74363;
     --todo-calendar-soft: #f9e8ed;
+    --todo-measurements: #167d89;
     --todo-recipe: #b4532a;
     --todo-recipe-dark: #8f3f20;
     --todo-recipe-soft: #f7e8db;
+    --todo-workout: #247a4b;
+    --todo-workout-dark: #185c37;
+    --todo-workout-soft: #e1f1e7;
     --todo-focus: #225ee8;
     --todo-radius-sm: 10px;
     --todo-radius: 16px;
@@ -290,6 +294,45 @@ textarea:focus-visible,
     font-weight: 700;
 }
 
+.todo-topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.todo-quick-add-button {
+    display: inline-flex;
+    min-height: 44px;
+    padding: 8px 13px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid var(--todo-ink);
+    border-radius: 999px;
+    background: var(--todo-ink);
+    color: white;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: border-color var(--todo-fast), background var(--todo-fast);
+}
+
+.todo-quick-add-button:hover,
+.todo-quick-add-button:focus-visible {
+    border-color: var(--todo-primary);
+    background: var(--todo-primary);
+}
+
+.todo-quick-add-button svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .todo-database-gate {
     display: flex;
     width: min(calc(100% - 32px), 720px);
@@ -382,7 +425,7 @@ textarea:focus-visible,
 
 .todo-today-dashboard__content {
     display: grid;
-    grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr);
+    grid-template-columns: minmax(280px, 1.2fr) minmax(240px, .8fr) minmax(230px, .7fr);
 }
 
 .todo-today-nutrition {
@@ -392,15 +435,46 @@ textarea:focus-visible,
 
 .todo-today-nutrition__total {
     display: flex;
+    width: 100%;
+    min-height: 48px;
+    padding: 7px 8px;
     align-items: end;
     justify-content: space-between;
     gap: 16px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: var(--todo-ink);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--todo-fast), box-shadow var(--todo-fast);
+}
+
+.todo-today-nutrition__total:hover {
+    background: var(--todo-surface-muted);
+}
+
+.todo-today-nutrition__total:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 3px var(--todo-primary-soft);
 }
 
 .todo-today-nutrition__total > span {
     color: var(--todo-muted);
     font-size: 12px;
     font-weight: 800;
+}
+
+.todo-today-nutrition__label {
+    display: grid;
+    gap: 2px;
+}
+
+.todo-today-nutrition__label small {
+    color: var(--todo-primary);
+    font-size: 10px;
+    font-weight: 850;
 }
 
 .todo-today-nutrition__total p {
@@ -538,6 +612,88 @@ textarea:focus-visible,
 .todo-today-next__arrow {
     width: 18px;
     height: 18px;
+    color: var(--todo-muted);
+}
+
+.todo-today-fitness {
+    display: grid;
+    min-width: 0;
+    border-left: 1px solid var(--todo-line);
+}
+
+.todo-today-pulse {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 18px;
+    min-width: 0;
+    min-height: 69px;
+    padding: 12px 14px;
+    align-items: center;
+    gap: 10px;
+    border: 0;
+    background: color-mix(in srgb, var(--todo-workout-soft) 35%, var(--todo-surface));
+    text-align: left;
+    transition: background var(--todo-fast);
+}
+
+.todo-today-pulse + .todo-today-pulse {
+    border-top: 1px solid var(--todo-line);
+}
+
+.todo-today-pulse:hover,
+.todo-today-pulse:focus-visible {
+    background: var(--todo-workout-soft);
+}
+
+.todo-today-pulse__icon {
+    display: inline-grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 11px;
+    background: white;
+    color: var(--todo-workout);
+}
+
+.todo-today-pulse__icon.is-weight {
+    color: var(--todo-measurements);
+}
+
+.todo-today-pulse__icon svg,
+.todo-today-pulse__arrow {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.todo-today-pulse > span:nth-child(2) {
+    display: grid;
+    min-width: 0;
+}
+
+.todo-today-pulse small,
+.todo-today-pulse em {
+    overflow: hidden;
+    color: var(--todo-muted);
+    font-size: 10px;
+    font-style: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-today-pulse strong {
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-today-pulse__arrow {
+    width: 16px;
+    height: 16px;
     color: var(--todo-muted);
 }
 
@@ -1500,6 +1656,23 @@ textarea:focus-visible,
     color: var(--todo-muted);
 }
 
+.todo-calorie-summary-card {
+    border-color: color-mix(in srgb, var(--todo-accent) 38%, var(--todo-line));
+    background: color-mix(in srgb, var(--todo-recipe-soft) 44%, white);
+}
+
+.todo-calorie-summary-card .todo-measurement-trend-periods {
+    border-top-color: color-mix(in srgb, var(--todo-accent) 18%, var(--todo-line));
+}
+
+.todo-calorie-summary-card .todo-measurement-trend-periods b.is-over {
+    color: var(--todo-danger);
+}
+
+.todo-calorie-summary-card .todo-measurement-trend-periods b.is-under {
+    color: #167d89;
+}
+
 .todo-measurement-trend-empty {
     margin: 0;
     color: var(--todo-muted);
@@ -2154,8 +2327,151 @@ textarea:focus-visible,
     gap: 7px;
 }
 
+.todo-meal-mode {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    margin: 18px 0;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--todo-surface-muted);
+}
+
+.todo-quick-add-form {
+    overflow: visible;
+}
+
+.todo-quick-add-entry {
+    margin-top: 18px;
+}
+
+.todo-quick-add-entry input {
+    width: 100%;
+    min-height: 56px;
+    padding: 12px 14px;
+    border: 1px solid var(--todo-line);
+    border-radius: 12px;
+    background: white;
+    color: var(--todo-ink);
+    font-size: 17px;
+}
+
+.todo-quick-add-entry input:focus {
+    border-color: var(--todo-primary);
+}
+
+.todo-quick-add-examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.todo-quick-add-examples button {
+    min-height: 44px;
+    padding: 6px 11px;
+    border: 1px solid var(--todo-line);
+    border-radius: 999px;
+    background: var(--todo-bg);
+    color: var(--todo-muted);
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    transition: border-color var(--todo-fast), background var(--todo-fast), color var(--todo-fast);
+}
+
+.todo-quick-add-examples button:hover,
+.todo-quick-add-examples button:focus-visible {
+    border-color: var(--todo-primary);
+    background: var(--todo-primary-soft);
+    color: var(--todo-primary);
+}
+
+.todo-quick-add-detection {
+    display: grid;
+    grid-template-columns: 150px minmax(0, 1fr);
+    margin-top: 18px;
+    overflow: hidden;
+    border: 1px solid var(--todo-line);
+    border-radius: 12px;
+    background: var(--todo-surface-muted);
+}
+
+.todo-quick-add-detection label {
+    display: grid;
+    gap: 4px;
+    padding: 10px 12px;
+    border-right: 1px solid var(--todo-line);
+    color: var(--todo-muted);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.todo-quick-add-detection select {
+    min-width: 0;
+    min-height: 34px;
+    padding: 3px 28px 3px 7px;
+    border: 1px solid var(--todo-line);
+    border-radius: 8px;
+    background: white;
+    color: var(--todo-ink);
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: none;
+}
+
+.todo-quick-add-detection p {
+    align-self: center;
+    margin: 0;
+    padding: 12px 14px;
+    color: var(--todo-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.todo-meal-mode button {
+    display: inline-flex;
+    min-height: 44px;
+    padding: 9px 12px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--todo-muted);
+    font-weight: 800;
+    cursor: pointer;
+    transition: border-color var(--todo-fast), background var(--todo-fast), color var(--todo-fast);
+}
+
+.todo-meal-mode button:hover,
+.todo-meal-mode button:focus-visible,
+.todo-meal-mode button.is-selected {
+    border-color: color-mix(in srgb, var(--todo-recipe) 32%, var(--todo-line));
+    background: white;
+    color: var(--todo-recipe-dark);
+}
+
+.todo-meal-mode button:focus-visible {
+    outline: 2px solid var(--todo-recipe);
+    outline-offset: 1px;
+}
+
+.todo-meal-mode svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 #mealRecipeSelect,
-#mealPortionPercent {
+#mealPortionPercent,
+#mealManualTitle {
     width: 100%;
     min-height: 48px;
     padding: 10px 12px;
@@ -2164,6 +2480,33 @@ textarea:focus-visible,
     background: white;
     color: var(--todo-ink);
     font-size: 16px;
+}
+
+.todo-meal-manual {
+    display: grid;
+    gap: 16px;
+}
+
+.todo-meal-manual .todo-meal-help {
+    margin-top: -7px;
+}
+
+.todo-meal-manual-macros {
+    margin-top: 0;
+}
+
+.todo-meal-manual-macros legend small {
+    color: var(--todo-muted);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.todo-meal-manual-macro-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.todo-meal-manual-macro-grid .todo-meal-macro-input input {
+    padding-right: 28px;
 }
 
 .todo-meal-help {
@@ -3384,6 +3727,72 @@ body.todo-dragging {
     opacity: .86;
 }
 
+.todo-workout-tile {
+    display: flex;
+    flex-direction: column;
+    border-color: var(--todo-workout-dark);
+    background: var(--todo-workout);
+    color: white;
+}
+
+.todo-workout-tile::before {
+    display: none;
+}
+
+.todo-workout-tile:hover {
+    border-color: #10462a;
+    background: var(--todo-workout-dark);
+}
+
+.todo-workout-tile__icon {
+    display: inline-flex;
+    margin-bottom: auto;
+    opacity: .28;
+}
+
+.todo-workout-tile__icon svg {
+    width: 82px;
+    height: 82px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.35;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.todo-workout-tile__label {
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    opacity: .76;
+}
+
+.todo-workout-tile__copy {
+    display: grid;
+    min-width: 0;
+    gap: 3px;
+}
+
+.todo-workout-tile__copy strong,
+.todo-workout-tile__copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.todo-workout-tile__copy strong {
+    font-size: 20px;
+    letter-spacing: -.025em;
+}
+
+.todo-workout-tile__copy small {
+    font-size: 13px;
+    font-weight: 750;
+    opacity: .86;
+}
+
 .todo-recipes-view,
 .todo-recipe-editor-view {
     width: min(100%, 1080px);
@@ -3996,6 +4405,22 @@ body.todo-modal-open {
 }
 
 @media (max-width: 900px) {
+    .todo-today-dashboard__content {
+        grid-template-columns: minmax(0, 1fr) minmax(240px, .8fr);
+    }
+
+    .todo-today-fitness {
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        border-top: 1px solid var(--todo-line);
+        border-left: 0;
+    }
+
+    .todo-today-pulse + .todo-today-pulse {
+        border-top: 0;
+        border-left: 1px solid var(--todo-line);
+    }
+
     .todo-calendar-layout {
         grid-template-columns: 1fr;
     }
@@ -4113,6 +4538,20 @@ body.todo-modal-open {
         display: none;
     }
 
+    .todo-quick-add-button {
+        width: 44px;
+        padding: 0;
+    }
+
+    .todo-quick-add-button span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
     .todo-today-dashboard {
         margin: -10px 0 32px;
         border-radius: var(--todo-radius);
@@ -4151,6 +4590,20 @@ body.todo-modal-open {
     .todo-today-next {
         min-height: 92px;
         padding: 14px 15px;
+        border-top: 1px solid var(--todo-line);
+        border-left: 0;
+    }
+
+    .todo-today-fitness {
+        grid-template-columns: 1fr;
+    }
+
+    .todo-today-pulse {
+        min-height: 64px;
+        padding: 10px 15px;
+    }
+
+    .todo-today-pulse + .todo-today-pulse {
         border-top: 1px solid var(--todo-line);
         border-left: 0;
     }
@@ -4626,6 +5079,24 @@ body.todo-modal-open {
 
     .todo-sync-pill span {
         max-width: 88px;
+    }
+
+    .todo-topbar {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .todo-brand > span:last-child {
+        display: none;
+    }
+
+    .todo-quick-add-detection {
+        grid-template-columns: 1fr;
+    }
+
+    .todo-quick-add-detection label {
+        border-right: 0;
+        border-bottom: 1px solid var(--todo-line);
     }
 
     .todo-goal-form {
