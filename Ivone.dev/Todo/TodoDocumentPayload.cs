@@ -13,12 +13,30 @@ internal sealed class TodoDocumentPayload
     public Dictionary<string, string> DeletedMealEntries { get; set; } = [];
     public List<TodoGoalPayload> Goals { get; set; } = [];
     public Dictionary<string, string> DeletedGoals { get; set; } = [];
+    public decimal FinanceMonthlyBudget { get; set; }
+    public string FinanceCurrency { get; set; } = "EUR";
+    public List<TodoFinanceExpensePayload> FinanceExpenses { get; set; } = [];
+    public Dictionary<string, string> DeletedFinanceExpenses { get; set; } = [];
     public string MeasurementUnit { get; set; } = "metric";
     public bool MeasurementSimplified { get; set; } = true;
     public List<TodoMeasurementEntryPayload> MeasurementEntries { get; set; } = [];
     public Dictionary<string, string> DeletedMeasurementEntries { get; set; } = [];
     public List<TodoRecipePayload> Recipes { get; set; } = [];
     public Dictionary<string, string> DeletedRecipes { get; set; } = [];
+}
+
+internal sealed class TodoFinanceExpensePayload
+{
+    public string Id { get; set; } = string.Empty;
+    public string Date { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public string Group { get; set; } = "Other";
+    public string Notes { get; set; } = string.Empty;
+    public bool IsRecurring { get; set; }
+    public string Recurrence { get; set; } = string.Empty;
+    public string CreatedAt { get; set; } = string.Empty;
+    public string UpdatedAt { get; set; } = string.Empty;
 }
 
 internal sealed class TodoGroupPayload

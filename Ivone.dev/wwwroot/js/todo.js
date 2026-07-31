@@ -7,6 +7,7 @@
     var MEASUREMENTS_COLOR = "#167d89";
     var RECIPES_COLOR = "#b4532a";
     var WORKOUT_COLOR = "#247a4b";
+    var FINANCE_COLOR = "#167d89";
     var CALENDAR_HOUR_HEIGHT = 72;
     var MANUAL_MEAL_RECIPE_ID = "manual";
     var MEASUREMENT_FIELDS = [
@@ -60,6 +61,7 @@
         editorView: document.getElementById("editorView"),
         calendarView: document.getElementById("calendarView"),
         goalsView: document.getElementById("goalsView"),
+        financeView: document.getElementById("financeView"),
         measurementsView: document.getElementById("measurementsView"),
         recipesView: document.getElementById("recipesView"),
         recipeEditorView: document.getElementById("recipeEditorView"),
@@ -157,6 +159,23 @@
         goalIsMain: document.getElementById("goalIsMain"),
         goalsSummary: document.getElementById("goalsSummary"),
         goalsList: document.getElementById("goalsList"),
+        financeMonthLabel: document.getElementById("financeMonthLabel"),
+        financeSummary: document.getElementById("financeSummary"),
+        financeExpenseForm: document.getElementById("financeExpenseForm"),
+        financeExpenseAmount: document.getElementById("financeExpenseAmount"),
+        financeExpenseDate: document.getElementById("financeExpenseDate"),
+        financeExpenseLabel: document.getElementById("financeExpenseLabel"),
+        financeExpenseGroup: document.getElementById("financeExpenseGroup"),
+        financeExpenseNotes: document.getElementById("financeExpenseNotes"),
+        financeExpenseRecurring: document.getElementById("financeExpenseRecurring"),
+        financeExpenseRecurrence: document.getElementById("financeExpenseRecurrence"),
+        financeRecurrenceField: document.getElementById("financeRecurrenceField"),
+        financeBudgetForm: document.getElementById("financeBudgetForm"),
+        financeBudgetAmount: document.getElementById("financeBudgetAmount"),
+        financeBudgetProgress: document.getElementById("financeBudgetProgress"),
+        financeGroups: document.getElementById("financeGroups"),
+        financeHistory: document.getElementById("financeHistory"),
+        financeExpenseCount: document.getElementById("financeExpenseCount"),
         measurementForm: document.getElementById("measurementForm"),
         measurementFormTitle: document.getElementById("measurementFormTitle"),
         measurementDate: document.getElementById("measurementDate"),
@@ -274,6 +293,10 @@
             deletedMealEntries: {},
             goals: [],
             deletedGoals: {},
+            financeMonthlyBudget: 0,
+            financeCurrency: "EUR",
+            financeExpenses: [],
+            deletedFinanceExpenses: {},
             measurementUnit: "metric",
             measurementSimplified: true,
             measurementEntries: [],
@@ -437,6 +460,35 @@
             goals.forEach(function (goal) { goal.isMain = goal.id === mainGoals[0].id; });
         }
 
+        var deletedFinanceExpenses = {};
+        if (value.deletedFinanceExpenses && typeof value.deletedFinanceExpenses === "object" && !Array.isArray(value.deletedFinanceExpenses)) {
+            Object.keys(value.deletedFinanceExpenses).sort().forEach(function (expenseId) {
+                if (value.deletedFinanceExpenses[expenseId]) {
+                    deletedFinanceExpenses[String(expenseId)] = String(value.deletedFinanceExpenses[expenseId]);
+                }
+            });
+        }
+        var financeExpenses = Array.isArray(value.financeExpenses) ? value.financeExpenses.filter(Boolean).map(function (expense) {
+            var amount = Number(expense.amount);
+            var recurrence = ["Weekly", "Monthly", "Yearly"].includes(expense.recurrence) ? expense.recurrence : "";
+            return {
+                id: String(expense.id || createId("expense")),
+                date: /^\d{4}-\d{2}-\d{2}$/.test(expense.date || "") ? expense.date : localDateKey(new Date()),
+                amount: Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) / 100 : 0,
+                label: String(expense.label || "Expense").slice(0, 160),
+                group: String(expense.group || "Other").slice(0, 60),
+                notes: String(expense.notes || "").slice(0, 1000),
+                isRecurring: Boolean(expense.isRecurring),
+                recurrence: Boolean(expense.isRecurring) ? recurrence || "Monthly" : "",
+                createdAt: expense.createdAt || now,
+                updatedAt: expense.updatedAt || now
+            };
+        }).filter(function (expense) {
+            return expense.amount > 0 && !deletedFinanceExpenses[expense.id];
+        }) : [];
+        financeExpenses.sort(function (a, b) { return a.id.localeCompare(b.id); });
+        var financeMonthlyBudget = Number(value.financeMonthlyBudget);
+
         var deletedMeasurementEntries = {};
         if (value.deletedMeasurementEntries && typeof value.deletedMeasurementEntries === "object" && !Array.isArray(value.deletedMeasurementEntries)) {
             Object.keys(value.deletedMeasurementEntries).sort().forEach(function (entryId) {
@@ -500,6 +552,12 @@
             deletedMealEntries: deletedMealEntries,
             goals: goals,
             deletedGoals: deletedGoals,
+            financeMonthlyBudget: Number.isFinite(financeMonthlyBudget) && financeMonthlyBudget >= 0
+                ? Math.round(financeMonthlyBudget * 100) / 100
+                : 0,
+            financeCurrency: "EUR",
+            financeExpenses: financeExpenses,
+            deletedFinanceExpenses: deletedFinanceExpenses,
             measurementUnit: value.measurementUnit === "imperial" ? "imperial" : "metric",
             measurementSimplified: value.measurementSimplified !== false,
             measurementEntries: measurementEntries,
@@ -815,6 +873,30 @@
         }).concat(Array.from(remoteGoalsById.values()));
         goals = goals.filter(function (goal) { return !deletedGoals[goal.id]; });
 
+        var deletedFinanceExpenses = {};
+        Array.from(new Set(Object.keys(local.deletedFinanceExpenses).concat(Object.keys(remote.deletedFinanceExpenses))))
+            .sort()
+            .forEach(function (expenseId) {
+                deletedFinanceExpenses[expenseId] = latestIso(
+                    local.deletedFinanceExpenses[expenseId],
+                    remote.deletedFinanceExpenses[expenseId]);
+            });
+        var remoteFinanceById = new Map(remote.financeExpenses.map(function (expense) { return [expense.id, expense]; }));
+        var financeExpenses = local.financeExpenses.map(function (expense) {
+            var remoteExpense = remoteFinanceById.get(expense.id);
+            remoteFinanceById.delete(expense.id);
+            if (!remoteExpense) {
+                return expense;
+            }
+            return (Date.parse(expense.updatedAt) || 0) >= (Date.parse(remoteExpense.updatedAt) || 0)
+                ? expense
+                : remoteExpense;
+        }).concat(Array.from(remoteFinanceById.values()));
+        financeExpenses = financeExpenses.filter(function (expense) { return !deletedFinanceExpenses[expense.id]; });
+        var financeMonthlyBudget = (Date.parse(local.updatedAt) || 0) >= (Date.parse(remote.updatedAt) || 0)
+            ? local.financeMonthlyBudget
+            : remote.financeMonthlyBudget;
+
         var deletedMeasurementEntries = {};
         Array.from(new Set(Object.keys(local.deletedMeasurementEntries).concat(Object.keys(remote.deletedMeasurementEntries))))
             .sort()
@@ -873,6 +955,10 @@
             deletedMealEntries: deletedMealEntries,
             goals: goals,
             deletedGoals: deletedGoals,
+            financeMonthlyBudget: financeMonthlyBudget,
+            financeCurrency: "EUR",
+            financeExpenses: financeExpenses,
+            deletedFinanceExpenses: deletedFinanceExpenses,
             measurementUnit: measurementUnit,
             measurementSimplified: measurementSimplified,
             measurementEntries: measurementEntries,
@@ -1397,6 +1483,8 @@
                 renderCalendar(selectedCalendarDate, false);
             } else if (viewState.view === "goals") {
                 renderGoals();
+            } else if (viewState.view === "finance") {
+                renderFinance();
             } else if (viewState.view === "measurements") {
                 renderMeasurements();
             } else if (viewState.view === "recipes") {
@@ -1439,6 +1527,7 @@
         elements.editorView.hidden = name !== "editor";
         elements.calendarView.hidden = name !== "calendar";
         elements.goalsView.hidden = name !== "goals";
+        elements.financeView.hidden = name !== "finance";
         elements.measurementsView.hidden = name !== "measurements";
         elements.recipesView.hidden = name !== "recipes";
         elements.recipeEditorView.hidden = name !== "recipeEditor";
@@ -1465,6 +1554,11 @@
 
         if (activeView === "goals") {
             renderGoals();
+            return;
+        }
+
+        if (activeView === "finance") {
+            renderFinance();
             return;
         }
 
@@ -1543,6 +1637,7 @@
                 elements.homeGrid.appendChild(buildMeasurementsTile());
                 elements.homeGrid.appendChild(buildRecipesTile());
                 elements.homeGrid.appendChild(buildWorkoutTile());
+                elements.homeGrid.appendChild(buildFinanceTile());
             }
         });
 
@@ -2021,6 +2116,198 @@
 
     function openWorkoutTracker() {
         window.location.assign(root.dataset.workoutUrl || "/MaxOut?shared=1");
+    }
+
+    function buildFinanceTile() {
+        var current = currentMonthFinance();
+        var button = document.createElement("button");
+        button.type = "button";
+        button.className = "todo-group-tile todo-finance-tile";
+        button.style.setProperty("--group-color", FINANCE_COLOR);
+        button.setAttribute("aria-label", "Open Finance to set a budget and track daily expenses");
+
+        var iconWrap = document.createElement("span");
+        iconWrap.className = "todo-finance-tile__icon";
+        iconWrap.innerHTML = icon("wallet");
+        var label = document.createElement("span");
+        label.className = "todo-finance-tile__label";
+        label.textContent = "Finance";
+        var copy = document.createElement("span");
+        copy.className = "todo-finance-tile__copy";
+        var title = document.createElement("strong");
+        title.textContent = current.spent > 0 ? formatFinanceMoney(current.spent) + " spent" : "Budget & expenses";
+        var detail = document.createElement("small");
+        detail.textContent = state.financeMonthlyBudget > 0
+            ? formatFinanceMoney(Math.max(0, state.financeMonthlyBudget - current.spent)) + " remaining this month"
+            : "Daily spending, groups and subscriptions";
+        copy.append(title, detail);
+        button.append(iconWrap, label, copy);
+        button.addEventListener("click", openFinance);
+        return button;
+    }
+
+    function openFinance() {
+        elements.financeExpenseDate.value = localDateKey(new Date());
+        renderFinance();
+    }
+
+    function formatFinanceMoney(value) {
+        return new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency: "EUR",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(Number(value) || 0);
+    }
+
+    function currentMonthFinance() {
+        var today = new Date();
+        var monthKey = localDateKey(today).slice(0, 7);
+        var expenses = state.financeExpenses.filter(function (expense) {
+            return expense.date.slice(0, 7) === monthKey;
+        });
+        return {
+            monthKey: monthKey,
+            expenses: expenses,
+            spent: expenses.reduce(function (total, expense) { return total + expense.amount; }, 0)
+        };
+    }
+
+    function renderFinance() {
+        showView("finance");
+        var current = currentMonthFinance();
+        var budget = Number(state.financeMonthlyBudget) || 0;
+        var remaining = budget - current.spent;
+        var today = new Date();
+        var daysRemaining = Math.max(1, new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() - today.getDate() + 1);
+        var dailyAllowance = budget > 0 && remaining > 0 ? remaining / daysRemaining : 0;
+        var recurringMonthly = state.financeExpenses.filter(function (expense) { return expense.isRecurring; })
+            .reduce(function (total, expense) {
+                return total + (expense.recurrence === "Weekly"
+                    ? expense.amount * 52 / 12
+                    : expense.recurrence === "Yearly" ? expense.amount / 12 : expense.amount);
+            }, 0);
+        var monthLabel = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(today);
+        elements.financeMonthLabel.textContent = monthLabel;
+        if (document.activeElement !== elements.financeBudgetAmount) {
+            elements.financeBudgetAmount.value = budget > 0 ? budget.toFixed(2) : "";
+        }
+        if (!elements.financeExpenseDate.value) {
+            elements.financeExpenseDate.value = localDateKey(today);
+        }
+
+        var stats = [
+            { label: "Spent", value: formatFinanceMoney(current.spent) },
+            { label: remaining < 0 ? "Over budget" : "Remaining", value: budget > 0 ? formatFinanceMoney(Math.abs(remaining)) : "Not set", danger: remaining < 0 },
+            { label: "Daily allowance", value: formatFinanceMoney(dailyAllowance) },
+            { label: "Recurring / month", value: formatFinanceMoney(recurringMonthly) }
+        ];
+        elements.financeSummary.innerHTML = stats.map(function (stat) {
+            return '<article class="todo-finance-stat' + (stat.danger ? " is-danger" : "") + '"><span>' +
+                escapeHtml(stat.label) + "</span><strong>" + escapeHtml(stat.value) + "</strong></article>";
+        }).join("");
+
+        var percent = budget > 0 ? current.spent / budget * 100 : 0;
+        elements.financeBudgetProgress.innerHTML =
+            '<div class="todo-finance-budget-copy"><span>' +
+            (budget > 0 ? Math.round(percent) + "% used" : "Set a budget to track your pace") +
+            "</span><strong>" + escapeHtml(formatFinanceMoney(current.spent)) + " / " +
+            escapeHtml(formatFinanceMoney(budget)) + '</strong></div><div class="todo-finance-progress' +
+            (percent > 100 ? " is-over" : "") + '" role="progressbar" aria-label="Monthly budget used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' +
+            Math.round(Math.min(100, percent)) + '"><span style="width:' + Math.min(100, percent) + '%"></span></div>';
+
+        var groupMap = new Map();
+        current.expenses.forEach(function (expense) {
+            groupMap.set(expense.group, (groupMap.get(expense.group) || 0) + expense.amount);
+        });
+        var groups = Array.from(groupMap.entries()).sort(function (a, b) { return b[1] - a[1]; });
+        elements.financeGroups.innerHTML = groups.length ? groups.map(function (entry) {
+            var groupPercent = current.spent > 0 ? entry[1] / current.spent * 100 : 0;
+            return '<div class="todo-finance-group"><div><strong>' + escapeHtml(entry[0]) +
+                "</strong><span>" + escapeHtml(formatFinanceMoney(entry[1])) +
+                '</span></div><div><span style="width:' + groupPercent + '%"></span></div></div>';
+        }).join("") : '<p class="todo-finance-empty">Add an expense to see your spending breakdown.</p>';
+
+        var sorted = state.financeExpenses.slice().sort(function (a, b) {
+            return b.date.localeCompare(a.date) || byUpdatedDescending(a, b);
+        });
+        var days = new Map();
+        sorted.forEach(function (expense) {
+            if (!days.has(expense.date)) { days.set(expense.date, []); }
+            days.get(expense.date).push(expense);
+        });
+        elements.financeExpenseCount.textContent = plural(sorted.length, "expense");
+        elements.financeHistory.innerHTML = sorted.length ? Array.from(days.entries()).map(function (day) {
+            var total = day[1].reduce(function (sum, expense) { return sum + expense.amount; }, 0);
+            return '<section class="todo-finance-day"><header><div><strong>' +
+                escapeHtml(formatMeasurementDate(day[0])) + '</strong><span>' + plural(day[1].length, "expense") +
+                "</span></div><b>" + escapeHtml(formatFinanceMoney(total)) + "</b></header>" +
+                day[1].map(function (expense) {
+                    return '<article class="todo-finance-expense"><span class="todo-finance-expense__dot" aria-hidden="true"></span><div><strong>' +
+                        escapeHtml(expense.label) + (expense.isRecurring ? '<em>' + escapeHtml(expense.recurrence) + "</em>" : "") +
+                        "</strong><small>" + escapeHtml(expense.group) + (expense.notes ? " · " + escapeHtml(expense.notes) : "") +
+                        "</small></div><b>" + escapeHtml(formatFinanceMoney(expense.amount)) +
+                        '</b><button type="button" data-delete-finance-expense="' + escapeHtml(expense.id) +
+                        '" aria-label="Delete ' + escapeHtml(expense.label) + '">' + icon("trash") + "</button></article>";
+                }).join("") + "</section>";
+        }).join("") : '<div class="todo-finance-empty todo-finance-empty--large"><strong>No expenses yet</strong><span>Your first expense will appear here, grouped by day.</span></div>';
+    }
+
+    function saveFinanceBudget(event) {
+        event.preventDefault();
+        var amount = Number(elements.financeBudgetAmount.value);
+        if (!Number.isFinite(amount) || amount < 0) {
+            showToast("Enter a valid monthly budget.");
+            return;
+        }
+        state.financeMonthlyBudget = Math.round(amount * 100) / 100;
+        persist({ touchActiveNote: false, immediate: true });
+        renderFinance();
+        showToast("Monthly budget saved.");
+    }
+
+    function addFinanceExpense(event) {
+        event.preventDefault();
+        var amount = Number(elements.financeExpenseAmount.value);
+        var label = elements.financeExpenseLabel.value.trim();
+        if (!Number.isFinite(amount) || amount <= 0 || !label) {
+            showToast("Add an amount and label first.");
+            return;
+        }
+        var now = new Date().toISOString();
+        state.financeExpenses.push({
+            id: createId("expense"),
+            date: elements.financeExpenseDate.value || localDateKey(new Date()),
+            amount: Math.round(amount * 100) / 100,
+            label: label.slice(0, 160),
+            group: elements.financeExpenseGroup.value,
+            notes: elements.financeExpenseNotes.value.trim().slice(0, 1000),
+            isRecurring: elements.financeExpenseRecurring.checked,
+            recurrence: elements.financeExpenseRecurring.checked ? elements.financeExpenseRecurrence.value : "",
+            createdAt: now,
+            updatedAt: now
+        });
+        elements.financeExpenseAmount.value = "";
+        elements.financeExpenseLabel.value = "";
+        elements.financeExpenseNotes.value = "";
+        elements.financeExpenseRecurring.checked = false;
+        elements.financeRecurrenceField.hidden = true;
+        persist({ touchActiveNote: false, immediate: true });
+        renderFinance();
+        elements.financeExpenseAmount.focus();
+        showToast("Expense added.");
+    }
+
+    function deleteFinanceExpense(expenseId) {
+        var expense = state.financeExpenses.find(function (item) { return item.id === expenseId; });
+        if (!expense || !window.confirm("Delete " + expense.label + "?")) {
+            return;
+        }
+        state.deletedFinanceExpenses[expenseId] = new Date().toISOString();
+        state.financeExpenses = state.financeExpenses.filter(function (item) { return item.id !== expenseId; });
+        persist({ touchActiveNote: false, immediate: true });
+        renderFinance();
+        showToast("Expense deleted.");
     }
 
     function formatShortDateTime(value) {
@@ -5646,6 +5933,17 @@
         }
     });
     elements.goalForm.addEventListener("submit", addGoal);
+    elements.financeBudgetForm.addEventListener("submit", saveFinanceBudget);
+    elements.financeExpenseForm.addEventListener("submit", addFinanceExpense);
+    elements.financeExpenseRecurring.addEventListener("change", function () {
+        elements.financeRecurrenceField.hidden = !elements.financeExpenseRecurring.checked;
+    });
+    elements.financeHistory.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-delete-finance-expense]");
+        if (button) {
+            deleteFinanceExpense(button.dataset.deleteFinanceExpense);
+        }
+    });
     elements.measurementForm.addEventListener("submit", saveMeasurement);
     elements.measurementSimplified.addEventListener("change", changeMeasurementMode);
     elements.measurementUnit.addEventListener("change", changeMeasurementUnit);

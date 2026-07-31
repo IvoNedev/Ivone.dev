@@ -91,6 +91,20 @@ public sealed class TodoGoal : TodoDocumentChild
     public DateTimeOffset UpdatedAtUtc { get; set; }
 }
 
+public sealed class TodoFinanceExpense : TodoDocumentChild
+{
+    public string Id { get; set; } = string.Empty;
+    public DateOnly Date { get; set; }
+    public decimal Amount { get; set; }
+    public string Label { get; set; } = string.Empty;
+    public string Group { get; set; } = "Other";
+    public string Notes { get; set; } = string.Empty;
+    public bool IsRecurring { get; set; }
+    public string Recurrence { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAtUtc { get; set; }
+    public DateTimeOffset UpdatedAtUtc { get; set; }
+}
+
 public sealed class TodoMeasurementEntry : TodoDocumentChild
 {
     public string Id { get; set; } = string.Empty;

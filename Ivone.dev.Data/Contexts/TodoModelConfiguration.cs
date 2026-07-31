@@ -14,6 +14,8 @@ internal static class TodoModelConfiguration
             entity.Property(x => x.Id).ValueGeneratedNever();
             entity.Property(x => x.UpdatedAtUtc).HasColumnType("datetimeoffset(7)");
             entity.Property(x => x.MeasurementUnit).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.FinanceMonthlyBudget).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.FinanceCurrency).HasMaxLength(3).IsRequired();
             entity.Property(x => x.RowVersion).IsRowVersion();
         });
 
@@ -118,6 +120,21 @@ internal static class TodoModelConfiguration
             {
                 entity.Property(propertyName).HasColumnType("decimal(10,2)");
             }
+            ConfigureAuditDates(entity);
+            entity.HasIndex(x => new { x.TodoDocumentId, x.Date });
+        });
+
+        ConfigureDocumentChild<TodoFinanceExpense>(modelBuilder, "TodoFinanceExpenses", x => x.FinanceExpenses);
+        modelBuilder.Entity<TodoFinanceExpense>(entity =>
+        {
+            entity.HasKey(x => new { x.TodoDocumentId, x.Id });
+            ConfigureCommonId(entity);
+            entity.Property(x => x.Date).HasColumnType("date");
+            entity.Property(x => x.Amount).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.Label).HasMaxLength(160).IsRequired();
+            entity.Property(x => x.Group).HasMaxLength(60).IsRequired();
+            entity.Property(x => x.Notes).HasMaxLength(1000).IsRequired();
+            entity.Property(x => x.Recurrence).HasMaxLength(16).IsRequired();
             ConfigureAuditDates(entity);
             entity.HasIndex(x => new { x.TodoDocumentId, x.Date });
         });

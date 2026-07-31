@@ -55,6 +55,7 @@ namespace ivone.dev.Data.Contexts
         public DbSet<TodoCalendarEvent> TodoCalendarEvents => Set<TodoCalendarEvent>();
         public DbSet<TodoMealEntry> TodoMealEntries => Set<TodoMealEntry>();
         public DbSet<TodoGoal> TodoGoals => Set<TodoGoal>();
+        public DbSet<TodoFinanceExpense> TodoFinanceExpenses => Set<TodoFinanceExpense>();
         public DbSet<TodoMeasurementEntry> TodoMeasurementEntries => Set<TodoMeasurementEntry>();
         public DbSet<TodoRecipe> TodoRecipes => Set<TodoRecipe>();
         public DbSet<TodoRecipeIngredient> TodoRecipeIngredients => Set<TodoRecipeIngredient>();

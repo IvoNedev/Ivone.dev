@@ -44,6 +44,7 @@
         <symbol id="i-utensils" viewBox="0 0 24 24"><path d="M7 3v7M4 3v5a3 3 0 0 0 6 0V3M7 11v10M16 3v18M16 3c3 1.5 4 4 4 7h-4"></path></symbol>
         <symbol id="i-dumbbell" viewBox="0 0 24 24"><path d="M6 8v8M3.5 9.5v5M18 8v8M20.5 9.5v5M6 12h12"></path></symbol>
         <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z"></path></symbol>
+        <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H18a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6.5A2.5 2.5 0 0 1 4 17.5v-11Z"></path><path d="M4 8h14M15 12h5v4h-5a2 2 0 0 1 0-4Z"></path></symbol>
         <symbol id="i-todo-mark" viewBox="0 0 24 24"><path d="M5 4.5h14a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5H5A2.5 2.5 0 0 1 2.5 17V7A2.5 2.5 0 0 1 5 4.5Z"></path><path d="m7 12.5 3.2 3.2L17.5 8"></path></symbol>
     </svg>
 
@@ -265,6 +266,79 @@
                     <small>Choose one main goal to show on the home tile.</small>
                 </div>
                 <div id="goalsList" class="todo-goals-list" aria-live="polite"></div>
+            </section>
+
+            <section id="financeView" class="todo-view todo-finance-view" hidden>
+                <header class="todo-view-header todo-finance-header">
+                    <button class="todo-icon-button" type="button" data-action="back-home" aria-label="Back to categories">
+                        <svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+                    </button>
+                    <div class="todo-view-header__title">
+                        <span class="todo-finance-mark" aria-hidden="true"><svg><use href="#i-wallet"></use></svg></span>
+                        <div><p class="todo-eyebrow">Money overview</p><h1>Finance</h1></div>
+                    </div>
+                    <span id="financeMonthLabel" class="todo-finance-month"></span>
+                </header>
+
+                <div id="financeSummary" class="todo-finance-summary" aria-live="polite"></div>
+
+                <div class="todo-finance-layout">
+                    <section class="todo-finance-card">
+                        <div class="todo-subsection-heading">
+                            <div><p class="todo-eyebrow">Quick entry</p><h2>Add expense</h2></div>
+                        </div>
+                        <form id="financeExpenseForm" class="todo-finance-form">
+                            <div class="todo-finance-form__row">
+                                <label><span>Amount</span><span class="todo-finance-money-input"><b>EUR</b><input id="financeExpenseAmount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required /></span></label>
+                                <label><span>Date</span><input id="financeExpenseDate" type="date" required /></label>
+                            </div>
+                            <label><span>Label</span><input id="financeExpenseLabel" type="text" maxlength="160" placeholder="Weekly groceries" autocomplete="off" required /></label>
+                            <label><span>Group</span>
+                                <select id="financeExpenseGroup">
+                                    <option>Food &amp; Drink</option><option>Housing</option><option>Transport</option>
+                                    <option>Shopping</option><option>Health</option><option>Entertainment</option>
+                                    <option>Bills</option><option>Subscriptions</option><option>Travel</option>
+                                    <option>Education</option><option>Other</option>
+                                </select>
+                            </label>
+                            <label><span>Notes <small>Optional</small></span><textarea id="financeExpenseNotes" maxlength="1000" rows="3" placeholder="Anything worth remembering"></textarea></label>
+                            <div class="todo-finance-recurring">
+                                <label class="todo-simplified-toggle" for="financeExpenseRecurring">
+                                    <input id="financeExpenseRecurring" type="checkbox" />
+                                    <span aria-hidden="true"></span><strong>Recurring payment</strong>
+                                </label>
+                                <label id="financeRecurrenceField" hidden><span>Repeats</span>
+                                    <select id="financeExpenseRecurrence"><option>Monthly</option><option>Weekly</option><option>Yearly</option></select>
+                                </label>
+                            </div>
+                            <button class="todo-primary-button todo-wide-button" type="submit"><svg aria-hidden="true"><use href="#i-plus"></use></svg> Add expense</button>
+                        </form>
+                    </section>
+
+                    <aside class="todo-finance-sidebar">
+                        <section class="todo-finance-card">
+                            <div class="todo-subsection-heading"><div><p class="todo-eyebrow">Spending limit</p><h2>Monthly budget</h2></div></div>
+                            <form id="financeBudgetForm" class="todo-finance-budget-form">
+                                <label class="todo-visually-hidden" for="financeBudgetAmount">Monthly budget in EUR</label>
+                                <span class="todo-finance-money-input"><b>EUR</b><input id="financeBudgetAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Set a budget" required /></span>
+                                <button class="todo-secondary-button" type="submit">Save</button>
+                            </form>
+                            <div id="financeBudgetProgress"></div>
+                        </section>
+                        <section class="todo-finance-card">
+                            <div class="todo-subsection-heading"><div><p class="todo-eyebrow">Where it goes</p><h2>By group</h2></div></div>
+                            <div id="financeGroups" class="todo-finance-groups"></div>
+                        </section>
+                    </aside>
+                </div>
+
+                <section class="todo-finance-card todo-finance-history-card">
+                    <div class="todo-subsection-heading">
+                        <div><p class="todo-eyebrow">Day by day</p><h2>Expense history</h2></div>
+                        <small id="financeExpenseCount"></small>
+                    </div>
+                    <div id="financeHistory" class="todo-finance-history"></div>
+                </section>
             </section>
 
             <section id="measurementsView" class="todo-view todo-measurements-view" hidden>

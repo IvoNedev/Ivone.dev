@@ -127,6 +127,7 @@ public sealed class TodoSqlStore
             .Include(x => x.CalendarEvents)
             .Include(x => x.MealEntries)
             .Include(x => x.Goals)
+            .Include(x => x.FinanceExpenses)
             .Include(x => x.MeasurementEntries)
             .Include(x => x.Recipes).ThenInclude(x => x.Ingredients)
             .Include(x => x.Recipes).ThenInclude(x => x.MethodSteps)
@@ -136,6 +137,7 @@ public sealed class TodoSqlStore
     {
         await _dbContext.Database.ExecuteSqlRawAsync("""
             DELETE FROM dbo.TodoDeletions WHERE TodoDocumentId = 1;
+            DELETE FROM dbo.TodoFinanceExpenses WHERE TodoDocumentId = 1;
             DELETE FROM dbo.TodoRecipes WHERE TodoDocumentId = 1;
             DELETE FROM dbo.TodoMeasurementEntries WHERE TodoDocumentId = 1;
             DELETE FROM dbo.TodoGoals WHERE TodoDocumentId = 1;
@@ -153,6 +155,8 @@ public sealed class TodoSqlStore
         target.UpdatedAtUtc = ParseTimestamp(payload.UpdatedAt, now);
         target.MeasurementUnit = payload.MeasurementUnit == "imperial" ? "imperial" : "metric";
         target.MeasurementSimplified = payload.MeasurementSimplified;
+        target.FinanceMonthlyBudget = Math.Max(0m, payload.FinanceMonthlyBudget);
+        target.FinanceCurrency = payload.FinanceCurrency == "EUR" ? "EUR" : "EUR";
 
         target.Groups = payload.Groups.Select(group => new TodoGroup
         {
@@ -227,6 +231,21 @@ public sealed class TodoSqlStore
             Deadline = ParseDate(item.Deadline),
             IsMain = item.IsMain,
             Completed = item.Completed,
+            CreatedAtUtc = ParseTimestamp(item.CreatedAt, now),
+            UpdatedAtUtc = ParseTimestamp(item.UpdatedAt, now)
+        }).ToList();
+
+        target.FinanceExpenses = payload.FinanceExpenses.Select(item => new TodoFinanceExpense
+        {
+            Document = target,
+            Id = item.Id,
+            Date = ParseDate(item.Date),
+            Amount = item.Amount,
+            Label = item.Label,
+            Group = item.Group,
+            Notes = item.Notes,
+            IsRecurring = item.IsRecurring,
+            Recurrence = item.IsRecurring ? item.Recurrence : string.Empty,
             CreatedAtUtc = ParseTimestamp(item.CreatedAt, now),
             UpdatedAtUtc = ParseTimestamp(item.UpdatedAt, now)
         }).ToList();
@@ -309,6 +328,8 @@ public sealed class TodoSqlStore
             UpdatedAt = FormatTimestamp(document.UpdatedAtUtc),
             MeasurementUnit = document.MeasurementUnit,
             MeasurementSimplified = document.MeasurementSimplified,
+            FinanceMonthlyBudget = document.FinanceMonthlyBudget,
+            FinanceCurrency = document.FinanceCurrency,
             Groups = document.Groups.OrderBy(x => x.Id).Select(x => new TodoGroupPayload
             {
                 Id = x.Id,
@@ -364,6 +385,19 @@ public sealed class TodoSqlStore
                 CreatedAt = FormatTimestamp(x.CreatedAtUtc),
                 UpdatedAt = FormatTimestamp(x.UpdatedAtUtc)
             }).ToList(),
+            FinanceExpenses = document.FinanceExpenses.OrderBy(x => x.Id).Select(x => new TodoFinanceExpensePayload
+            {
+                Id = x.Id,
+                Date = FormatDate(x.Date),
+                Amount = x.Amount,
+                Label = x.Label,
+                Group = x.Group,
+                Notes = x.Notes,
+                IsRecurring = x.IsRecurring,
+                Recurrence = x.Recurrence,
+                CreatedAt = FormatTimestamp(x.CreatedAtUtc),
+                UpdatedAt = FormatTimestamp(x.UpdatedAtUtc)
+            }).ToList(),
             MeasurementEntries = document.MeasurementEntries.OrderBy(x => x.Id).Select(ToMeasurementPayload).ToList(),
             Recipes = document.Recipes.OrderBy(x => x.Id).Select(x => new TodoRecipePayload
             {
@@ -388,6 +422,7 @@ public sealed class TodoSqlStore
                 "calendarEvent" => payload.DeletedCalendarEvents,
                 "mealEntry" => payload.DeletedMealEntries,
                 "goal" => payload.DeletedGoals,
+                "financeExpense" => payload.DeletedFinanceExpenses,
                 "measurementEntry" => payload.DeletedMeasurementEntries,
                 "recipe" => payload.DeletedRecipes,
                 _ => null
@@ -492,6 +527,7 @@ public sealed class TodoSqlStore
             .Concat(Entries("calendarEvent", payload.DeletedCalendarEvents))
             .Concat(Entries("mealEntry", payload.DeletedMealEntries))
             .Concat(Entries("goal", payload.DeletedGoals))
+            .Concat(Entries("financeExpense", payload.DeletedFinanceExpenses))
             .Concat(Entries("measurementEntry", payload.DeletedMeasurementEntries))
             .Concat(Entries("recipe", payload.DeletedRecipes));
 
@@ -520,6 +556,7 @@ public sealed class TodoSqlStore
         EnsureUnique(payload.CalendarEvents.Select(x => x.Id), "calendar event");
         EnsureUnique(payload.MealEntries.Select(x => x.Id), "meal");
         EnsureUnique(payload.Goals.Select(x => x.Id), "goal");
+        EnsureUnique(payload.FinanceExpenses.Select(x => x.Id), "finance expense");
         EnsureUnique(payload.MeasurementEntries.Select(x => x.Id), "measurement");
         EnsureUnique(payload.Recipes.Select(x => x.Id), "recipe");
         foreach (var note in payload.Notes)

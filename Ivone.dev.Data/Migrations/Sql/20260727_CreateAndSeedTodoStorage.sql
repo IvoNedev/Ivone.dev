@@ -39,6 +39,8 @@ BEGIN TRY
             UpdatedAtUtc datetimeoffset(7) NOT NULL,
             MeasurementUnit nvarchar(16) NOT NULL,
             MeasurementSimplified bit NOT NULL,
+            FinanceMonthlyBudget decimal(18,2) NOT NULL CONSTRAINT DF_TodoDocuments_FinanceMonthlyBudget DEFAULT 0,
+            FinanceCurrency nvarchar(3) NOT NULL CONSTRAINT DF_TodoDocuments_FinanceCurrency DEFAULT N'EUR',
             RowVersion rowversion NOT NULL,
             CONSTRAINT PK_TodoDocuments PRIMARY KEY (Id),
             CONSTRAINT CK_TodoDocuments_SharedId CHECK (Id = 1)
@@ -158,6 +160,27 @@ BEGIN TRY
             CONSTRAINT FK_TodoGoals_TodoDocuments FOREIGN KEY (TodoDocumentId)
                 REFERENCES dbo.TodoDocuments(Id) ON DELETE CASCADE
         );
+
+        CREATE TABLE dbo.TodoFinanceExpenses
+        (
+            TodoDocumentId tinyint NOT NULL,
+            Id nvarchar(160) NOT NULL,
+            Date date NOT NULL,
+            Amount decimal(18,2) NOT NULL,
+            Label nvarchar(160) NOT NULL,
+            [Group] nvarchar(60) NOT NULL,
+            Notes nvarchar(1000) NOT NULL,
+            IsRecurring bit NOT NULL,
+            Recurrence nvarchar(16) NOT NULL,
+            CreatedAtUtc datetimeoffset(7) NOT NULL,
+            UpdatedAtUtc datetimeoffset(7) NOT NULL,
+            CONSTRAINT PK_TodoFinanceExpenses PRIMARY KEY (TodoDocumentId, Id),
+            CONSTRAINT FK_TodoFinanceExpenses_TodoDocuments FOREIGN KEY (TodoDocumentId)
+                REFERENCES dbo.TodoDocuments(Id) ON DELETE CASCADE,
+            CONSTRAINT CK_TodoFinanceExpenses_Amount CHECK (Amount > 0)
+        );
+        CREATE INDEX IX_TodoFinanceExpenses_Date
+            ON dbo.TodoFinanceExpenses(TodoDocumentId, Date);
 
         CREATE TABLE dbo.TodoMeasurementEntries
         (
